@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 
 setup(name='sog',
       version='0.1',
@@ -7,6 +7,6 @@ setup(name='sog',
       author='Jason Newblanc',
       author_email='<first>.<last>(at)gmail.com',
       license='CC0 1.0',
-      packages=find_namespace_packages(include=['sog.*'])
+      packages=find_namespace_packages(include=['sog.*']),
       zip_safe=False,
       )
