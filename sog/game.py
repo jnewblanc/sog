@@ -182,6 +182,7 @@ class _Game():
         elif cmd == 'echo':
             pass
         elif cmd == 'exit' or cmd == "quit":
+            charObj.save()
             self.leaveRoom(charObj)
             self.leaveGame(svrObj)
             return(False)
@@ -258,7 +259,7 @@ class _Game():
             pass
         elif cmd == 'suicide' or cmd == 'lose':
             self.suicide(svrObj)
-            buf += "Character deleted\n"
+            return(False)
         elif cmd == 'teach':
             pass
         elif cmd == 'track':
@@ -293,7 +294,7 @@ class _Game():
         else:
             buf += 'Unknown Command: ' + cmd + '\n'
             self.selfMsg(charObj, buf)
-            return(False)
+            return(True)
 
         self.selfMsg(charObj, buf)
         if charObj:  # doesn't exist if there is a suicide
@@ -473,7 +474,7 @@ class _Game():
                                ' has left the game', bChar='=')
         svrObj.charObj = None
         svrObj.broadcast(msg, 'game', '')
-        svrObj.setArea('lobby')
+        logging.info(msg)
         return(True)
 
     def getCorrespondingRoomObj(self, doorObj, activeOnly=False):
@@ -514,17 +515,18 @@ class _Game():
     def suicide(self, svrObj):
         if svrObj.promptForYN("DANGER: This will permanently delete " +
                               "your character.  Are you sure?"):
-            charName = svrObj.charObj.getName()
-            self.leaveRoom(svrObj.charObj)
-            self.removeCharacterFromGame(svrObj.charObj)
-            msg = svrObj.txtBanner(svrObj.charObj.getName() +
+            charObj = svrObj.charObj
+            charName = charObj.getName()
+            self.leaveRoom(charObj)
+            self.removeCharacterFromGame(charObj)
+            msg = svrObj.txtBanner(charName +
                                    ' has shuffled off this mortal coil',
                                    bChar='=')
-            svrObj.charObj.delete()
-            svrObj.charObj = None
+            charObj.delete()
+            charObj = None
             svrObj.acctObj.removeCharacterFromAccount(charName)
             svrObj.broadcast(msg, 'game', '')
-            svrObj.setArea('lobby')          # Set this to return to game
+            logging.info("Character deleted: " + charName)
             return(True)
         return(False)
 

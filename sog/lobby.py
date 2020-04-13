@@ -8,7 +8,7 @@ class _Lobby():
     ''' lobby class '''
     def __init__(self):
         self.instance = "Instance at %d" % self.__hash__()
-        self.playerList = []
+        self.userList = []
         return(None)
 
     def processCommand(self, svrObj):    # noqa: C901
@@ -17,16 +17,18 @@ class _Lobby():
         cmdargs = svrObj.getInputStr().split(' ')
         cmd = cmdargs[0]
 
-        if svrObj.acctObj not in self.playerList:
-            self.playerList.append(svrObj.acctObj)
+        if svrObj.acctObj not in self.userList:
+            self.userList.append(svrObj.acctObj)
 
         logging.debug("LOBBY cmd = " + cmd)
 
         buf = ''
+
+        if svrObj.acctObj.isAdmin():
+            buf += self.processAdminCommand(svrObj, cmdargs)
+
         if cmd == '':
             pass
-        elif svrObj.acctObj.isAdmin():
-            buf += self.processAdminCommand(svrObj, cmdargs)
         elif cmd == 'brief':
             svrObj.acctObj.setPromptSize("brief")
         elif cmd == 'broadcast':
@@ -35,12 +37,10 @@ class _Lobby():
             if svrObj.broadcast(msgBuf):
                 buf = 'Sent\n'
         elif cmd == 'exit' or cmd == "quit":
-            svrObj.broadcast(svrObj.acctObj.getName() + ' has left the lobby')
-            svrObj.acctObj.setLogoutDate()
-            svrObj.acctObj.save()
-            self.playerList.remove(svrObj.acctObj)
-            svrObj.setArea('exit')  # Set this to trigger logout
+            self.userList.remove(svrObj.acctObj)
             buf = 'Leaving Lobby...\n'
+            svrObj.spoolOut(buf)
+            return(False)
         elif cmd == 'full':
             svrObj.acctObj.setPromptSize("full")
         elif cmd == 'help':
@@ -77,7 +77,7 @@ class _Lobby():
         prompt = "You may send a message to one the the folowing users."
         prompt += self.showLogins()
         prompt += "Who do you want to send a message to? "
-        inNum = svrObj.promptForNumberInput(prompt, len(self.playerList))
+        inNum = svrObj.promptForNumberInput(prompt, len(self.userList))
         prompt = "What is the message? "
         msgBuf = svrObj.promptForInput(prompt, '')
         if svrObj.broadcast(msgBuf, inNum):
@@ -113,7 +113,7 @@ class _Lobby():
     def showLogins(self):
         ''' show an enumerated list of players '''
         buf = "Players:\n"
-        for num, player in enumerate(self.playerList):
+        for num, player in enumerate(self.userList):
             buf += '  (' + str(num) + ") " + player.getName() + "\n"
         return(buf)
 

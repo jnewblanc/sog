@@ -55,56 +55,62 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
         ''' Connection/Thread ID Str - often used as a prefix for logging '''
         return self.identifier
 
+    def loggedInLoop(self, acctObj):
+        ''' Main active loop, once user is logged in. '''
+        if not acctObj:
+            return(False)
+
+        self.setArea("lobby")
+
+        while True:
+            if self.promptForCommand():  # send/receive outpt/input
+                # logging.debug("Area: ", self.getArea())
+                if self.isArea('lobby'):
+                    if not self.lobbyObj.processCommand(self):
+                        return(False)
+                if self.isArea('game'):
+                    if not self.charObj:      # login as character
+                        self.charObj = character.Character(self, self.acctObj.getId())  # noqa: E501
+                        if self.charObj.login():
+                            self.gameObj.joinGame(self)
+                        else:
+                            self.charObj = None
+                            msg = "Error: Could not login to game"
+                            logging.warning(msg)
+                            self.spoolOut(msg + '\n')
+                            self.setArea("lobby")
+                    else:                 # Process game commands
+                        if not self.gameObj.processCommand(self):
+                            self.setArea("lobby")
+                if self.isArea('exit') or not self.isRunning():
+                    break                  # exit loop to logout
+            else:
+                break
+        return(False)
+
     # main program
     def run(self):
         ''' This is the main entry point into the app '''
         logging.info(str(self) + " Client connection established")
         try:
-            while True:
+            while True:                             # Server loop
                 self.welcome("Sog Server\n")
                 self.acctObj = account.Account(self)
-                self.setArea("lobby")
                 if self.acctObj.login():
-                    while True:
-                        if self.promptForCommand():  # send/receive outpt/input
-                            # logging.debug("Area: ", self.getArea())
-                            if self.isArea('lobby'):
-                                if self.lobbyObj.processCommand(self):
-                                    pass
-                                else:
-                                    logging.debug("Lobby PC returned false")
-                            if self.isArea('game'):
-                                if not self.charObj:
-                                    self.charObj = character.Character(self, self.acctObj.getId())  # noqa: E501
-                                    if self.charObj.login():
-                                        self.gameObj.joinGame(self)
-                                    else:
-                                        self.charObj = None
-                                        msg = "Error: Could not login to game"
-                                        logging.warning(msg)
-                                        self.spoolOut(msg + '\n')
-                                        self.setArea("lobby")
-                                else:
-                                    if self.gameObj.processCommand(self):
-                                        pass
-                                    else:
-                                        logging.debug("Game PC returned false")
-                            if self.isArea('exit') or not self.isRunning():
-                                break                  # exit loop to logout
-                        else:
-                            break
+                    self.loggedInLoop(self.acctObj)
                     if (self.acctObj):
                         self.acctObj.logout()
-                    self.acctObj = account.Account(self)
+                    self.acctObj = None
                 else:
                     logging.debug(str(self) + ' Authentication failed')
                     self.acctObj = None
                     if not self.isRunning():
-                        break                          # exit loop to terminate
+                        break                # exit loop to terminate
                     time.sleep(1)
             self.terminateClientConnection()
         finally:
             self.terminateClientConnection()
+        return(None)
 
     def isRunning(self):
         if not self._running:

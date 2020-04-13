@@ -117,6 +117,7 @@ class Account(Storage, AttributeHelper):
                 dateStr(self.getLastLogoutDate()) + "\n" +
                 self.svrObj.txtLine('=') + "\n")
         self.svrObj.spoolOut(buf)
+        self.save(logStr=__class__.__name__)
         if self.svrObj:
             logging.info(str(self.svrObj) + ' Logout ' + self.getEmail())
         self.__init__(self.svrObj)

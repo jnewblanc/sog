@@ -1,5 +1,6 @@
 ''' Object Class '''   # noqa
 
+import bisect
 import datetime
 import logging
 import pprint
@@ -599,53 +600,51 @@ class Closable(Object):
             buf += "Ouch!  That's one heavy door"
         return(buf)
 
-    def trapTxt(self, damage=0, poison=False, currenthealth=-1):
+    def trapTxt(self, damage=0, poison=False, currenthealth=-1):  # no
         ''' returns the text for the trap '''
         buf = ''
 
+        fatalDict = {
+                     (10, "Spear impales your stomach!"),
+                     (20, "A rack of knives falls and crushes you!"),
+                     (30, "Tons of rocks tumble down upon you!")
+        }
+
+        poisonDict = {
+                     (10, "Poison dart!"),
+                     (20, "Poison needles!"),
+                     (50, "Cobra lunges at you!"),
+                     (80, "Gas spores explode!")
+        }
+
+        normalDict = {
+                      (5, "Splinters on your hand!"),
+                      (10, "Spring dart!"),
+                      (15, "Small knife flies at you!"),
+                      (20, "Spear shoots out of the ground at you!"),
+                      (30, "Dust sprays in your eyes!"),
+                      (40, "Grubs bite you!"),
+                      (50, "Steel wire cuts your hand!"),
+                      (60, "Needles stab your toes!"),
+                      (70, "Rocks fall from the ceiling!"),
+                      (80, "Blam!  Explosion in your face!"),
+                      (90, "Acid splashes in your face!"),
+                      (100, "Flames shoot out at you!"),
+                      (120, "Boooooom!")
+                     }
+
         if (damage >= currenthealth):  # fatal blow
-            if damage <= 10:
-                buf += "Spear impales your stomach!"
-            elif damage <= 30:
-                buf += "A rack of knives falls and crushes you!"
-            elif damage >= 30:
-                buf += "Tons of rocks tumble down upon you!"
+            pos = bisect.bisect_right(fatalDict, (damage,))
+            buf += fatalDict[pos]
         elif poison:
-            if damage <= 5:
-                buf += "Poison dart!"
-            elif damage <= 10:
-                buf += "Poison needles!"
-            elif damage <= 20:
-                buf += "Cobra lunges at you!"
-            elif damage > 20:
-                buf += "Gas spores explode!"
+            pos = bisect.bisect_right(poisonDict, (damage,))
+            buf += poisonDict[pos]
         else:
-            if damage < 5:
-                buf += "Splinters on your hand!"
-            elif damage < 10:
-                buf += "Spring dart!"
-            elif damage < 20:
-                buf += "Small knife flies at you!"
-            elif damage < 20:
-                buf += "Spear shoots out of the ground at you!"
-            elif damage < 20:
-                buf += "Dust sprays in your eyes!"
-            elif damage < 20:
-                buf += "Grubs bite you!"
-            elif damage < 20:
-                buf += "Steel wire cuts your hand!"
-            elif damage < 20:
-                buf += "Needles stab your toes!"
-            elif damage < 20:
-                buf += "Rocks fall from the ceiling!"
-            elif damage < 20:
-                buf += "Blam!  Explosion in your face!"
-            elif damage < 20:
-                buf += "Acid splashes in your face!"
-            elif damage < 20:
-                buf += "Flames shoot out at you!"
-            elif damage < 20:
-                buf += "Boooooom!"
+            pos = bisect.bisect_right(normalDict, (damage,))
+            buf += normalDict[pos]
+
+        if buf == '':
+            buf = "You are hit by a trap."
         return(buf)
 
     def poison(self, charObj, chanceToAvoid=20):
