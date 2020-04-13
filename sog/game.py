@@ -117,7 +117,7 @@ class _Game():
         for oneChar in self.getCharacterList():
             oneChar.svrObj.spoolOut(msg)
 
-    def processCommand(self, svrObj):
+    def processCommand(self, svrObj):    # noqa: C901
         ''' Process the game commands '''
         charObj = svrObj.charObj
         acctObj = svrObj.acctObj

@@ -21,7 +21,7 @@ class AttributeHelper():
         for attName in self.strAttributes:
             setattr(self, attName, '')
 
-    def fixAttributes(self):
+    def fixAttributes(self):          # noqa C901
         ''' Sometimes we change attributes, and need to fix them in rooms
             that are saved.  This method lets us do that.  This is the
             generic case, but subClasses may choose to do more class

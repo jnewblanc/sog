@@ -788,10 +788,7 @@ class Character(Storage, AttributeHelper):
         self._maxhitpoints += self.classDict[classKey]['hitpointAdjustment']
         self._maxmagicpoints += self.classDict[classKey]['magicpointAdjustment']  # noqa: E501
 
-    def promptForNewCharacter(self, ):
-        '''Prompt user to input character info and return the results'''
-
-        ROW_FORMAT = "  ({0:1}) {1:<30}\n"
+    def promptForClass(self, ROW_FORMAT):
         prompt = 'Classes:\n'
         for oneNum, oneName in enumerate(self.classList):
             desc = str(oneName) + ' - ' + self.classDict[str(oneNum)]['desc']
@@ -801,9 +798,11 @@ class Character(Storage, AttributeHelper):
                                                  (len(self.classList) - 1))
         if inNum == -1:
             return(False)
-        else:
-            self._classname = self.classList[inNum]
 
+        self._classname = self.classList[inNum]
+        return(True)
+
+    def promptForGender(self, ROW_FORMAT):
         prompt = 'Genders:\n'
         for oneNum, oneName in enumerate(self.genderList):
             prompt += ROW_FORMAT.format(str(oneNum), oneName)
@@ -812,9 +811,11 @@ class Character(Storage, AttributeHelper):
                                                  (len(self.genderList) - 1))
         if inNum == -1:
             return(False)
-        else:
-            self._gender = self.genderList[int(inNum)]
 
+        self._gender = self.genderList[int(inNum)]
+        return(True)
+
+    def promptForAlignment(self, ROW_FORMAT):
         prompt = 'Alignment:\n'
         prompt += ROW_FORMAT.format('0', 'Lawful - ' +
                                     'friend of good, enemy of evil')
@@ -831,8 +832,11 @@ class Character(Storage, AttributeHelper):
         inNum = self.svrObj.promptForNumberInput(prompt, aNumOptions)
         if inNum == -1:
             return(False)
-        self._alignment = self.alignmentList[int(inNum)]
 
+        self._alignment = self.alignmentList[int(inNum)]
+        return(True)
+
+    def promptForSkills(self, ROW_FORMAT):
         prompt = 'Skills:\n'
         sList = {}
         for num, skill in enumerate(self.skillDict):
@@ -842,13 +846,28 @@ class Character(Storage, AttributeHelper):
         inNum = self.svrObj.promptForNumberInput(prompt, len(self.skillDict))
         if inNum == -1:
             return(False)
-        setattr(self, sList[inNum], 10)          # Set skill of choice to 10%
 
+        setattr(self, sList[inNum], 10)          # Set skill of choice to 10%
+        return(True)
+
+    def promptForDm(self, ROW_FORMAT):
         if self.svrObj:                          # not set when testing
             if self.svrObj.acctObj.isAdmin():
                 prompt = 'Should this Character be a Dungeon Master (admin)?'
                 if self.svrObj.promptForYN(prompt):
                     self.setDm()
+                    return(True)
+        return(False)
+
+    def promptForNewCharacter(self, ):
+        '''Prompt user to input character info and return the results'''
+
+        ROW_FORMAT = "  ({0:1}) {1:<30}\n"
+        self.promptForClass(ROW_FORMAT)
+        self.promptForGender(ROW_FORMAT)
+        self.promptForAlignment(ROW_FORMAT)
+        self.promptForSkills(ROW_FORMAT)
+        self.promptForDm(ROW_FORMAT)
         return(True)
 
     def getRandomStat(self):

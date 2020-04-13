@@ -91,7 +91,14 @@ def targetSearch(itemList, targetStr):
     return(targetObj)
 
 
-def itemSearch(itemList, name, desiredNum="#1", typeList=[]):
+def dLog(self, msg, show=False):
+    ''' Show debug log messages if flag is set '''
+    if show:
+        logging.debug(msg)
+    return(None)
+
+
+def itemSearch(itemList, name, desiredNum="#1", typeList=[]):  # noqa: C901
     ''' Often we need a fuzzy search lookup of items in a list (of class
         instances).  Given a list, return an item that matches the name,
         number, and type.
@@ -104,55 +111,41 @@ def itemSearch(itemList, name, desiredNum="#1", typeList=[]):
     # strip out anything that's not a digit (i.e. number signs)
     desiredNum = int(re.sub('[^0-9]', '', str(desiredNum)))
 
-    if debugItemSearch:
-        logging.debug("sea - Trying to search for item " + name +
-                      " #" + str(desiredNum))
+    dLog("sea - Trying to search for item " + name + " #" + str(desiredNum),
+         debugItemSearch)
 
     cnt = 0
     for oneitem in itemList:
-        if debugItemSearch:
-            logging.debug("sea - Checking item name " + oneitem.getName() +
-                          "...")
+        dLog("sea - Checking item name " + oneitem.getName() + "...",
+             debugItemSearch)
         if re.match("^" + name, oneitem.getName()):  # fuzzy name search
             cnt += 1
-            if debugItemSearch:
-                logging.debug("sea - item name " + oneitem.getName() +
-                              " matched.  Checking type...")
+            dLog("sea - item name " + oneitem.getName() +
+                 " matched.  Checking type...", debugItemSearch)
             if len(typeList) > 0:
                 if oneitem.getType().lower() not in typeList:
-                    if debugItemSearch:
-                        logging.debug("sea - skipping item " +
-                                      oneitem.getName() + " because it "
-                                      "doesn't match type " +
-                                      str(typeList))
+                    dLog("sea - skipping item " + oneitem.getName() +
+                         " because it doesn't match type " + str(typeList),
+                         debugItemSearch)
                     continue                # skip if not the desired type
             else:
-                if debugItemSearch:
-                    logging.debug("sea - skipping typecheck for item " +
-                                  oneitem.getName())
-            if debugItemSearch:
-                logging.debug("sea - Checking number for item name " +
-                              oneitem.getName() + " .  Looking for #" +
-                              str(desiredNum))
+                dLog("sea - skipping typecheck for item " + oneitem.getName(),
+                     debugItemSearch)
+            dLog("sea - Checking number for item name " + oneitem.getName() +
+                 " .  Looking for #" + str(desiredNum), debugItemSearch)
             if cnt == desiredNum:  # skip if not desired number
-                if debugItemSearch:
-                    logging.debug("sea - Found item " +
-                                  oneitem.getName() + " matching number "
-                                  + str(cnt))
+                dLog("sea - Found item " + oneitem.getName() +
+                     " matching number " + str(cnt), debugItemSearch)
                 myitem = oneitem
                 break
             else:
-                if debugItemSearch:
-                    logging.debug("sea - Could not find " +
-                                  oneitem.getName() +
-                                  " with matching number " +
-                                  str(desiredNum))
+                dLog("sea - Could not find " + oneitem.getName() +
+                     " with matching number " + str(desiredNum),
+                     debugItemSearch)
         else:
-            if debugItemSearch:
-                logging.debug("sea - Item " + oneitem.getName() +
-                              " did not match.")
+            dLog("sea - Item " + oneitem.getName() + " did not match.",
+                 debugItemSearch)
     if myitem:
-        if debugItemSearch:
-            logging.debug("sea - Found item " + myitem.getName())
+        dLog("sea - Found item " + myitem.getName(), debugItemSearch)
 
     return(myitem)

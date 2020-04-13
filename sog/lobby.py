@@ -11,7 +11,7 @@ class _Lobby():
         self.playerList = []
         return(None)
 
-    def processCommand(self, svrObj):
+    def processCommand(self, svrObj):    # noqa: C901
         ''' Process lobby commands '''
 
         cmdargs = svrObj.getInputStr().split(' ')
@@ -25,21 +25,8 @@ class _Lobby():
         buf = ''
         if cmd == '':
             pass
-        elif cmd == 'addcharacterondisk' and svrObj.acctObj.isAdmin():
-            charNamesFromDisk = svrObj.acctObj.getCharactersOnDisk()
-            if len(charNamesFromDisk) > 0:
-                prompt = "Characters on Disk:\n  "
-                prompt += "\n  ".join(charNamesFromDisk)
-                prompt += "\nEnter character name or press [enter] to exit: "
-                inStr = svrObj.promptForInput(prompt)
-                if inStr in charNamesFromDisk:
-                    svrObj.acctObj.addCharacterToAccount(inStr)
-                    buf += inStr + " added to characterList\n"
-                else:
-                    buf += "Could not add " + inStr + " to characterList"
-        elif cmd == 'addcharactertoaccount' and svrObj.acctObj.isAdmin():
-            name = svrObj.promptForInput("Char Name: ")
-            svrObj.acctObj.addCharacterToAccount(name)
+        elif svrObj.acctObj.isAdmin():
+            buf += self.processAdminCommand(svrObj, cmdargs)
         elif cmd == 'brief':
             svrObj.acctObj.setPromptSize("brief")
         elif cmd == 'broadcast':
@@ -47,9 +34,6 @@ class _Lobby():
             msgBuf = svrObj.promptForInput(prompt, '')
             if svrObj.broadcast(msgBuf):
                 buf = 'Sent\n'
-        elif cmd == 'deletecharacterfromaccount' and svrObj.acctObj.isAdmin():
-            name = svrObj.promptForInput("Char Name: ")
-            svrObj.acctObj.removeCharacterFromAccount(name)
         elif cmd == 'exit' or cmd == "quit":
             svrObj.broadcast(svrObj.acctObj.getName() + ' has left the lobby')
             svrObj.acctObj.setLogoutDate()
@@ -71,14 +55,7 @@ class _Lobby():
         elif cmd == 'info':
             buf = svrObj.acctObj.getInfo()
         elif cmd == 'msg':
-            prompt = "You may send a message to one the the folowing users."
-            prompt += self.showLogins()
-            prompt += "Who do you want to send a message to? "
-            inNum = svrObj.promptForNumberInput(prompt, len(self.playerList))
-            prompt = "What is the message? "
-            msgBuf = svrObj.promptForInput(prompt, '')
-            if svrObj.broadcast(msgBuf, inNum):
-                buf = 'Sent\n'
+            self.sendMsg(svrObj)
         elif cmd == 'play' or cmd == 'game' or cmd == 'g':
             svrObj.setArea('game')  # Set this to trigger logout
             buf = "Entering game\n"
@@ -95,6 +72,43 @@ class _Lobby():
         svrObj.spoolOut(buf)
         svrObj.acctObj.save(logStr=__class__.__name__)
         return(True)
+
+    def sendMsg(self, svrObj):
+        prompt = "You may send a message to one the the folowing users."
+        prompt += self.showLogins()
+        prompt += "Who do you want to send a message to? "
+        inNum = svrObj.promptForNumberInput(prompt, len(self.playerList))
+        prompt = "What is the message? "
+        msgBuf = svrObj.promptForInput(prompt, '')
+        if svrObj.broadcast(msgBuf, inNum):
+            buf = 'Sent\n'
+        return(buf)
+
+    def processAdminCommand(self, svrObj, cmdargs):
+        ''' Process lobby commands for Admins '''
+        buf = ''
+        cmd = cmdargs[0]
+
+        if cmd == 'addcharacterondisk':
+            charNamesFromDisk = svrObj.acctObj.getCharactersOnDisk()
+            if len(charNamesFromDisk) > 0:
+                prompt = "Characters on Disk:\n  "
+                prompt += "\n  ".join(charNamesFromDisk)
+                prompt += "\nEnter character name or press [enter] to exit: "
+                inStr = svrObj.promptForInput(prompt)
+                if inStr in charNamesFromDisk:
+                    svrObj.acctObj.addCharacterToAccount(inStr)
+                    buf += inStr + " added to characterList\n"
+                else:
+                    buf += "Could not add " + inStr + " to characterList"
+        elif cmd == 'addcharactertoaccount':
+            name = svrObj.promptForInput("Char Name: ")
+            svrObj.acctObj.addCharacterToAccount(name)
+        elif cmd == 'deletecharacterfromaccount':
+            name = svrObj.promptForInput("Char Name: ")
+            svrObj.acctObj.removeCharacterFromAccount(name)
+
+        return(buf)
 
     def showLogins(self):
         ''' show an enumerated list of players '''

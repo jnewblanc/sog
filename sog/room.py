@@ -166,7 +166,7 @@ class Room(Storage, AttributeHelper):
         # Restore permanentCreatures health
         return(None)
 
-    def display(self, charObj):
+    def displayDescription(self, charObj):
         buf = ''
 
         if charObj.isDm():  # DM can see room ID
@@ -185,6 +185,10 @@ class Room(Storage, AttributeHelper):
             buf += "You are " + self._shortDesc + '\n'
         else:
             buf += "You are " + self._desc + '\n'
+        return(buf)
+
+    def displayExits(self, charObj):
+        buf = ''
 
         # show adjoining rooms
         exitTxt = ''
@@ -198,36 +202,45 @@ class Room(Storage, AttributeHelper):
         exitTxt = exitTxt.rstrip(', ')
         if exitTxt != '':
             buf += "Obvious exits are " + exitTxt + ".\n"
+        return(buf)
+
+    def dmTxt(self, charObj, msg):
+        ''' return the given msg only if the character is a DM '''
+        if charObj.isDm():
+            return(msg)
+
+    def displayItems(self, charObj):
+        ''' show items in current room '''
+        buf = ''
 
         sightList = ''
 
         # show creatures, objects, and players
         for onecreature in self.getCreatureList():
-            if charObj.isDm():  # DM can see creature Ids
-                extraTxt = '(' + str(onecreature.getId()) + ')'
-                if onecreature.isInvisible():
-                    extraTxt += "[INV]"
-                if onecreature.isHidden():
-                    extraTxt += "[HID]"
+            dmInfo = '(' + str(onecreature.getId()) + ')'
+            if onecreature.isInvisible():
+                dmInfo += "[INV]"
+            if onecreature.isHidden():
+                dmInfo += "[HID]"
             if (((onecreature.isInvisible() and not charObj.canSeeInvisible())
                  or (onecreature.isHidden() and not charObj.canSeeHidden()))):
                 pass
             else:
-                sightList += onecreature.getName() + extraTxt + ", "
+                sightList += (onecreature.getName() +
+                              self.dmTxt(charObj, dmInfo) + ", ")
 
         for obj in self.getObjectList():
-            extraTxt = ""
-            if charObj.isDm():   # DM can see object Ids
-                extraTxt = '(' + str(obj.getId()) + ')'
-                if obj.isInvisible():
-                    extraTxt += "[INV]"
-                if obj.isHidden():
-                    extraTxt += "[HID]"
+            dmInfo = '(' + str(obj.getId()) + ')'
+            if obj.isInvisible():
+                dmInfo += "[INV]"
+            if obj.isHidden():
+                dmInfo += "[HID]"
             if (((obj.isInvisible() and not charObj.canSeeInvisible())
                  or (obj.isHidden() and not charObj.canSeeHidden()))):
                 pass
             else:
-                sightList += obj.describe() + extraTxt + ", "
+                sightList += (obj.describe() + self.dmTxt(charObj, dmInfo) +
+                              ", ")
 
         # toDo: compact lists by grouping duplicates as plurals
 
@@ -241,6 +254,11 @@ class Room(Storage, AttributeHelper):
             sightList = rreplace(sightList, ', ', andTxt)
             buf += "  You see " + sightList + ".\n"
 
+        return(buf)
+
+    def displayPlayers(self, charObj):
+        ''' show players in current room '''
+        buf = ''
         # show players
         otherPlayerList = []
         for oneplayer in self.getCharacterList():
@@ -261,7 +279,12 @@ class Room(Storage, AttributeHelper):
             last = otherPlayerList[-1]
             buf += ' & '.join([all_but_last, last])
             buf += " are also here.\n"
+        return(buf)
 
+    def displayAttackers(self, charObj):
+        ''' show attackers in current room '''
+
+        buf = ''
         # show attackers
         for onecreature in self.getCreatureList():
             if onecreature.attacking != '':
@@ -275,6 +298,18 @@ class Room(Storage, AttributeHelper):
         # todo: show other players who are attacking each other
         return(buf)
 
+    def display(self, charObj):
+        ''' show all player visible info about current room '''
+        buf = ''
+
+        buf += self.displayDescription(charObj)
+        buf += self.displayExits(charObj)
+        buf += self.displayItems(charObj)
+        buf += self.displayPlayers(charObj)
+        buf += self.displayAttackers(charObj)
+
+        return(buf)
+
     def getDataFilename(self):
         ''' returns the filename of self.roomNum '''
         filename = ''
@@ -286,6 +321,8 @@ class Room(Storage, AttributeHelper):
         return(filename)
 
     def postLoad(self):
+        ''' Called by the loader - can be used for room initialization '''
+
         self.initTmpAttributes()
         self.loadPermanents()
         self.closeSpringDoors()
@@ -301,6 +338,7 @@ class Room(Storage, AttributeHelper):
         self._roomNum = int(num)
 
     def getRoomNumForExit(self, exitStr):
+        ''' Return the room number for a given exit '''
         return(getattr(self, exitStr))
 
     def getExits(self):

@@ -116,7 +116,7 @@ class Storage():
                           str(self.getId()))
         return(True)
 
-    def load(self, desiredAttributes=[], logStr=''):
+    def load(self, desiredAttributes=[], logStr=''):   # noqa: C901
         ''' load from persistant storage
               - load data into tmp object
               - iterate through the attributes assigning all, except the

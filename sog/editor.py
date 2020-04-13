@@ -32,6 +32,34 @@ class Editor(IoLib):
         attType = re.sub(r"^<class '(.*)'>.*", r'\1', attType)
         return(attType)
 
+    def changeListValue(self, obj, name, type):
+        changed = False
+        attObj = getattr(obj, name)
+        attType = 'unknown'
+        if len(attObj) > 0:
+            attType = self.getAttributeType(attObj[0])
+        prompt = "Editing list " + name + "(type: " + attType + "):\n"
+        prompt += "To append a value, enter \'a <value>\'\n"
+        prompt += 'To remove a value, enter \'r <value>\'\n'
+        prompt += 'To clear all values, enter \'clear\'\n'
+        prompt += "List command for " + name + ": "
+        cmdargs = input(prompt).split(' ')
+        if cmdargs[0] == 'clear':
+            if len(attObj) > 0:
+                setattr(obj, name, [])
+                changed = True
+        elif len(cmdargs) > 1 and cmdargs[0] == "a":
+            attObj.append(cmdargs[1])
+            setattr(obj, name, attObj)
+            changed = True
+        elif len(cmdargs) > 1 and cmdargs[0] == "r":
+            attObj.remove(cmdargs[1])
+            setattr(obj, name, attObj)
+            changed = True
+        else:
+            print("List command unsupported")
+        return(changed)
+
     def changeValue(self, obj, name, type):
         changed = False
         ''' Alter instance, given the object, field name, and field type
@@ -55,30 +83,7 @@ class Editor(IoLib):
             setattr(obj, name, newval)
             changed = True
         elif (type) == "list":
-            attType = 'unknown'
-            attObj = getattr(obj, name)
-            if len(attObj) > 0:
-                attType = self.getAttributeType(attObj[0])
-            prompt = "Editing list " + name + "(type: " + attType + "):\n"
-            prompt += "To append a value, enter \'a <value>\'\n"
-            prompt += 'To remove a value, enter \'r <value>\'\n'
-            prompt += 'To clear all values, enter \'clear\'\n'
-            prompt += "List command for " + name + ": "
-            cmdargs = input(prompt).split(' ')
-            if cmdargs[0] == 'clear':
-                if len(attObj) > 0:
-                    setattr(obj, name, [])
-                    changed = True
-            elif len(cmdargs) > 1 and cmdargs[0] == "a":
-                attObj.append(cmdargs[1])
-                setattr(obj, name, attObj)
-                changed = True
-            elif len(cmdargs) > 1 and cmdargs[0] == "r":
-                attObj.remove(cmdargs[1])
-                setattr(obj, name, attObj)
-                changed = True
-            else:
-                print("List command unsupported")
+            changed = self.changeListValue(obj, name, type)
         else:
             print("Editing of", type,
                   "types is not supported yet.")
