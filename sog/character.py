@@ -8,12 +8,14 @@ import random
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
-from common.general import getNeverDate, differentDay
+from common.general import getNeverDate, differentDay, dLog
 from common.paths import DATADIR
 
 
 class Character(Storage, AttributeHelper):
     """ Character class """
+
+    _debugCharacter = False
 
     statList = ['strength', 'dexterity', 'intelligence', 'piety',
                 'charisma', 'constitution', 'luck']
@@ -254,29 +256,29 @@ class Character(Storage, AttributeHelper):
         if self.selectCharacter():
             pStr = __class__.__name__ + ".login: "
             charName = str(self.getName())
-            logging.debug('Attemping login for ' + charName)
+            dLog('Attemping login for ' + charName, self._debugCharacter)
             # Import existing character
             if self.load(logStr=__class__.__name__):
-                logging.debug(pStr + 'Character ' + charName + ' loaded for ' +
-                              self._acctName)
+                dLog(pStr + 'Character ' + charName + ' loaded for ' +
+                     self._acctName, self._debugCharacter)
             else:
-                logging.debug(pStr + 'Character ' + charName +
-                              ' could not be loaded for ' +
-                              self._acctName + " - New character?")
+                dLog(pStr + 'Character ' + charName +
+                     ' could not be loaded for ' + self._acctName +
+                     " - New character?", self._debugCharacter)
                 if self.create(charName):
-                    logging.debug(pStr + 'Character ' + charName +
-                                  ' created for ' + self._acctName)
+                    dLog(pStr + 'Character ' + charName + ' created for ' +
+                         self._acctName, self._debugCharacter)
                     self.svrObj.acctObj.addCharacterToAccount(charName)
                     self.svrObj.acctObj.save()
                 else:
                     buf = ('Character ' + charName +
                            ' could not be created for ' + self._acctName)
-                    logging.debug(pStr + buf)
+                    dLog(pStr + buf, self._debugCharacter)
                     self.svrObj.spoolOut(buf + '\n')
                     return(False)
             if not self.isValid():
                 buf = 'Character ' + charName + ' is not valid'
-                logging.debug(pStr + buf)
+                dLog(pStr + buf, self._debugCharacter)
                 self.svrObj.spoolOut(buf + '\n')
                 return(False)
         else:
@@ -490,6 +492,12 @@ class Character(Storage, AttributeHelper):
         self.save()
         return(True)
 
+    def dmTxt(self, msg):
+        ''' return the given msg only if the character is a DM '''
+        if self.isDm():
+            return(msg)
+        return('')
+
     def statsInfo(self):
         ''' Display character stats'''
         buf = "Stats:\n"
@@ -504,7 +512,9 @@ class Character(Storage, AttributeHelper):
         ROW_FORMAT = "  ({0:2}) {1:<60}\n"
         itemlist = ''
         for num, oneObj in enumerate(self._inventory):
-            itemlist += ROW_FORMAT.format(num, oneObj.describe())
+            dmInfo = '(' + str(oneObj.getId()) + ')'
+            itemlist += (ROW_FORMAT.format(num, oneObj.describe() +
+                         self.dmTxt(dmInfo)))
 
         if itemlist:
             buf += itemlist
@@ -641,18 +651,19 @@ class Character(Storage, AttributeHelper):
                           ' characters long.')
                 charName = self.svrObj.promptForInput(prompt, r'^[A-Za-z][A-Za-z0-9_\- ]{2,}$', errmsg)  # noqa: E501
                 if charName == "":
-                    logging.debug("selectCharacter: name is blank")
+                    dLog("selectCharacter: name is blank",
+                         self._debugCharacter)
                     return(False)
                 elif charName in self.svrObj.acctObj.getCharactersOnDisk():
                     msg = ("Invalid Character Name.  You already have a " +
                            "character named " + charName + ".\n")
                     self.svrObj.spoolOut(msg)
-                    logging.debug("selectCharacter: " + msg)
+                    dLog("selectCharacter: " + msg, self._debugCharacter)
                     return(False)
                 elif not self.svrObj.acctObj.characterNameIsUnique(charName):
                     msg = ("Name is already in use.  Please try again\n")
                     self.svrObj.spoolOut(msg)
-                    logging.debug("selectCharacter: " + msg)
+                    dLog("selectCharacter: " + msg, self._debugCharacter)
                     return(False)
                 self.setName(charName)
                 return(True)
@@ -1228,8 +1239,8 @@ class Character(Storage, AttributeHelper):
 
         dodgeAdv = (self.getDex() * (classMult + skillMult)/10)
         dodgeCalc = (randX + dodgeAdv) * 2
-        logging.debug("dodge - calc=" + dodgeCalc + " >? basePercent=" +
-                      basePercent)
+        dLog("dodge - calc=" + dodgeCalc + " >? basePercent=" +
+             basePercent, self._debugCharacter)
         if dodgeCalc > basePercent:
             return(True)
         return(False)

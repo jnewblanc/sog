@@ -24,6 +24,8 @@ from magic import Spell
 class _Game():
     ''' game class '''
 
+    debugGame = False
+
     def __init__(self):
         ''' game-wide attributes '''
         self.instance = "Instance at %d" % self.__hash__()
@@ -130,14 +132,16 @@ class _Game():
 
         self.addCharacterToGame(charObj)
 
+        if charObj.isDm():
+            if self.processDmCommand(svrObj, cmdargs):
+                return(True)
+
         if cmd == '':
             pass
         elif (cmd == 'accept' or cmd == 'offer' or cmd == 'broadcast' or
               cmd == 'say' or cmd == 'shout' or cmd == 'send' or
               cmd == 'whisper' or cmd == 'yell'):
             self.converse(svrObj, cmdargs)
-        elif cmd == 'adminstats' and charObj.isDm():
-            buf += charObj.getDmStats()
         elif cmd == 'appeal':
             pass
         elif (cmd == 'attack' or cmd == 'backstab' or cmd == 'block' or
@@ -160,26 +164,6 @@ class _Game():
             buf += dateStr('now') + "\n"
         elif cmd == 'dm-on' and acctObj.isAdmin():
             charObj.setDm()
-        elif cmd == 'dm-off' and acctObj.isAdmin():
-            charObj.removeDm()
-        elif cmd == 'debug' and charObj.isDm():
-            if cmdargs[1]:
-                roomObj = charObj.getRoom()
-                if cmdargs[1].lower() == 'room':
-                    buf += ('=== Debug Info for Room ' +
-                            str(roomObj.getId()) + " ===\n")
-                    buf += roomObj.debug() + '\n'
-                if cmdargs[1].lower() == 'self':
-                    buf += ('=== Debug Info for Self ' +
-                            str(charObj.getId()) + " ===\n")
-                    buf += charObj.debug() + '\n'
-                else:
-                    objList = (self.getObjFromCmd(roomObj.getAllObjects(),
-                               cmdargs))
-                    if len(objList) >= 1:
-                        buf += ('=== Debug Info for Object ' +
-                                str(objList[0].getId()) + " ===\n")
-                        buf += objList[0].debug() + '\n'
         elif cmd == 'echo':
             pass
         elif cmd == 'exit' or cmd == "quit":
@@ -201,9 +185,6 @@ class _Game():
                     buf += "You can't go there\n"
             else:
                 buf += "You can't go there\n"
-        elif cmd == 'goto' and charObj.isDm():
-            self.joinRoom(int(cmdargs[1]), charObj)
-            charObj.getRoom().describe()
         elif cmd == 'health' or cmd == 'hea' or cmd == 'h':
             buf += charObj.healthInfo()
         elif cmd == 'help':
@@ -235,10 +216,10 @@ class _Game():
                     buf += "You must be blind because you don't see that\n"
         elif cmd == 'prompt':
             charObj.setPromptSize('')
+        elif cmd == 'purse':
+            buf += charObj.financialInfo()
         elif cmd == 'return':
             pass
-        elif cmd == 'roominfo' and charObj.IsAdmin():
-            buf += charObj.getRoom().getInfo()
         elif cmd == 'run' or cmd == 'panic':
             pass
         elif cmd == 'save':
@@ -247,8 +228,6 @@ class _Game():
             else:
                 buf += "Could not save\n"
         elif cmd == 'search':
-            pass
-        elif cmd == 'sell':
             pass
         elif cmd == 'skills':
             buf += charObj.SkillsInfo()
@@ -572,6 +551,52 @@ class _Game():
             self.selfMsg(charObj, "Conversation not implemented yet\n")
         return(True)
 
+    def processDmCommand(self, svrObj, cmdargs):
+        ''' Process commands that are related to npc communication '''
+        charObj = svrObj.charObj
+        buf = ''
+
+        if cmdargs[0] == 'adminstats':
+            buf += charObj.getDmStats()
+        elif cmdargs[0] == 'dm-off':
+            charObj.removeDm()
+            buf += "Ok"
+        elif cmdargs[0] == 'debug':
+            if len(cmdargs) == 1:
+                self.selfMsg(charObj, "usage: debug <room | self | object>")
+                return(True)
+
+            roomObj = charObj.getRoom()
+            if cmdargs[1].lower() == 'room':
+                buf += ('=== Debug Info for Room ' +
+                        str(roomObj.getId()) + " ===\n")
+                buf += roomObj.debug() + '\n'
+            if cmdargs[1].lower() == 'self':
+                buf += ('=== Debug Info for Self ' +
+                        str(charObj.getId()) + " ===\n")
+                buf += charObj.debug() + '\n'
+            else:
+                objList = (self.getObjFromCmd(roomObj.getAllObjects(),
+                           cmdargs))
+                if len(objList) >= 1:
+                    buf += ('=== Debug Info for Object ' +
+                            str(objList[0].getId()) + " ===\n")
+                    buf += objList[0].debug() + '\n'
+        elif cmdargs[0] == 'goto':
+            if len(cmdargs) == 1:
+                self.selfMsg(charObj, "usage: goto <room>")
+                return(True)
+
+            self.joinRoom(cmdargs[1], charObj)
+            buf += charObj.getRoom().display(charObj)
+        elif cmdargs[0] == 'roominfo':
+            buf += charObj.getRoom().getInfo()
+
+        if buf != '':
+            self.selfMsg(charObj, buf)
+            return(True)
+        return(False)
+
     def npcInteraction(self, svrObj, cmdargs):
         ''' Process commands that are related to npc communication '''
         charObj = svrObj.charObj
@@ -600,7 +625,7 @@ class _Game():
         targetList = self.getObjFromCmd(charObjList, cmdargs)
 
         if not targetList:
-            self.selfMsg(charObj, "usage: " + cmdargs[1] +
+            self.selfMsg(charObj, "usage: " + cmdargs[0] +
                          " <item> [number]\n")
             return(True)
         elif len(targetList) == 1:
@@ -842,7 +867,12 @@ class _Game():
                     if len(cmdargs) < 2 or not isIntStr(cmdargs[1]):
                         self.selfMsg(charObj, "usage: buy <item> [#]\n")
                         return(False)
-                    catItem = roomObj.getcatalog()[int(cmdargs[1])]
+                    catList = roomObj.getcatalog()
+                    if ((int(cmdargs[1]) < 0 or
+                         int(cmdargs[1]) > (len(catList)) - 1)):
+                        self.selfMsg(charObj, "Bad item number.  Aborted\n")
+                        return(False)
+                    catItem = catList[int(cmdargs[1])]
                     oType, oNum = catItem.split('/')
                     obj1 = ObjectFactory(oType, oNum)
                     obj1.load()
@@ -930,10 +960,11 @@ class _Game():
                 else:
                     self.selfMsg(charObj, "You need to find someone who can " +
                                  "repair your ragged items.\n")
-            elif cmd == 'sell':
+            elif cmd == 'sell' or cmd == 'pawn':
                 if roomObj.isPawnShop():
-                    if len(cmdargs) < 2 or not isIntStr(cmdargs[1]):
-                        self.selfMsg(charObj, "usage: sell <item> [#]\n")
+                    if len(cmdargs) < 2:
+                        self.selfMsg(charObj, "usage: " + cmdargs[0] +
+                                     "<item> [#]\n")
                         return(False)
                     playerInventory = charObj.getInventory()
                     objList = self.getObjFromCmd(playerInventory, cmdargs)
@@ -943,12 +974,12 @@ class _Game():
                         self.selfMsg(charObj, "Invalid item\n")
                         return(False)
 
-                    price = self.calculateObjectPrice(svrObj, obj1) * .8
+                    price = int(self.calculateObjectPrice(svrObj, obj1) * .8)
 
                     # prompt player for confirmation
                     prompt = ("You are about to pawn " + obj1.getArticle() +
                               " " + obj1.getName() + " for " + str(price) +
-                              "shillings.  Proceed?")
+                              " shillings.  Proceed?")
                     if svrObj.promptForYN(prompt):
                         charObj.removeFromInventory(obj1)     # remove item
                         charObj.addCoins(price)                 # tax included

@@ -208,6 +208,7 @@ class Room(Storage, AttributeHelper):
         ''' return the given msg only if the character is a DM '''
         if charObj.isDm():
             return(msg)
+        return('')
 
     def displayItems(self, charObj):     # noqa C901
         ''' show items in current room '''
@@ -297,6 +298,10 @@ class Room(Storage, AttributeHelper):
 
         # todo: show other players who are attacking each other
         return(buf)
+
+    def describe(self, charObj):
+        ''' alias for display '''
+        return(self.display(charObj))
 
     def display(self, charObj):
         ''' show all player visible info about current room '''

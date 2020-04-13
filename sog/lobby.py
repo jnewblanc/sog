@@ -25,7 +25,8 @@ class _Lobby():
         buf = ''
 
         if svrObj.acctObj.isAdmin():
-            buf += self.processAdminCommand(svrObj, cmdargs)
+            if self.processAdminCommand(svrObj, cmdargs):
+                return(True)
 
         if cmd == '':
             pass
@@ -35,38 +36,38 @@ class _Lobby():
             prompt = "What is the message? "
             msgBuf = svrObj.promptForInput(prompt, '')
             if svrObj.broadcast(msgBuf):
-                buf = 'Sent\n'
+                buf += 'Sent\n'
         elif cmd == 'exit' or cmd == "quit":
             self.userList.remove(svrObj.acctObj)
-            buf = 'Leaving Lobby...\n'
+            buf += 'Leaving Lobby...\n'
             svrObj.spoolOut(buf)
             return(False)
         elif cmd == 'full':
             svrObj.acctObj.setPromptSize("full")
         elif cmd == 'help':
-            buf = ('play  - play the SoG game\n'
-                   'who   - show players logged in to the lobby\n' +
-                   'info  - get account information\n' +
-                   'brief - set lobby prompt to brief mode\n' +
-                   'full  - set lobby promp to full mode\n' +
-                   'msg - send a private message to one player\n' +
-                   'broadcast - send a message to all players\n' +
-                   'quit  - log out of lobby\n')
+            buf += ('play  - play the SoG game\n'
+                    'who   - show players logged in to the lobby\n' +
+                    'info  - get account information\n' +
+                    'brief - set lobby prompt to brief mode\n' +
+                    'full  - set lobby promp to full mode\n' +
+                    'msg - send a private message to one player\n' +
+                    'broadcast - send a message to all players\n' +
+                    'quit  - log out of lobby\n')
         elif cmd == 'info':
-            buf = svrObj.acctObj.getInfo()
+            buf += svrObj.acctObj.getInfo()
         elif cmd == 'msg':
             self.sendMsg(svrObj)
         elif cmd == 'play' or cmd == 'game' or cmd == 'g':
             svrObj.setArea('game')  # Set this to trigger logout
-            buf = "Entering game\n"
+            buf += "Entering game\n"
         elif cmd == 'prompt':
             svrObj.acctObj.setPromptSize('')
         elif cmd == 'setdisplayname':
             svrObj.acctObj.setDisplayName(svrObj.acctObj.promptForDisplayName())  # noqa: E501
         elif cmd == 'who':
-            buf = self.showLogins()
+            buf += self.showLogins()
         else:
-            buf = "Unknown Command: " + cmd + '\n'
+            buf += "Unknown Command: " + cmd + '\n'
 
         logging.debug("LOBBY buf = " + buf)
         svrObj.spoolOut(buf)
@@ -102,14 +103,18 @@ class _Lobby():
                     buf += inStr + " added to characterList\n"
                 else:
                     buf += "Could not add " + inStr + " to characterList"
+            return(True)
         elif cmd == 'addcharactertoaccount':
             name = svrObj.promptForInput("Char Name: ")
             svrObj.acctObj.addCharacterToAccount(name)
+            return(True)
         elif cmd == 'deletecharacterfromaccount':
             name = svrObj.promptForInput("Char Name: ")
             svrObj.acctObj.removeCharacterFromAccount(name)
+            return(True)
 
-        return(buf)
+        svrObj.spoolOut(buf)
+        return(False)
 
     def showLogins(self):
         ''' show an enumerated list of players '''
