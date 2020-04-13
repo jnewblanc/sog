@@ -78,9 +78,10 @@ class _Lobby():
         prompt += self.showLogins()
         prompt += "Who do you want to send a message to? "
         inNum = svrObj.promptForNumberInput(prompt, len(self.userList))
+        userObj = self.userList[inNum]
         prompt = "What is the message? "
         msgBuf = svrObj.promptForInput(prompt, '')
-        if svrObj.broadcast(msgBuf, inNum):
+        if userObj.svrObj.spoolOut(msgBuf):
             buf = 'Sent\n'
         return(buf)
 

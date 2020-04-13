@@ -211,21 +211,41 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                                   "non-existent socket")
         return(None)
 
-    def broadcast(self, data, who="all", header=None):
+    def broadcast(self, data, header=None):
         ''' output a message to all users '''
         sentCount = 0
-        logging.debug("broadcast - " + str(data) + " - " + str(who))
+        logging.debug("broadcast - " + str(data))
+
         if data[-1] != '\n':        # Add newline if needed
             data += '\n'
-        if who == 'all':            # broadcast to all other clients
-            if not header:
-                header = (self.txtBanner('Broadcast message from ' +
-                          self.acctObj.getEmail()) + '\n> ')
-            for client in connections:
-                if client.id != self.id:
-                    client.spoolOut(header + data)
-                    sentCount += 1
-        elif self.isNum(who):       # send only to specified client
+
+        if not header:
+            header = (self.txtBanner('Broadcast message from ' +
+                      self.acctObj.getEmail()) + '\n> ')
+        for client in connections:
+            if client.id != self.id:
+                client.spoolOut(header + data)
+                sentCount += 1
+
+        if sentCount:
+            return(True)
+
+        header = (self.txtBanner("No valid target for message." +
+                  "  Sending to yourself") + "\n> ")
+        self.spoolOut(header + data)     # send to myself
+
+        return(False)
+
+    def directMessage(self, data, who, header=None):
+        ''' output a message to specific user '''
+        sentCount = 0
+        logging.debug("broadcast - " + str(data) + " - " + str(who))
+
+        if data[-1] != '\n':        # Add newline if needed
+            data += '\n'
+
+        # toDo: this should be a name search, instead of a number from 'who'
+        if self.isNum(who):
             if not header:
                 header = (self.txtBanner('Private message from ' +
                           self.acctObj.getEmail()) + '\n> ')
@@ -233,13 +253,14 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                 if client.id == int(who):
                     client.spoolOut(header + data)
                     sentCount += 1
-        else:
-            header = (self.txtBanner("No valid target for message." +
-                      "  Sending to yourself") + "\n> ")
-            self.spoolOut(header + data)     # send to myself
 
         if sentCount:
             return(True)
+
+        header = (self.txtBanner("No valid target for message." +
+                  "  Sending to yourself") + "\n> ")
+        self.spoolOut(header + data)     # send to myself
+
         return(False)
 
     def setArea(self, area):

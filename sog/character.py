@@ -283,7 +283,6 @@ class Character(Storage, AttributeHelper):
             return(False)
 
         self.setLoginDate()
-        self.svrObj.broadcast(self.getName() + ' has entered the game\n')
         self.svrObj.charObj = self
 
         self.svrObj.spoolOut(buf)
@@ -730,7 +729,8 @@ class Character(Storage, AttributeHelper):
             ROW_FORMAT = "  {0:16}: {1:<30}\n"
             buf += (ROW_FORMAT.format('Prompt', self.getPromptSize()) +
                     ROW_FORMAT.format('2xStatLvls', dblstatList) +
-                    ROW_FORMAT.format('DodgeBouns', str(self.getDodgeBonus)) +
+                    ROW_FORMAT.format('DodgeBounus',
+                                      str(self.getDodgeBonus())) +
                     ROW_FORMAT.format('BankBalance', str(self._bankBalance)) +
                     ROW_FORMAT.format('TaxesPaid', str(self._taxesPaid)) +
                     ROW_FORMAT.format('BankFeesPaid', str(self._bankFeesPaid))
@@ -1249,7 +1249,7 @@ class Character(Storage, AttributeHelper):
     def processDeath(self):
         # lose one or two levels
         buf = 'You are Dead'
-        self.svrObj.broadcast(self._displayName + ' has died')
+        self.svrObj.broadcast(self._displayName + ' has died')   # toDo: fix
         logging.info(self._displayName + ' has died')
 
         # random chance of losing two levels

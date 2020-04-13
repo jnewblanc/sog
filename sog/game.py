@@ -176,7 +176,7 @@ class _Game():
                 else:
                     objList = (self.getObjFromCmd(roomObj.getAllObjects(),
                                cmdargs))
-                    if objList[0]:
+                    if len(objList) >= 1:
                         buf += ('=== Debug Info for Object ' +
                                 str(objList[0].getId()) + " ===\n")
                         buf += objList[0].debug() + '\n'
@@ -228,7 +228,7 @@ class _Game():
                 buf += roomObj.display(charObj) + "\n"
             else:
                 objList = self.getObjFromCmd(roomObj.getAllObjects(), cmdargs)
-                if objList[0]:
+                if len(objList) >= 1:
                     buf += objList[0].describe() + "\n"
                 else:
                     # need to handle characters and creatures
@@ -693,9 +693,13 @@ class _Game():
         roomObjList = roomObj.getAllObjects()
 #        fullObjList = charObj.getInventory() + roomObjList
 
-        obj1, obj2 = self.getObjFromCmd(roomObjList, cmdargs)
+        objList = self.getObjFromCmd(roomObjList, cmdargs)
 
-        if not obj1:
+        if len(objList) >= 1:
+            obj1 = objList[0]
+            if len(objList) >= 2:
+                obj2 = objList[1]
+        else:
             svrObj.spoolOut("usage: " + cmdargs[0] + " <item> [number]\n")
             return(True)
 
@@ -745,6 +749,9 @@ class _Game():
             else:
                 self.selfMsg(charObj, "You are not strong enough.")
         elif cmd == 'lock':
+            if not obj2:
+                self.selfMsg(charObj, "usage: lock <obj> <key>")
+                return(False)
             if not obj1.isLockable():
                 self.selfMsg(charObj, "This is not lockable!")
                 return(False)
@@ -785,10 +792,12 @@ class _Game():
                 return(False)
             return(False)
         elif cmd == 'unlock':
+            if not obj2:
+                self.selfMsg(charObj, "usage: unlock <obj> <key>")
             if not obj1.isUnlockable():
                 self.selfMsg(charObj, "You can't unlock that.")
                 return(False)
-            # need to get lock ID and see if character has the key
+            # need to get lock ID and see if the given key matches
             # if keys have charges, we need to modify key
             if obj1.unlock(charObj):
                 self.selfMsg(charObj, "You unlock the lock.")
@@ -892,10 +901,12 @@ class _Game():
                         self.selfMsg(charObj, "usage: repair <item> [#]\n")
 
                     playerInventory = charObj.getInventory()
-                    objToRepair, obj2 = self.getObjFromCmd(playerInventory,
-                                                           cmdargs)
-                    if not objToRepair:
-                        self.selfMsg(charObj, "You can't do that here\n")
+                    objList = self.getObjFromCmd(playerInventory, cmdargs)
+
+                    if len(objList) >= 1:
+                        obj1 = objList[0]
+                    else:
+                        self.selfMsg(charObj, "Invalid item\n")
                         return(False)
 
                     if not obj1.canBeRepaired():
@@ -925,10 +936,11 @@ class _Game():
                         self.selfMsg(charObj, "usage: sell <item> [#]\n")
                         return(False)
                     playerInventory = charObj.getInventory()
-                    objToSell, obj2 = self.getObjFromCmd(playerInventory,
-                                                         cmdargs)
-                    if not objToSell:
-                        self.selfMsg(charObj, "You can't do that here\n")
+                    objList = self.getObjFromCmd(playerInventory, cmdargs)
+                    if len(objList) >= 1:
+                        obj1 = objList[0]
+                    else:
+                        self.selfMsg(charObj, "Invalid item\n")
                         return(False)
 
                     price = self.calculateObjectPrice(svrObj, obj1) * .8
