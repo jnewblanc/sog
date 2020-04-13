@@ -55,7 +55,7 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
         ''' Connection/Thread ID Str - often used as a prefix for logging '''
         return self.identifier
 
-    def loggedInLoop(self, acctObj):
+    def loggedInLoop(self, acctObj):    # noqa: C901
         ''' Main active loop, once user is logged in. '''
         if not acctObj:
             return(False)
@@ -123,7 +123,7 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
     def getId(self):
         return(self.id)
 
-    def _sendAndReceive(self):
+    def _sendAndReceive(self):     # noqa: C901
         ''' All client Input and output function go through here
               * Override IOspool for client/server communication
               * send and recieve is connected in a single transaction
@@ -225,13 +225,6 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                 if client.id != self.id:
                     client.spoolOut(header + data)
                     sentCount += 1
-        elif who == 'game':           # broadcast to all other players in game
-            if not header:
-                header = (self.txtBanner('Broadcast message from ' +
-                          self.acctObj.getEmail(), bChar='=') + '\n> ')
-            for onechar in self.gameObj.getCharacterList():
-                onechar.svrObj.spoolOut(header + data)
-                sentCount += 1
         elif self.isNum(who):       # send only to specified client
             if not header:
                 header = (self.txtBanner('Private message from ' +

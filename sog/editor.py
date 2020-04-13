@@ -111,7 +111,7 @@ class Editor(IoLib):
                         pass
         return(True)
 
-    def editRaw(self, objName, obj, changedSinceLastSave=False):
+    def editRaw(self, objName, obj, changedSinceLastSave=False):   # noqa C901
         ROW_FORMAT = "({0:3}) {1:25s}({2:4s}): {3}\n"
         while True:
             buf = ('===== Editing ' + objName.capitalize() + " " +

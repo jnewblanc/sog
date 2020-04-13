@@ -148,7 +148,7 @@ class Creature(Storage, AttributeHelper):
     def __init__(self, id=0):
         self._name = ""
         self._creatureID = id
-        logging.debug("Creature __init__" + self._creatureID)
+        logging.debug("Creature __init__" + str(self._creatureID))
 
         return(None)
 

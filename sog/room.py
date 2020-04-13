@@ -209,7 +209,7 @@ class Room(Storage, AttributeHelper):
         if charObj.isDm():
             return(msg)
 
-    def displayItems(self, charObj):
+    def displayItems(self, charObj):     # noqa C901
         ''' show items in current room '''
         buf = ''
 

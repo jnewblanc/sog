@@ -5,6 +5,7 @@ import datetime
 import logging
 import pprint
 import random
+import re
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
@@ -46,6 +47,7 @@ class Object(Storage):
         self._magic = False
         self._permanent = False
         self._usable = False
+        self._cursed = False
 
         self._weight = 1
         self._value = 1
@@ -121,6 +123,9 @@ class Object(Storage):
 
     def isMagic(self):
         return(self._magic)
+
+    def isCursed(self):
+        return(self._cursed)
 
     def getValue(self):
         return(max(0, self._value))
@@ -604,44 +609,46 @@ class Closable(Object):
         ''' returns the text for the trap '''
         buf = ''
 
-        fatalDict = {
+        fatalDict = [
+                     (0, "You hear a click"),  # only occurs if damage is 0
                      (10, "Spear impales your stomach!"),
-                     (20, "A rack of knives falls and crushes you!"),
-                     (30, "Tons of rocks tumble down upon you!")
-        }
+                     (50, "A rack of knives falls and crushes you!"),
+                     (99999, "Tons of rocks tumble down upon you!"),
+                     ]
 
-        poisonDict = {
+        poisonDict = [
+                     (0, "You hear a click"),  # only occurs if damage is 0
                      (10, "Poison dart!"),
                      (20, "Poison needles!"),
                      (50, "Cobra lunges at you!"),
-                     (80, "Gas spores explode!")
-        }
+                     (99999, "Gas spores explode!"),
+                     ]
 
-        normalDict = {
+        normalDict = [
+                      (0, "You hear a click"),  # only occurs if damage is 0
                       (5, "Splinters on your hand!"),
                       (10, "Spring dart!"),
                       (15, "Small knife flies at you!"),
                       (20, "Spear shoots out of the ground at you!"),
-                      (30, "Dust sprays in your eyes!"),
+                      (30, "Putrid dust sprays in your eyes!"),
                       (40, "Grubs bite you!"),
                       (50, "Steel wire cuts your hand!"),
                       (60, "Needles stab your toes!"),
-                      (70, "Rocks fall from the ceiling!"),
-                      (80, "Blam!  Explosion in your face!"),
-                      (90, "Acid splashes in your face!"),
-                      (100, "Flames shoot out at you!"),
-                      (120, "Boooooom!")
-                     }
+                      (70, "Blam!  Explosion in your face!"),
+                      (80, "Acid splashes in your face!"),
+                      (90, "Flames shoot out at you!"),
+                      (99999, "Boooooom!"),
+                      ]
 
         if (damage >= currenthealth):  # fatal blow
             pos = bisect.bisect_right(fatalDict, (damage,))
-            buf += fatalDict[pos]
+            buf += str(fatalDict[pos][1])
         elif poison:
-            pos = bisect.bisect_right(poisonDict, (damage,))
-            buf += poisonDict[pos]
+            pos = bisect.bisect_left(poisonDict, (damage,))
+            buf += str(poisonDict[pos][1])
         else:
-            pos = bisect.bisect_right(normalDict, (damage,))
-            buf += normalDict[pos]
+            pos = bisect.bisect_left(normalDict, (damage,))
+            buf += str(normalDict[pos][1])
 
         if buf == '':
             buf = "You are hit by a trap."
@@ -953,7 +960,7 @@ def getObjectFactoryTypes():
     return(objTypeList)
 
 
-def ObjectFactory(objType, id=0):
+def ObjectFactory(objType, id=0):       # noqa: C901
     ''' Factory method to return the correct object, depending on the type '''
     obj = None
 

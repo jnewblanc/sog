@@ -42,7 +42,7 @@ class _Game():
         # in-game broadcast announcing game entry
         msg = svrObj.txtBanner(charObj.getName() +
                                ' has entered the game', bChar='=')
-        svrObj.broadcast(msg, 'game', '')
+        self.gameMsg(msg)
 
         self.addCharacterToGame(charObj)
 
@@ -145,9 +145,10 @@ class _Game():
               cmd == 'kill' or cmd == 'parry' or cmd == 'strike' or
               cmd == 'thrust'):
             self.combat(svrObj, cmdargs)
-        elif (cmd == 'balance' or cmd == 'buy' or cmd == 'catalog' or
-              cmd == 'deposit' or cmd == 'list' or cmd == 'pawn' or
-              cmd == 'repair' or cmd == 'sell' or cmd == 'withdraw'):
+        elif (cmd == 'balance' or cmd == 'deposit' or cmd == 'withdraw'):
+            self.bankTransaction(svrObj, cmdargs)
+        elif (cmd == 'buy' or cmd == 'catalog' or cmd == 'list' or
+              cmd == 'pawn' or cmd == 'repair' or cmd == 'sell'):
             self.shopTransaction(svrObj, cmdargs)
         elif (cmd == 'bribe' or cmd == 'parley' or cmd == 'talk'):
             self.npcInteraction(svrObj, cmdargs)
@@ -473,7 +474,7 @@ class _Game():
         msg = svrObj.txtBanner(svrObj.charObj.getName() +
                                ' has left the game', bChar='=')
         svrObj.charObj = None
-        svrObj.broadcast(msg, 'game', '')
+        self.gameMsg(msg)
         logging.info(msg)
         return(True)
 
@@ -525,7 +526,7 @@ class _Game():
             charObj.delete()
             charObj = None
             svrObj.acctObj.removeCharacterFromAccount(charName)
-            svrObj.broadcast(msg, 'game', '')
+            self.gameMsg(msg)
             logging.info("Character deleted: " + charName)
             return(True)
         return(False)
@@ -542,13 +543,33 @@ class _Game():
         ''' Process commands that are related to player communication '''
         charObj = svrObj.charObj
 
-        if cmdargs[0] == 'broadcast':                 # not originally in game
-            buf = svrObj.promptForInput()
-            svrObj.broadcast(buf)
+        if cmdargs[0] == 'accept':
+            self.selfMsg(charObj, cmdargs[0] + " not implemented yet\n")
+        elif cmdargs[0] == 'offer':
+            self.selfMsg(charObj, cmdargs[0] + " not implemented yet\n")
+        elif cmdargs[0] == 'say':
+            msg = svrObj.promptForInput()
+            self.roomMsg(svrObj.charObj.roomObj, msg)
+            charObj.setHidden(False)
+        elif cmdargs[0] == 'send':
+            msg = svrObj.promptForInput()
+            self.gameMsg(msg)
             return(True)
-
-        charObj.setHidden(False)
-        self.selfMsg(charObj, "Conversation not implemented yet\n")
+        elif cmdargs[0] == 'shout' or cmdargs[0] == 'yell':
+            msg = svrObj.promptForInput()
+            self.yellMsg(svrObj.charObj.roomObj, msg)
+        elif cmdargs[0] == 'whisper':
+            if not cmdargs[1]:
+                self.selfMsg(charObj, "usage: " + cmdargs[0] +
+                             " <playerName>\n")
+                return(False)
+            msg = svrObj.promptForInput()
+            self.directMsg(self, cmdargs[1], msg)
+            # toDo: if overheard
+            # becomes unhidden and other players hear the msg
+            # charObj.setHidden(False)
+        else:
+            self.selfMsg(charObj, "Conversation not implemented yet\n")
         return(True)
 
     def npcInteraction(self, svrObj, cmdargs):
@@ -569,7 +590,7 @@ class _Game():
                 targetItems.append(obj)
         return(targetItems)
 
-    def inventoryObjectInteraction(self, svrObj, cmdargs):
+    def inventoryObjectInteraction(self, svrObj, cmdargs):    # noqa: C901
         cmd = cmdargs[0]
         charObj = svrObj.charObj
         roomObj = charObj.getRoom()
@@ -663,7 +684,7 @@ class _Game():
             pass
         return(False)
 
-    def roomObjectInteraction(self, svrObj, cmdargs):
+    def roomObjectInteraction(self, svrObj, cmdargs):     # noqa: C901
         ''' Process commands that are related to object manipulation '''
         cmd = cmdargs[0]
         charObj = svrObj.charObj
@@ -790,13 +811,17 @@ class _Game():
                 self.modifyCorrespondingDoor(obj1)
 
     def calculateObjectPrice(self, svrObj, obj):
+        ''' return adjusted price for an object based on many factors '''
+        if obj.isCursed():
+            return(1)
+
         price = obj.getValue()
         price = obj.adjustPrice(price)   # object adjustment
         price = svrObj.charObj.getRoom().adjustPrice(price)  # room adjustment
         price = svrObj.charObj.adjustPrice(price)  # char adjust
         return(price)
 
-    def shopTransaction(self, svrObj, cmdargs):
+    def shopTransaction(self, svrObj, cmdargs):    # noqa: C901
         ''' Process commands that are related to shop transactions '''
         cmd = cmdargs[0]
         charObj = svrObj.charObj
@@ -923,7 +948,18 @@ class _Game():
                     else:
                         self.selfMsg(charObj, roomObj.getAbortedTxt())
                         return(False)
-            elif cmd == 'balance':
+        else:
+            self.selfMsg(charObj, "You can't do that here\n")
+        return(False)
+
+    def bankTransaction(self, svrObj, cmdargs):      # noqa: C901
+        ''' Process commands that are related to shop transactions '''
+        cmd = cmdargs[0]
+        charObj = svrObj.charObj
+        roomObj = charObj.getRoom()
+
+        if roomObj.getType() == 'Shop':
+            if cmd == 'balance':
                 if roomObj.isBank():
                     amount = charObj.getBankBalance()
                     self.selfMsg(charObj, "Your account balance is " +
