@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import logging
+import random
 import re
 
 
@@ -46,6 +47,12 @@ def isCountStr(numstr):
     if re.match("^#*[0-9]+$", str(numstr)):
         return(True)
     return(False)
+
+
+def getRandomItemFromList(list):
+    ''' Given a list, returns random element '''
+    indexNum = random.randint(0, len(list) - 1)
+    return(list[indexNum])
 
 
 def splitCmd(cmdargs):

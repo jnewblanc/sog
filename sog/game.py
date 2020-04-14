@@ -5,6 +5,7 @@
 # each time we try to instanciate Game(), we just return a reference to
 # the game class.
 
+import cmd
 from datetime import datetime
 import logging
 import re
@@ -21,7 +22,7 @@ from creature import Creature
 from magic import Spell
 
 
-class _Game():
+class _Game(cmd.Cmd):
     ''' game class '''
 
     debugGame = False
@@ -551,7 +552,7 @@ class _Game():
             self.selfMsg(charObj, "Conversation not implemented yet\n")
         return(True)
 
-    def processDmCommand(self, svrObj, cmdargs):
+    def processDmCommand(self, svrObj, cmdargs):    # noqa: C901
         ''' Process commands that are related to npc communication '''
         charObj = svrObj.charObj
         buf = ''
@@ -600,9 +601,88 @@ class _Game():
     def npcInteraction(self, svrObj, cmdargs):
         ''' Process commands that are related to npc communication '''
         charObj = svrObj.charObj
+        roomObj = charObj.getRoom()
+
+        roomCreatureList = roomObj.getAllCreatures()
+
+        creatList = self.getObjFromCmd(roomCreatureList, cmdargs)
+        if len(creatList) >= 1:
+            creat1 = creatList[0]
+        else:
+            self.selfMsg(charObj, "usage: " + cmdargs[0] +
+                         " <creature> [number]\n")
+
+        if cmdargs[0] == 'bribe':
+            self.selfMsg(charObj, cmdargs[0] + " not implemented yet\n")
+        elif cmdargs[0] == 'parley' or cmdargs[0] == 'talk':
+            msg = creat1.getParleyTxt()
+            if creat1.getParleyAction().lower() == "teleport":
+                self.selfMsg(charObj, msg)
+                self.joinRoom(creat1.getParleyTeleportRoomNum(), charObj)
+            elif creat1.getParleyAction().lower() == "sell":
+                saleItem = creat1.getParleySaleItem()
+                if saleItem:
+                    price = int(saleItem.getValue() * .9)
+                    prompt = (msg + "  Would you like to buy " +
+                              saleItem.describe() + " for " + price + "?")
+                    successTxt = ("It's all yours.  Don't tell anyone " +
+                                  "that you got it from me")
+                    abortTxt = "Another time, perhaps."
+                    self.buyTransaction(svrObj, saleItem, price, prompt,
+                                        successTxt, abortTxt)
+                else:
+                    self.selfMsg(charObj, "I have nothing to sell.\n")
+            else:
+                self.selfMsg(charObj, msg)
 
         charObj.setHidden(False)
         self.selfMsg(charObj, "NPC interaction not implemented yet\n")
+        return(True)
+
+    def buyTransaction(self, svrObj, obj, price, prompt,
+                       successTxt='Ok.', abortTxt='Ok.'):
+        ''' buy an item '''
+        charObj = svrObj.charObj
+        roomObj = charObj.getRoom()
+
+        if svrObj.promptForYN(prompt):
+            charObj.subtractCoins(price)           # tax included
+            charObj.addToInventory(obj)         # add item
+            if roomObj.getType() == 'Shop':
+                roomObj.recordTransaction(obj)      # update stats
+                roomObj.recordTransaction("sale/" + str(price))
+                charObj.recordTax(roomObj.getTaxAmount(price))
+            self.selfMsg(charObj, successTxt)
+            return(True)
+        else:
+            self.selfMsg(charObj, abortTxt)
+        return(False)
+
+    def sellTransaction(self, svrObj, obj, price, prompt,
+                        successTxt='Ok.', abortTxt='Ok.'):
+        ''' sell an item '''
+        charObj = svrObj.charObj
+        roomObj = charObj.getRoom()
+
+        if svrObj.promptForYN(prompt):
+            charObj.removeFromInventory(obj)     # remove item
+            charObj.addCoins(price)              # tax included
+            if roomObj.getType() == 'Shop':
+                roomObj.recordTransaction(obj)       # update stats
+                roomObj.recordTransaction("purchase/" + str(price))
+                charObj.recordTax(roomObj.getTaxAmount(price))
+            self.selfMsg(charObj, successTxt)
+            return(True)
+        else:
+            self.selfMsg(charObj, abortTxt)
+            return(False)
+
+    def kidnap(self, charObj, roomNum=184):
+        ''' Instead of death:
+        * Player is teleported to room
+        * ??? monster will placed in the room connected to the door in room 7.
+        '''
+        self.joinRoom(roomNum, charObj)
         return(True)
 
     def getObjFromCmd(self, itemList, cmdargs):
@@ -892,15 +972,10 @@ class _Game():
                     prompt = ("You are about to spend " + str(price) +
                               " shillings for " + obj1.getArticle() + " " +
                               obj1.getName() + ".  Proceed?")
-                    if svrObj.promptForYN(prompt):
-                        charObj.subtractCoins(price)           # tax included
-                        charObj.addToInventory(obj1)         # add item
-                        roomObj.recordTransaction(obj1)      # update stats
-                        roomObj.recordTransaction("sale/" + str(price))
-                        charObj.recordTax(roomObj.getTaxAmount(price))
-                        self.selfMsg(charObj, roomObj.getSuccessTxt())
-                    else:
-                        self.selfMsg(charObj, roomObj.getAbortedTxt())
+                    successTxt = roomObj.getSuccessTxt()
+                    abortTxt = roomObj.getAbortedTxt()
+                    self.buyTransaction(svrObj, obj1, price, prompt,
+                                        successTxt, abortTxt)
                 else:
                     self.selfMsg(charObj, "Find a shop!\n")
             elif cmd == 'catalog':
@@ -980,17 +1055,9 @@ class _Game():
                     prompt = ("You are about to pawn " + obj1.getArticle() +
                               " " + obj1.getName() + " for " + str(price) +
                               " shillings.  Proceed?")
-                    if svrObj.promptForYN(prompt):
-                        charObj.removeFromInventory(obj1)     # remove item
-                        charObj.addCoins(price)                 # tax included
-                        roomObj.recordTransaction(obj1)       # update stats
-                        roomObj.recordTransaction("purchase/" + str(price))
-                        charObj.recordTax(roomObj.getTaxAmount(price))
-                        self.selfMsg(charObj, roomObj.getSuccessTxt())
-                        return(True)
-                    else:
-                        self.selfMsg(charObj, roomObj.getAbortedTxt())
-                        return(False)
+                    self.sellTransaction(svrObj, obj1, price, prompt,
+                                         roomObj.getSuccessTxt(),
+                                         roomObj.getAbortedTxt())
         else:
             self.selfMsg(charObj, "You can't do that here\n")
         return(False)
