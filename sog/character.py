@@ -393,7 +393,7 @@ class Character(Storage, AttributeHelper):
     def getDesc(self):
         ''' Returns a string that describes the in-game appearance '''
         buf = (self.getName() + ' is a level ' + str(self.getLevel()) + " " +
-               self._gender + " " + self._classname)
+               self._gender + " " + self.getClassName())
         if self._alignment == 'lawful':
             buf += " who tends to follow the rules"
         elif self._alignment == 'chaotic':
@@ -766,7 +766,7 @@ class Character(Storage, AttributeHelper):
         ''' customize stats based on class, gender, alignment, and random '''
 
         # get the index numbers of the named elements to use for dict lookup
-        classKey = self.getClassKey(self._classname)
+        classKey = self.getClassKey(self.getClassName())
         genderKey = self.genderList.index(self._gender)
 
         self._maxhitpoints = self.classDict[classKey]['baseHealth']
@@ -782,7 +782,7 @@ class Character(Storage, AttributeHelper):
             self.incrementStat(bonusStat)
         # luck bonuses for lawful and chaotic alignments, since they are
         # inherently more limiting
-        if self._alignment == 'lawful' or self._alignment == 'chaotic':
+        if self._alignment in ['lawful', 'chaotic']:
             self.incrementStat('luck')
             self.incrementStat('luck')
         # Randomly select an additional unused double up stat level
@@ -831,11 +831,11 @@ class Character(Storage, AttributeHelper):
         prompt += ROW_FORMAT.format('0', 'Lawful - ' +
                                     'friend of good, enemy of evil')
         aNumOptions = 0
-        if self._classname != 'paladin':
+        if self.getClassName() != 'paladin':
             prompt += ROW_FORMAT.format('1', 'Neutral - ' +
                                         'Neither lawful, nor chaotic')
             aNumOptions = aNumOptions + 1
-        if self._classname != 'cleric' and self._classname != 'paladin':
+        if self.getClassName().lower() in ['cleric', 'paladin']:
             prompt += ROW_FORMAT.format('2', 'Chaotic - ' +
                                         'unpredictable and untrustworthy')
             aNumOptions = aNumOptions + 1
@@ -978,7 +978,7 @@ class Character(Storage, AttributeHelper):
 
     def setPromptSize(self, size):
         ''' change the prompt verbosity '''
-        if size == 'full' or size == 'brief':
+        if size in ['full', 'brief']:
             self._prompt = size
         elif size == '':
             # if promptStr is blank, toggle between the prompts
@@ -1041,6 +1041,9 @@ class Character(Storage, AttributeHelper):
 
     def getSpellPoints(self):
         return(self._spellpoints)
+
+    def getClassName(self):
+        return(self._classname)
 
     def isDm(self):
         return(self._dm)
@@ -1266,7 +1269,7 @@ class Character(Storage, AttributeHelper):
         # random chance of losing two levels
         randX = random.randint(1, 100)
         chanceOfLosingTwoLevels = 50 - self._piety - (self._luck / 2)
-        if self._classname == 'cleric' or self._classname == 'paladin':
+        if self.getClassName().lower() in ['cleric', 'paladin']:
             # 10% reduction for clerics and paladins
             chanceOfLosingTwoLevels = chanceOfLosingTwoLevels - 10
         if randX > chanceOfLosingTwoLevels:
@@ -1346,7 +1349,7 @@ class Character(Storage, AttributeHelper):
 
         hidechance = self._level * 20 + self.dexterity
 
-        if self._classname.lower() == 'rogue':
+        if self.getClassName().lower() == 'rogue':
             hidechance *= 2  # double the chance of success for rogues
         # consider additional bonus for guild status
         # half the chance of success if there are already creatures in the room
@@ -1357,6 +1360,13 @@ class Character(Storage, AttributeHelper):
 
         if (hidechance > randX):
             self.setHidden()
+            return(True)
+        return(False)
+
+    def hearsWhispers(self):
+        ''' calculate whether a character can hear whispers in a room
+            todo: make this more random and skill/sluck based '''
+        if self.getClassName().lower() == 'ranger':
             return(True)
         return(False)
 

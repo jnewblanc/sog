@@ -11,5 +11,13 @@ class TestGame(unittest.TestCase):
         self.assertEqual(gameObj._startdate != '', True, out)
 
 
+class TestGameCmd(unittest.TestCase):
+
+    def testGameCmdInstanciation(self):
+        gameCmdObj = game.GameCmd()
+        out = "Could not instanciate the gameCmd object"
+        self.assertEqual(gameCmdObj._lastinput == '', True, out)
+
+
 if __name__ == '__main__':
     unittest.main()

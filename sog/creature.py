@@ -98,7 +98,7 @@ class Creature(Storage, AttributeHelper):
 
         self._objDropList = []      # list of item nums that creature may drop
         self._numOfItemsDropped = []  # number of items dropped - random
-        self._inventory             # list of items that creature is carrying
+        self._inventory = []        # list of items that creature is carrying
 
         self._attackPlayer = ''     # Who the creature is currently attacking
         self._defendCreature = ''   # Which creatures it will defend
@@ -192,7 +192,7 @@ class Creature(Storage, AttributeHelper):
     def fleesIfAttacked(self):
         return(self._fleeIfAttacked)
 
-    def populateInventory():
+    def populateInventory(self):
         ''' create creature inventory
            * randomly pick the number of items from the numOfItemsDropped list
            * for each of those, randomly pick an objNum from the objDropList
@@ -208,7 +208,7 @@ class Creature(Storage, AttributeHelper):
             oType, oNum = itemId.split('/')
             obj1 = ObjectFactory(oType, oNum)
             obj1.load()
-            self._inventory.append(obj)
+            self._inventory.append(obj1)
         return(True)
 
     def postLoad(self):
@@ -299,7 +299,7 @@ class Creature(Storage, AttributeHelper):
         elif self._parleyLevel.lower() == 'teleport':
             buf += getRandomItemFromList(self._parleyTeleport)
         else:
-            buf += "The " + self._name + " " + self._parleyNone)
+            buf += "The " + self._name + " " + self._parleyNone
 
         return(buf)
 

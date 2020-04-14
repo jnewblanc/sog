@@ -102,9 +102,10 @@ class IoLib():
                 return(False)
         return(False)
 
-    def promptForCommand(self):
+    def promptForCommand(self, promptStr=''):
         ''' Prompt user for command '''
-        promptStr = self.getCmdPrompt()
+        if promptStr == '':
+            promptStr = self.getCmdPrompt()
 
         self.spoolOut(promptStr)
         if self._sendAndReceive():

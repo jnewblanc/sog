@@ -22,7 +22,6 @@ from common.ioLib import IoLib
 from common.network import HOST, PORT, BYTES_TO_TRANSFER
 from common.network import NOOP_STR, TERM_STR, STOP_STR
 from common.paths import LOGDIR
-import character
 import lobby
 import game
 
@@ -40,12 +39,12 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
         self._running = True
 
         self.lobbyObj = lobby.Lobby()     # create single lobby instance
-        self.gameObj = game.Game()             # create single game instance
+        self.gameObj = game.Game()        # create single game instance
         self.acctObj = None
         self.charObj = None
         self.identifier = "SVR" + str(id) + str(address)
+        self._area = 'server'
 
-        self._area = "lobby"               # place user in the lobby
         self._debugServer = False          # Turn on/off debug logging
 
         if self._debugServer:
@@ -54,39 +53,6 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
     def __str__(self):
         ''' Connection/Thread ID Str - often used as a prefix for logging '''
         return self.identifier
-
-    def loggedInLoop(self, acctObj):    # noqa: C901
-        ''' Main active loop, once user is logged in. '''
-        if not acctObj:
-            return(False)
-
-        self.setArea("lobby")
-
-        while True:
-            if self.promptForCommand():  # send/receive outpt/input
-                # logging.debug("Area: ", self.getArea())
-                if self.isArea('lobby'):
-                    if not self.lobbyObj.processCommand(self):
-                        return(False)
-                if self.isArea('game'):
-                    if not self.charObj:      # login as character
-                        self.charObj = character.Character(self, self.acctObj.getId())  # noqa: E501
-                        if self.charObj.login():
-                            self.gameObj.joinGame(self)
-                        else:
-                            self.charObj = None
-                            msg = "Error: Could not login to game"
-                            logging.warning(msg)
-                            self.spoolOut(msg + '\n')
-                            self.setArea("lobby")
-                    else:                 # Process game commands
-                        if not self.gameObj.processCommand(self):
-                            self.setArea("lobby")
-                if self.isArea('exit') or not self.isRunning():
-                    break                  # exit loop to logout
-            else:
-                break
-        return(False)
 
     # main program
     def run(self):
@@ -97,7 +63,7 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                 self.welcome("Sog Server\n")
                 self.acctObj = account.Account(self)
                 if self.acctObj.login():
-                    self.loggedInLoop(self.acctObj)
+                    self.lobbyObj.joinLobby(self)
                     if (self.acctObj):
                         self.acctObj.logout()
                     self.acctObj = None
@@ -195,7 +161,6 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                 connections.remove(self)
                 totalConnections = totalConnections - 1
             self._running = False
-            self.setArea("lobby")
             self.lobbyObj = None
             self.gameObj = None
             self.acctObj = None
@@ -210,6 +175,45 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                     logging.debug("Server term - Couldn't close " +
                                   "non-existent socket")
         return(None)
+
+    def setArea(self, area):
+        self._area = area
+
+    def getArea(self):
+        if self._area:
+            return(str(self._area))
+        return(None)
+
+    def isArea(self, area=''):
+        if self._area:
+            if self._area == area:
+                return(True)
+        return(False)
+
+    def getCmdPrompt(self):
+        if self.isArea("game"):
+            sp = '<'
+            ep = '>'
+            if self.charObj:
+                promptsize = self.charObj.getPromptSize()
+            elif self.acctObj:
+                promptsize = self.acctObj.getPromptSize()
+            else:
+                promptsize = 'full'
+        elif self.isArea("lobby"):
+            sp = '['
+            ep = ']'
+            promptsize = self.acctObj.getPromptSize()
+        else:
+            sp = '('
+            ep = ')'
+            promptsize = 'full'
+
+        if promptsize == 'brief':
+            promptStr = ep + ' '
+        else:
+            promptStr = sp + self.getArea() + ep + ' '
+        return(promptStr)
 
     def broadcast(self, data, header=None):
         ''' output a message to all users '''
@@ -262,45 +266,6 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
         self.spoolOut(header + data)     # send to myself
 
         return(False)
-
-    def setArea(self, area):
-        self._area = area
-
-    def getArea(self):
-        if self._area:
-            return(str(self._area))
-        return(None)
-
-    def isArea(self, area=''):
-        if self._area:
-            if self._area == area:
-                return(True)
-        return(False)
-
-    def getCmdPrompt(self):
-        if self.isArea("game"):
-            sp = '<'
-            ep = '>'
-            if self.charObj:
-                promptsize = self.charObj.getPromptSize()
-            elif self.acctObj:
-                promptsize = self.acctObj.getPromptSize()
-            else:
-                promptsize = 'full'
-        elif self.isArea("lobby"):
-            sp = '['
-            ep = ']'
-            promptsize = self.acctObj.getPromptSize()
-        else:
-            sp = '('
-            ep = ')'
-            promptsize = 'full'
-
-        if promptsize == 'brief':
-            promptStr = ep + ' '
-        else:
-            promptStr = sp + self.getArea() + ep + ' '
-        return(promptStr)
 
     def setDebug(self, debugBool=True):
         self._debugServer = bool(debugBool)
