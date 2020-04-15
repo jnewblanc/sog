@@ -26,10 +26,13 @@ python server.py
 python client.py
 ```
 
-### Admin Info ###
+### Admin/DM Info ###
 * At present, all persistent storage is on disk in the sog/.data directory.
   - All account/character info only exists locally (ignored via .gitignore)
 * logs are in sog/.logs
+* town map is at: https://docs.google.com/drawings/d/1SDAjL62DRsWta3vgfGLerKsn49e5wzywlQregGmKTbk/edit
+* To become an admin, create an account and then create an empty isAdmin.txt file in the directory: sog\sog\.data\Account\<your_email>
+  - This allows you to create DM characters and/or turn dm mode on in-game by running the dm_on command.  dm mode allows you to see additional debug info.
 
 ### Basic Design ###
 1. client connects to server

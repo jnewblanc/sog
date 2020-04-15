@@ -5,7 +5,7 @@ import datetime
 import logging
 import pprint
 import random
-import re
+# import re
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
@@ -16,6 +16,8 @@ from common.attributes import AttributeHelper
 
 class Object(Storage):
     ''' object class '''
+
+    _instanceDebug = False
 
     # integer attributes
     intAttributes = ['_weight', '_value']
@@ -153,27 +155,27 @@ class Object(Storage):
         return(["_name", "_article", "_singledesc", "_pluraldesc",
                 "_longdesc", "_weight", "_value"])
 
-    def limitationsAreSatisfied(self, svrObj):
-        charObj = svrObj.charObj
+    def limitationsAreSatisfied(self, charObj):
         ''' Return True if an items limitations are met '''
         if ((self._classesAllowed and
              charObj.getClass() not in self._classesAllowed)):
-            svrObj.spoolOut(charObj.getClass().capitalize()
-                            + "s are not permitted.\n")
+            charObj.svrObj.spoolOut(charObj.getClass().capitalize() +
+                                    "s are not permitted.\n")
             return(False)
         if ((self._alignmentsAllowed and
              charObj.getAlignment() not in self._alignmentsAllowed)):
-            svrObj.spoolOut("Folks regarded to be " + charObj.getAlignment() +
-                            " are not allowed.\n")
+            charObj.svrObj.spoolOut("Folks regarded to be " +
+                                    charObj.getAlignment() +
+                                    " are not allowed.\n")
             return(False)
         if ((self._gendersAllowed and
              charObj.getGender() not in self._gendersAllowed)):
-            svrObj.spoolOut("You have the wrong parts.\n")
+            charObj.svrObj.spoolOut("You have the wrong parts.\n")
             return(False)
         if not charObj.getLevel() >= self._minLevelAllowed:
-            svrObj.spoolOut("You are not experienced enough.\n")
+            charObj.svrObj.spoolOut("You are not experienced enough.\n")
         if not charObj.getLevel() <= self._maxLevelAllowed:
-            svrObj.spoolOut("You are over experienced.\n")
+            charObj.svrObj.spoolOut("You are over experienced.\n")
             return(False)
         return(True)
 
@@ -756,8 +758,8 @@ class Portal(Object):
     def getToWhere(self):
         return(self._toWhere)
 
-    def canBeEntered(self, svrObj):
-        if self.limitationsAreSatisfied(svrObj):
+    def canBeEntered(self, charObj):
+        if self.limitationsAreSatisfied(charObj):
             return(True)
         return(False)
 
@@ -780,11 +782,11 @@ class Door(Portal, Closable):
         return(["_name", "_article", "_singledesc", "_pluraldesc",
                 "_longdesc", "_toWhere", "_correspondingDoorId", '_weight'])
 
-    def canBeEntered(self, svrObj):
+    def canBeEntered(self, charObj):
         if self.isClosed():
-            svrObj.spoolOut(self.name + " is closed")
+            charObj.svrObj.spoolOut(self.name + " is closed")
             return(False)
-        if self.limitationsAreSatisfied(svrObj):
+        if self.limitationsAreSatisfied(charObj):
             return(True)
         return(False)
 

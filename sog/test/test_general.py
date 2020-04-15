@@ -82,23 +82,22 @@ class TestGeneral(unittest.TestCase):
             status = bool(result == outputs[num])
             self.assertEqual(status, True, out)
 
-    def testSplitCmd(self):
-        inputs = ['use staff',
-                  'use staff 1',
-                  'use staff player',
-                  'use staff 1 player',
-                  'use staff player 2',
-                  'use staff 1 player 2']
-        outputs = [('use', ['staff']),
-                   ('use', ['staff 1']),
-                   ('use', ['staff', 'player']),
-                   ('use', ['staff 1', 'player']),
-                   ('use', ['staff', 'player 2']),
-                   ('use', ['staff 1', 'player 2'])]
+    def testSplitTarget(self):
+        inputs = ['staff',
+                  'staff 1',
+                  'staff player',
+                  'staff 1 player',
+                  'staff player 2',
+                  'staff 1 player 2']
+        outputs = [['staff'],
+                   ['staff 1'],
+                   ['staff', 'player'],
+                   ['staff 1', 'player'],
+                   ['staff', 'player 2'],
+                   ['staff 1', 'player 2']]
 
         for num, input in enumerate(inputs):
-            inWords = input.split(' ')
-            resultlist = common.general.splitCmd(inWords)
+            resultlist = common.general.splitTargets(input)
             out = ("Input: " + str(input) + " - Output: " + str(resultlist) +
                    " - Expected: " + str(outputs[num]))
             status = bool(resultlist == outputs[num])
@@ -124,12 +123,12 @@ class TestGeneral(unittest.TestCase):
         obj5.setName("sword2")
         itemList.append(obj5)
 
-        inputs = ['use staff',
-                  'use staff 1',
-                  'use staff sword',
-                  'use staff 2 sword',
-                  'use staff sword 2',
-                  'use staff 2 sword 2']
+        inputs = ['staff',
+                  'staff 1',
+                  'staff sword',
+                  'staff 2 sword',
+                  'staff sword 2',
+                  'staff 2 sword 2']
         outputs = [['staff1'],
                    ['staff1'],
                    ['staff1', 'sword1'],
@@ -138,8 +137,7 @@ class TestGeneral(unittest.TestCase):
                    ['staff2', 'sword2']]
 
         for num, input in enumerate(inputs):
-            inWords = input.split(' ')
-            cmd, targets = common.general.splitCmd(inWords)
+            targets = common.general.splitTargets(input)
             for num2, target in enumerate(targets):
                 obj = common.general.targetSearch(itemList, target)
                 if obj:

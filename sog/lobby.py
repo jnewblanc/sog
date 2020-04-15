@@ -12,7 +12,7 @@ class _Lobby():
     ''' Single instance of the lobby class, shared by all users
         (see instanciation magic at the bottom of the file)'''
 
-    debugLobby = False
+    _instanceDebug = False
 
     def __init__(self):
         self.instance = "Instance at %d" % self.__hash__()
@@ -53,7 +53,7 @@ class _Lobby():
         return(buf)
 
     def debug(self):
-        return(self.debugLobby)
+        return(self._instanceDebug)
 
 
 class LobbyCmd(cmd.Cmd):
@@ -75,7 +75,8 @@ class LobbyCmd(cmd.Cmd):
         return(promptStr)
 
     def cmdloop(self):
-        ''' Lobby cmd loop - requires user to be authenticated '''
+        ''' cmd method override - Lobby cmd loop
+            requires user to be authenticated '''
         stop = False
         line = ""
         self.preloop()
@@ -90,6 +91,11 @@ class LobbyCmd(cmd.Cmd):
             else:
                 stop = True
         self.postloop()
+
+    def default(self, line):
+        ''' cmd method override '''
+        logging.warn('*** Invalid lobby command: %s\n' % line)
+        self.svrObj.spoolOut("Invalid Command\n")
 
     def do_addcharacterondisk(self, line):
         ''' admin - add missing character (on disk) to account '''

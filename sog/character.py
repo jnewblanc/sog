@@ -8,14 +8,14 @@ import random
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
-from common.general import getNeverDate, differentDay, dLog
+from common.general import getNeverDate, differentDay, dLog, secsSinceDate
 from common.paths import DATADIR
 
 
 class Character(Storage, AttributeHelper):
     """ Character class """
 
-    _debugCharacter = False
+    _instanceDebug = False
 
     statList = ['strength', 'dexterity', 'intelligence', 'piety',
                 'charisma', 'constitution', 'luck']
@@ -256,29 +256,29 @@ class Character(Storage, AttributeHelper):
         if self.selectCharacter():
             pStr = __class__.__name__ + ".login: "
             charName = str(self.getName())
-            dLog('Attemping login for ' + charName, self._debugCharacter)
+            dLog('Attemping login for ' + charName, self._instanceDebug)
             # Import existing character
             if self.load(logStr=__class__.__name__):
                 dLog(pStr + 'Character ' + charName + ' loaded for ' +
-                     self._acctName, self._debugCharacter)
+                     self._acctName, self._instanceDebug)
             else:
                 dLog(pStr + 'Character ' + charName +
                      ' could not be loaded for ' + self._acctName +
-                     " - New character?", self._debugCharacter)
+                     " - New character?", self._instanceDebug)
                 if self.create(charName):
                     dLog(pStr + 'Character ' + charName + ' created for ' +
-                         self._acctName, self._debugCharacter)
+                         self._acctName, self._instanceDebug)
                     self.svrObj.acctObj.addCharacterToAccount(charName)
                     self.svrObj.acctObj.save()
                 else:
                     buf = ('Character ' + charName +
                            ' could not be created for ' + self._acctName)
-                    dLog(pStr + buf, self._debugCharacter)
+                    dLog(pStr + buf, self._instanceDebug)
                     self.svrObj.spoolOut(buf + '\n')
                     return(False)
             if not self.isValid():
                 buf = 'Character ' + charName + ' is not valid'
-                dLog(pStr + buf, self._debugCharacter)
+                dLog(pStr + buf, self._instanceDebug)
                 self.svrObj.spoolOut(buf + '\n')
                 return(False)
         else:
@@ -652,18 +652,18 @@ class Character(Storage, AttributeHelper):
                 charName = self.svrObj.promptForInput(prompt, r'^[A-Za-z][A-Za-z0-9_\- ]{2,}$', errmsg)  # noqa: E501
                 if charName == "":
                     dLog("selectCharacter: name is blank",
-                         self._debugCharacter)
+                         self._instanceDebug)
                     return(False)
                 elif charName in self.svrObj.acctObj.getCharactersOnDisk():
                     msg = ("Invalid Character Name.  You already have a " +
                            "character named " + charName + ".\n")
                     self.svrObj.spoolOut(msg)
-                    dLog("selectCharacter: " + msg, self._debugCharacter)
+                    dLog("selectCharacter: " + msg, self._instanceDebug)
                     return(False)
                 elif not self.svrObj.acctObj.characterNameIsUnique(charName):
                     msg = ("Name is already in use.  Please try again\n")
                     self.svrObj.spoolOut(msg)
-                    dLog("selectCharacter: " + msg, self._debugCharacter)
+                    dLog("selectCharacter: " + msg, self._instanceDebug)
                     return(False)
                 self.setName(charName)
                 return(True)
@@ -1023,18 +1023,8 @@ class Character(Storage, AttributeHelper):
     def setLastAttack(self):
         self._lastAttack = datetime.now()
 
-    def secsSinceLastAttack(self):
-        if not self._lastAttack:
-            return(0)
-        return((datetime.now() - self._lastAttack).total_seconds())
-
     def setLastHeal(self):
         self._lastHeal = datetime.now()
-
-    def secsSinceLastHeal(self):
-        if not self._lastHeal:
-            return(0)
-        return((datetime.now() - self._lastHeal).total_seconds())
 
     def getHitPoints(self):
         return(self._hitpoints)
@@ -1137,11 +1127,11 @@ class Character(Storage, AttributeHelper):
         del self._inventory[num:]
 
     def checkCooldown(self, secs):
-        secsSinceLastAttack = self.secsSinceLastAttack()
+        secsSinceLastAttack = secsSinceDate(self._lastAttack)
         if secsSinceLastAttack < secs:
             return(True)
         else:
-            secsRemaining = secs - secsSinceLastAttack
+            secsRemaining = secs - secsSinceDate(self._lastAttack)
             self.svrObj.spoolOut("You must wait " + secsRemaining +
                                  " seconds")
         return(False)
@@ -1243,7 +1233,7 @@ class Character(Storage, AttributeHelper):
         dodgeAdv = (self.getDex() * (classMult + skillMult)/10)
         dodgeCalc = (randX + dodgeAdv) * 2
         dLog("dodge - calc=" + dodgeCalc + " >? basePercent=" +
-             basePercent, self._debugCharacter)
+             basePercent, self._instanceDebug)
         if dodgeCalc > basePercent:
             return(True)
         return(False)

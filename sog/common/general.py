@@ -11,6 +11,15 @@ def getNeverDate():
     return(datetime(1900, 1, 1))
 
 
+def secsSinceDate(date1):
+    ''' return seconds since a given date '''
+    if not date1:
+        return(0)
+    if date1 == getNeverDate():
+        return(0)
+    return((datetime.now() - date1).total_seconds())
+
+
 def dateStr(onedate, datefmt="%Y/%m/%d %H:%M"):
     ''' return a given date Obj as a string, in our standard format '''
     if onedate == getNeverDate():
@@ -55,9 +64,9 @@ def getRandomItemFromList(list):
     return(list[indexNum])
 
 
-def splitCmd(cmdargs):
+def splitTargets(targetStr):
     ''' break cmdargs into parts consisting of:
-        1) command - Always the first arg
+        1) cmdargs are already stripped of their first arg
         2) list of targets, including their number.  Target examples:
            * staff
            * staff 2
@@ -65,15 +74,12 @@ def splitCmd(cmdargs):
            * player
            * player #3
     '''
-    cmd = ''
     argStr = ''
     targetList = []
-    for arg in cmdargs:
-        if cmd == '':                      # The first arg is the command
-            cmd = arg
-        elif argStr == '':                 # The second arg is the item
+    for arg in targetStr.split(' '):
+        if argStr == '':                 # The first arg is the item
             argStr = arg
-        elif isCountStr(arg):              # if the second arg is a number
+        elif isCountStr(arg):              # if the first arg is a number
             targetList.append(argStr + " " + arg)
             argStr = ''
         else:                   # the last one is complete, this one is new
@@ -82,7 +88,7 @@ def splitCmd(cmdargs):
 
     if argStr != '':           # if the last arg hasn't been appended
         targetList.append(argStr)
-    return(cmd, targetList)
+    return(targetList)
 
 
 def targetSearch(itemList, targetStr):

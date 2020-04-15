@@ -4,11 +4,13 @@ from datetime import datetime
 import logging
 import os
 import pprint
+import random
 # import re
+import textwrap
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
-from common.general import rreplace, getNeverDate, differentDay
+from common.general import rreplace, getNeverDate, differentDay, secsSinceDate
 from common.paths import DATADIR
 from object import ObjectFactory, Door
 
@@ -56,6 +58,8 @@ class Room(Storage, AttributeHelper):
         self._encounterList = []  # list of creature numbers for encounters
         self._permanentCreatureList = []  # perm creature instances
         self._permanentObjectList = []    # perm object instances
+        self._timeOfLastEncounter = getNeverDate()
+        self._timeOfLastAttack = getNeverDate()
 
         # These are tmp properties that get reset everytime the room is empty
         self.initTmpAttributes()
@@ -182,10 +186,10 @@ class Room(Storage, AttributeHelper):
                 return(buf)
 
         if charObj.getPromptSize() == 'brief':
-            buf += "You are " + self._shortDesc + '\n'
+            buf += "You are " + self._shortDesc
         else:
-            buf += "You are " + self._desc + '\n'
-        return(buf)
+            buf += "You are " + self._desc
+        return(textwrap.fill(buf, width=80) + '\n')
 
     def displayExits(self, charObj):
         buf = ''
@@ -253,9 +257,9 @@ class Room(Storage, AttributeHelper):
             else:
                 andTxt = ' and '
             sightList = rreplace(sightList, ', ', andTxt)
-            buf += "  You see " + sightList + ".\n"
+            buf += "You see " + sightList
 
-        return(buf)
+        return(textwrap.fill(buf, width=80) + '\n')
 
     def displayPlayers(self, charObj):
         ''' show players in current room '''
@@ -511,6 +515,28 @@ class Room(Storage, AttributeHelper):
             if isinstance(obj, Door):
                 if obj.hasSpring():
                     obj.close()
+
+    def readyForEncounter(self):
+        ''' returns true if the room is ready for an encounter '''
+        if not self._encounterTime:
+            return(False)
+
+        if not self._encounterList:
+            return(False)
+
+        if random.randint(1, 3) == 3:  # 33% chance that there is no encounter
+            self.setLastEncounter()
+            return(False)
+
+        if secsSinceDate(self._timeOfLastEncounter) > self._encounterTime:
+            return(True)
+        return(False)
+
+    def setLastEncounter(self):
+        self._timeOfLastEncounter = datetime.now()
+
+    def setLastAttack(self):
+        self._timeOfLastAttack = datetime.now()
 
 
 class Shop(Room):

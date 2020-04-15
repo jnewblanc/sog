@@ -213,10 +213,16 @@ class Editor(IoLib):
             return(False)
 
         changeFlag = False
+        if not obj:
+            msg = "Object doesn't exist.  Aborting..."
+            print(msg + '\n')
+            logging.warning(msg)
+            return(False)
         if not obj.load():
             if obj.getId() == 0:
-                logging.warning("Couldn't load object and ID is 0." +
-                                "  Aborting...")
+                msg = "Couldn't load object and ID is 0.  Aborting..."
+                print(msg + '\n')
+                logging.warning(msg)
                 return(False)
             print("WARN:", cmdargs[0], objId, "doesn't exist - Creating")
             self.wizard(cmdargs[0], obj)
