@@ -26,8 +26,11 @@ def dateStr(onedate, datefmt="%Y/%m/%d %H:%M"):
         return("Never")
     elif onedate == 'now':
         return(datetime.now().strftime(datefmt))
-    else:
+    elif onedate:
         return(onedate.strftime(datefmt))
+    else:
+        logging.error("dateStr returned an empty value")
+        return('')
 
 
 def differentDay(date1, date2):

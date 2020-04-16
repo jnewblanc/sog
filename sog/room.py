@@ -21,7 +21,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     attributesThatShouldntBeSaved = ['gameObj', "_creatureList",   # Storage
                                      '_characterList', '_objectList',
-                                     '_inventory']
+                                     '_inventory', '_creatureCache']
     _instanceDebug = False
 
     directionNameDict = {
@@ -138,6 +138,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         ''' Reset attributes that are not supposed to persist '''
         self._characterList = []
         self._inventory = []
+        self._creatureCache = []
         return(True)
 
     def fixAttributes(self):
@@ -160,6 +161,14 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
              self._desc != '')):
             return(True)
         return(False)
+
+    def creatureCachePush(self, creaObj):
+        ''' Populate the creature Cache '''
+        self._creatureCache.append(creaObj)
+
+    def getCreatureCache(self):
+        ''' Return the creature cache '''
+        return(self._creatureCache)
 
     def deletePlayer(self, roomNum, charObj):
         ''' remove player from a room - destroy room instance if needed '''

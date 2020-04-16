@@ -406,23 +406,42 @@ class _Game(cmd.Cmd):
             logging.debug(debugPrefix + 'not ready for encounter')
             return(False)
 
-        matchingCreatureList = []
-        for cNum in roomObj.getEncounterList():
-            cObj = Creature(cNum)
-            # todo: should probably cache this, but loot changes on load
-            cObj.load()
-            if cObj.getFrequency() >= random.randint(1, 100):
-                matchingCreatureList.append(cObj)
+        if roomObj.len(roomObj.getInventoryByType('Creature')) >= 6:
+            self.roomMsg(roomObj, 'Others arrive, but wander off because ' +
+                         'of the crowd.\n')
+            return(False)
 
-        logging.debug(debugPrefix + 'matching creatures = ' +
-                      str(matchingCreatureList))
+        # Create a creature cache, so that we don't have to load the
+        # creatures every time we check for encounters.  These creatures are
+        # never actually encountered.  They just exist for reference
+        if len(roomObj.getCreatureCache()) == 0:
+            # loop through all possible creatures for room and fill cache
+            for cNum in roomObj.getEncounterList():
+                cObj = Creature(cNum)
+                # todo: should probably cache this, but loot changes on load
+                cObj.load()
+                roomObj.creatureCachePush(cObj)
+
+        # Determine which creatures, from the cache, can be encountered, by
+        # comparing their frequency attribute to a random roll.
+        matchingCreatureList = []
+        for cObj in roomObj.getCreatureCache():
+            if cObj.getFrequency() >= random.randint(1, 100):
+                # Load creature to be encountered
+                cObj = Creature(cNum)
+                cObj.load()
+                roomObj.creatureCacheAdd(cObj)
+                matchingCreatureList.append(cObj)
+                logging.debug(debugPrefix + 'Creature ' +
+                              str(matchingCreatureList) + ' is eligible for' +
+                              ' insertion into room')
 
         creatureObj = getRandomItemFromList(matchingCreatureList)
         if creatureObj:
             logging.debug(debugPrefix + 'adding creature to room: ' +
                           str(creatureObj.describe()))
             roomObj.addCreature(creatureObj)
-            self.roomMsg(creatureObj.describe() + ' has arrived')
+            self.roomMsg(roomObj, creatureObj.describe() + ' has arrived')
             creatureObj.setEnterRoomTime()
             roomObj.setLastEncounter()
         return(None)

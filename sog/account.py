@@ -248,7 +248,7 @@ class Account(Storage, AttributeHelper):
         else:
             return(displayName)
 
-    def promptForPassword(self, promptStr='Enter Password:'):
+    def promptForPassword(self, promptStr='Enter Password: '):
         ''' Prompts user for password, verifies it, and returns password '''
         while True:
             self.svrObj.spoolOut(promptStr)
@@ -263,7 +263,7 @@ class Account(Storage, AttributeHelper):
             else:
                 self.svrObj.spoolOut("Invalid password.  Try Again\n")
 
-    def verifyAcctPassword(self, promptStr='Enter Account Password:'):
+    def verifyAcctPassword(self, promptStr='Enter Account Password: '):
         ''' Prompt user to verify password, returns True if successful '''
 
         if not self.email or self.email == '':
@@ -283,7 +283,7 @@ class Account(Storage, AttributeHelper):
                                         "account " + self.email)
         return(False)
 
-    def validatePassword(self, loadedpassword, promptStr='Verify Password:'):
+    def validatePassword(self, loadedpassword, promptStr='Verify Password: '):
         ''' Prompt user to verify password, returns True if successful '''
         self.svrObj.spoolOut(promptStr)
         self.svrObj._sendAndReceive()

@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import pickle
 import re
-import traceback
 
 from common.paths import DATADIR
 
@@ -14,7 +13,7 @@ from common.paths import DATADIR
 class Storage():
     ''' Storage object superClass '''
 
-    _debugStorage = True
+    _debugStorage = False
     attributesThatShouldntBeSaved = []
 
     def __init__(self):
@@ -143,12 +142,7 @@ class Storage():
 
         if self.dataFileExists():
             with open(filename, 'rb') as inputfilehandle:
-                try:
-                    loadedInst = pickle.load(inputfilehandle)
-                except ValueError:
-                    logging.error(subclassname + "Pickle could not load " +
-                                  "from file " + filename)
-                    traceback.print_last()
+                loadedInst = pickle.load(inputfilehandle)
             instanceAttributes = vars(loadedInst)
 
             # filter out instance attributes that we want to ignore

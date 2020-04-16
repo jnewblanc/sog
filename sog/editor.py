@@ -4,7 +4,8 @@
 '''
 import logging
 from pathlib import Path
-import pprint
+# import pprint
+import random
 import re
 import sys
 
@@ -116,6 +117,21 @@ class Editor(IoLib):
                   "types is not supported yet.")
         return(changed)
 
+    def setDefaults(self, obj, attName):
+        ''' Some wizard field values may trigger us to set the starting values
+            of other fields '''
+        attValue = getattr(obj, attName)
+        objType = obj.getType()
+        print("defaults start: ", attName, objType, str(attValue))
+        if objType.lower() == 'creature' and attName == '_level':
+            print("Setting defaults for creature level")
+            for oneAtt in obj._levelDefaultsDict[attValue].keys():
+                newval = obj._levelDefaultsDict[attValue][oneAtt]
+                if oneAtt in ['_exp', '_maxhp']:
+                    newval = int(newval * (random.randint(0, 9) / 100))
+                print("defaults: " + oneAtt + " = " + str(newval))
+                setattr(obj, oneAtt, newval)
+
     def wizard(self, objName, obj):
         ''' Prompt for field input '''
         wizFields = obj.getWizFields()
@@ -133,6 +149,7 @@ class Editor(IoLib):
                     attType = self.getAttributeType(attValue)
                     if self.changeValue(obj, attName, attType, attValue):
                         pass
+                    self.setDefaults(obj, attName)
         return(True)
 
     def editRaw(self, objName, obj, changedSinceLastSave=False):   # noqa C901
@@ -299,7 +316,7 @@ class Editor(IoLib):
             itemObj = RoomFactory(cmdargs[0], itemId)
         elif cmdargs[0].lower() == 'character':
             prompt = ("Enter the Account email address for character " +
-                      itemId + ": ")
+                      str(itemId) + ": ")
             acctName = self.promptForInput(prompt)
             itemObj = Character(None, acctName)
             itemObj.setName(itemId)

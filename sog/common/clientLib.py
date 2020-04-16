@@ -105,8 +105,9 @@ class Client(AttributeHelper):
                 print("Client: No data received from server")
 
             if self.isRunning():
-                if ((self.output == 'Enter Password:' or
-                     self.output == 'Verify Password:')):
+                if ((self.output == 'Enter Password: ' or
+                     self.output == 'Verify Password: ' or
+                     self.output == 'Enter Account Password: ')):
                     time.sleep(1)
                     self.input = getpass.getpass('')
                 else:

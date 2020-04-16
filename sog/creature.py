@@ -40,19 +40,72 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     attributesThatShouldntBeSaved = ['_creationDate', '_attackPlayer',
                                      '_enterRoomTime']
 
-    _levelToExpDict = {
-                       1: 10,
-                       2: 20,
-                       3: 30,
-                       4: 40,
-                       5: 50,
-                       6: 90,
-                       7: 200,
-                       8: 300,
-                       9: 1000,
-                       10: 3000,
-                       11: 4000,
-                       12: 5000,
+    _levelDefaultsDict = {
+        1: {
+            '_exp': 10,
+            '_ac': 1,
+            '_maxhp': 30
+        },
+        2: {
+            '_exp': 20,
+            '_ac': 1,
+            '_maxhp': 50
+        },
+        3: {
+            '_exp': 30,
+            '_ac': 1,
+            '_maxhp': 70
+        },
+        4: {
+            '_exp': 40,
+            '_ac': 1,
+            '_maxhp': 100
+        },
+        5: {
+            '_exp': 50,
+            '_ac': 1,
+            '_maxhp': 150
+        },
+        6: {
+            '_exp': 90,
+            '_ac': 1,
+            '_maxhp': 200
+        },
+        7: {
+            '_exp': 200,
+            '_ac': 1,
+            '_maxhp': 500
+        },
+        8: {
+            '_exp': 300,
+            '_ac': 1,
+            '_maxhp': 700
+        },
+        9: {
+            '_exp': 1000,
+            '_ac': 1,
+            '_maxhp': 1000
+        },
+        10: {
+            '_exp': 3000,
+            '_ac': 1,
+            '_maxhp': 3000
+        },
+        11: {
+            '_exp': 4000,
+            '_ac': 1,
+            '_maxhp': 4000
+        },
+        12: {
+            '_exp': 5000,
+            '_ac': 1,
+            '_maxhp': 5000
+        },
+        99: {
+            '_exp': 8000,
+            '_ac': 10,
+            '_maxhp': 10000
+        }
     }
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
@@ -66,8 +119,8 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         "_longdesc": "the detailed description that is shown when you examine",
         "_level": "the level of the creature",
         "_maxhp": "the health of the creature",
-        "_hostile": "whether the creature attacks on sight or not"}
-
+        "_hostile": "whether the creature attacks on sight or not",
+        "_frequency": "How often its encountered.  Range 1 (rare) to 100"}
 
     def __init__(self, id=0):
         super().__init__()
@@ -352,7 +405,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         exp = 0
 
         level = min(1, self.getLevel())
-        exp += self.getMaxHitPoints() + self._levelToExpDict[level]
+        exp += self.getMaxHitPoints() + self._levelDefaultsDict[level]['exp']
 
         # Monster level	Bonus
         monsterLevelBonus = (((self.getAttributeCount('primary') + 2) *

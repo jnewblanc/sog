@@ -32,104 +32,92 @@ class Character(Storage, AttributeHelper, Inventory):
         '_dodge': 'being quick on your feet helps avoid blows'}
 
     genderDict = {
-        '0': {
+        0: {
             'name': 'male',
             'pronoun': 'him',
             'possisivepronoun': 'his',
             'bonusStats': ['strength', 'constitution']},
-        '1': {
+        1: {
             'name': 'female',
             'pronoun': 'her',
             'possisivepronoun': 'her',
             'bonusStats': ['charisma', 'intelligence']},
-        '2': {
+        2: {
             'name': 'fluid',
             'pronoun': 'them',
             'possisivepronoun': 'their',
             'bonusStats': ['piety', 'dexterity']}
         }
     classDict = {
-        '0': {
+        0: {
             'name': 'fighter',
             'desc': 'Master of combat, skilled in weapondry',
             'pros': 'Attack/Defense Bonuses',
             'cons': 'Poor Magic Use',
-            'hitpointAdjustment': 4,
-            'magicpointAdjustment': -4,
-            'damageAdjustment': 1,
             'doubleUpStatLevels': [2, 3, 7],
             'bonusStats': ['strength', 'constitution'],
             'penaltyStats': ['intelligence', 'piety'],
+            'baseDamage': 3,
             'baseHealth': 18,
             'baseMagic': 2
             },
-        '1': {
+        1: {
             'name': 'rogue',
             'desc': 'A scoundrel fluent in stealth and trickery',
             'pros': 'Hiding/Defense Bonuses',
             'cons': 'Poor Attack',
-            'hitpointAdjustment': 2,
-            'magicpointAdjustment': -2,
-            'damageAdjustment': 0,
             'doubleUpStatLevels': [3, 7, 9],
             'bonusStats': ['dexterity', 'charisma'],
             'penaltyStats': ['strength', 'piety'],
+            'baseDamage': 2,
             'baseHealth': 14,
             'baseMagic': 6
             },
-        '2': {
+        2: {
             'name': 'mage',
             'desc': 'A vulnerable and powerful scholarly spellcaster',
             'pros': 'Spell abilities and Bonuses',
             'cons': 'Can not use metal armor',
-            'hitpointAdjustment': -4,
-            'magicpointAdjustment': 4,
-            'damageAdjustment': -1,
             'doubleUpStatLevels': [2, 6, 8],
             'bonusStats': ['intelligence', 'intelligence'],
             'penaltyStats': ['strength', 'strength'],
+            'baseDamage': 1,
             'baseHealth': 6,
             'baseMagic': 14
             },
-        '3': {
+        3: {
             'name': 'cleric',
             'desc': 'Healer and servant of higher powers',
             'pros': 'Healing Abilities and Bonuses + Undead Turning',
             'cons': 'Can not use bladed weapons',
-            'hitpointAdjustment': -3,
-            'magicpointAdjustment': 3,
-            'damageAdjustment': -1,
             'doubleUpStatLevels': [4, 6, 8],
             'bonusStats': ['piety', 'piety'],
             'penaltyStats': ['strength', 'dexterity'],
+            'baseDamage': 1,
             'baseHealth': 7,
             'baseMagic': 13,
             },
-        '4': {
+        4: {
             'name': 'ranger',
             'desc': 'A rough and wild hunter ',
             'pros': 'Minor Defense Bonuses & Spell Abilities',
             'cons': 'Poor Charisma',
-            'hitpointAdjustment': 0,
-            'magicpointAdjustment': 0,
             'doubleUpStatLevels': [2, 4, 9],
-            'damageAdjustment': 0,
             'bonusStats': ['dexterity', 'intelligence'],
             'penaltyStats': ['charisma', 'charisma'],
+            'baseDamage': 2,
             'baseHealth': 12,
             'baseMagic': 8,
             },
-        '5': {
+        5: {
             'name': 'paladin',
             'desc': 'A righteous fighter who hunts the forces of evil',
             'pros': 'Minor Attack Bonuses, Healing, and Undead Turning',
             'cons': 'Must be lawful, can not steal',
-            'hitpointAdjustment': 1,
-            'magicpointAdjustment': -1,
-            'damageAdjustment': 1,
             'doubleUpStatLevels': [3, 8, 9],
             'bonusStats': ['charisma', 'piety'],
             'penaltyStats': ['intelligence', 'constitution'],
+            'baseDamage': 3,
             'baseHealth': 10,
             'baseMagic': 10
             }
@@ -163,6 +151,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self._acctName = acctName
 
         super().__init__()
+        Inventory.__init__(self)
         self.setName('')
 
         self._dm = False
@@ -313,7 +302,7 @@ class Character(Storage, AttributeHelper, Inventory):
             self.randomlyIncrementStat(12)
 
             # set starting points for changing stats that depend on other stats
-            self._hitpoints = self._maxhitpoints
+            self._hitpoints = self.getMaxHP()
             self._spellpoints = self._maxspellpoints
 
             self.resetTempStats()
@@ -530,7 +519,7 @@ class Character(Storage, AttributeHelper, Inventory):
         return(buf)
 
     def healthInfo(self):
-        hitTxt = str(self.getHitPoints()) + "/" + str(self._maxhitpoints)
+        hitTxt = str(self.getHitPoints()) + "/" + str(self.getMaxHP())
         magTxt = str(self.getSpellPoints()) + "/" + str(self._maxspellpoints)
         buf = ("You have " + hitTxt + " health pts and " +
                magTxt + " magic pts.")
@@ -743,21 +732,23 @@ class Character(Storage, AttributeHelper, Inventory):
 
         return(buf)
 
-    def getClassKey(self, className):
+    def getClassKey(self, className=''):
         ''' Get the key for the classname '''
         if className == '':
-            className = self.className()
-        return(str(self.classList.index(className)))
+            className = self.getClassName()
+        return(self.classList.index(className))
 
     def customizeStats(self):
         ''' customize stats based on class, gender, alignment, and random '''
 
         # get the index numbers of the named elements to use for dict lookup
-        classKey = self.getClassKey(self.getClassName())
+        classKey = self.getClassKey()
         genderKey = self.genderList.index(self._gender)
 
-        self._maxhitpoints = self.classDict[classKey]['baseHealth']
-        self._maxspellpoints = self.classDict[classKey]['baseMagic']
+        logging.debug("customizeStats - alignment=" + str(self._alignment))
+
+        self.setMaxHP()
+        self.setMaxSP()
         # increment the value of the CLASS bonus stats
         for bonusStat in self.classDict[classKey]['bonusStats']:
             self.incrementStat(bonusStat)
@@ -765,7 +756,7 @@ class Character(Storage, AttributeHelper, Inventory):
         for bonusStat in self.classDict[classKey]['penaltyStats']:
             self.decrementStat(bonusStat)
         # increment the value of the GENDER bonus stats
-        for bonusStat in self.genderDict[str(genderKey)]['bonusStats']:
+        for bonusStat in self.genderDict[genderKey]['bonusStats']:
             self.incrementStat(bonusStat)
         # luck bonuses for lawful and chaotic alignments, since they are
         # inherently more limiting
@@ -774,7 +765,7 @@ class Character(Storage, AttributeHelper, Inventory):
             self.incrementStat('luck')
         # Randomly select an additional unused double up stat level
         #   keep selecting a random number until we find an unused one
-        self._doubleUpStatLevels = self.classList[classKey]['doubleUpStatLevels']  # noqa: E501
+        self._doubleUpStatLevels = self.classDict[classKey]['doubleUpStatLevels']  # noqa: E501
         while True:
             randX = random.randint(2, 9)
             if randX in self._doubleUpStatLevels:
@@ -782,18 +773,16 @@ class Character(Storage, AttributeHelper, Inventory):
             else:
                 self._doubleUpStatLevels.append(randX)
                 break
-        # hitpoint/magicpoint adjustments
-        self._maxhitpoints += self.classDict[classKey]['hitpointAdjustment']
-        self._maxmagicpoints += self.classDict[classKey]['magicpointAdjustment']  # noqa: E501
 
     def promptForClass(self, ROW_FORMAT):
         prompt = 'Classes:\n'
         for oneNum, oneName in enumerate(self.classList):
-            desc = str(oneName) + ' - ' + self.classDict[str(oneNum)]['desc']
+            desc = str(oneName) + ' - ' + self.classDict[oneNum]['desc']
             prompt = (prompt + ROW_FORMAT.format(oneNum, desc))
         prompt = (prompt + 'Select your character\'s class: ')
         inNum = self.svrObj.promptForNumberInput(prompt,
                                                  (len(self.classList) - 1))
+
         if inNum == -1:
             return(False)
 
@@ -815,6 +804,7 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def promptForAlignment(self, ROW_FORMAT):
         prompt = 'Alignment:\n'
+
         prompt += ROW_FORMAT.format('0', 'Lawful - ' +
                                     'friend of good, enemy of evil')
         aNumOptions = 0
@@ -822,7 +812,7 @@ class Character(Storage, AttributeHelper, Inventory):
             prompt += ROW_FORMAT.format('1', 'Neutral - ' +
                                         'Neither lawful, nor chaotic')
             aNumOptions = aNumOptions + 1
-        if self.getClassName().lower() in ['cleric', 'paladin']:
+        if self.getClassName().lower() not in ['cleric', 'paladin']:
             prompt += ROW_FORMAT.format('2', 'Chaotic - ' +
                                         'unpredictable and untrustworthy')
             aNumOptions = aNumOptions + 1
@@ -909,13 +899,23 @@ class Character(Storage, AttributeHelper, Inventory):
         self.setMaxWeightForCharacter()
         return(None)
 
-    def setMaxHP(self):
-        self._maxhitpoints = (self.classDict[self.getClassKey()]['baseHealth']
-                              * self._level)
+    def setMaxHP(self, num=0):
+        if num == 0:
+            baseHealth = self.classDict[self.getClassKey()]['baseHealth']
+            num = baseHealth * self._level
+        self._maxhitpoints = num
 
-    def setMaxSP(self):
-        self._maxspellpoints = (self.classDict[self.getClassKey()]['baseMagic']
-                                * self._level)
+    def getMaxHP(self):
+        return(self._maxhitpoints)
+
+    def setMaxSP(self, num=0):
+        if num == 0:
+            baseMagic = self.classDict[self.getClassKey()]['baseMagic']
+            num = (baseMagic * self._level)
+        self._maxspellpoints = num
+
+    def getMaxSP(self):
+        return(self._maxspellpoints)
 
     def setExpForLevel(self):
         self._expToNextLevel = (2 ** (9 + self._level))
@@ -1171,22 +1171,22 @@ class Character(Storage, AttributeHelper, Inventory):
         ''' Return a non-numerical health status '''
         if self.getHitPoints() <= 0:
             status = 'dead'
-        elif self.getHitPoints() < self._maxhitpoints * .10:
+        elif self.getHitPoints() < self.getMaxHP() * .10:
             # Less than 10% of health remains
             status = 'desperate'
-        elif self.getHitPoints() < self._maxhitpoints * .25:
+        elif self.getHitPoints() < self.getMaxHP() * .25:
             # 11-25% of health remains
             status = 'injured'
-        elif self.getHitPoints() < self._maxhitpoints * .50:
+        elif self.getHitPoints() < self.getMaxHP() * .50:
             # 26-50% of health remains
             status = 'drained'
-        elif self.getHitPoints() < self._maxhitpoints * .75:
+        elif self.getHitPoints() < self.getMaxHP() * .75:
             # 51-75% of health remains
             status = 'fatigued'
-        elif self.getHitPoints() < self._maxhitpoints * .99:
+        elif self.getHitPoints() < self.getMaxHP() * .99:
             # 76-99% of health remains
             status = 'healthy'
-        elif self.getHitPoints() == self._maxhitpoints:
+        elif self.getHitPoints() == self.getMaxHP():
             # Less than 25% of health remains
             status = 'fresh'
         return(status)
@@ -1240,7 +1240,7 @@ class Character(Storage, AttributeHelper, Inventory):
             self._levelDownStats()
             self._level = self._level - 1
 
-        self._hitpoints = self._maxhitpoints
+        self._hitpoints = self.getMaxHP()
 
         # return to starting room or guild
         self._roomObj = self.svrObj.gameObj.placePlayer(0)
