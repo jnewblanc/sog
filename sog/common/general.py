@@ -58,10 +58,12 @@ def isCountStr(numstr):
     return(False)
 
 
-def getRandomItemFromList(list):
+def getRandomItemFromList(list1):
     ''' Given a list, returns random element '''
-    indexNum = random.randint(0, len(list) - 1)
-    return(list[indexNum])
+    if len(list1) == 0:
+        return(None)
+    indexNum = random.randint(0, len(list1) - 1)
+    return(list1[indexNum])
 
 
 def splitTargets(targetStr):

@@ -8,11 +8,12 @@ import random
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
+from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
 from common.paths import DATADIR
 
 
-class Character(Storage, AttributeHelper):
+class Character(Storage, AttributeHelper, Inventory):
     """ Character class """
 
     _instanceDebug = False
@@ -152,15 +153,16 @@ class Character(Storage, AttributeHelper):
     # string attributes
     strAttributes = ['_name']
     # list attributes
-    listAttributes = ['_inventory', '_knownSpells', '_doubleUpStatLevels']
+    listAttributes = ['_knownSpells', '_doubleUpStatLevels']
 
     # obsolete attributes (to be removed)
-    obsoleteAtt = ['_money', '_weight']
+    obsoleteAtt = ['_money']
 
     def __init__(self, svrObj=None, acctName=''):
-        AttributeHelper.__init__(self)
         self.svrObj = svrObj
         self._acctName = acctName
+
+        super().__init__()
         self.setName('')
 
         self._dm = False
@@ -216,7 +218,6 @@ class Character(Storage, AttributeHelper):
 
         self._bankBalance = 0
         self._coins = 100
-        self._inventory = []
         self._knownSpells = []
         self._doubleUpStatLevels = []
 
@@ -238,6 +239,8 @@ class Character(Storage, AttributeHelper):
 
         self.resetTempStats()
         self.resetDailyStats()
+
+        self._instanceDebug = Character._instanceDebug
 
         return(None)
 
@@ -351,7 +354,7 @@ class Character(Storage, AttributeHelper):
         self._lastCommand = ''
 
         self.setAc()
-        self.setMaxWeight()
+        self.setMaxWeightForCharacter()
 
         self._hidden = False
         self._blessed = False
@@ -412,7 +415,7 @@ class Character(Storage, AttributeHelper):
         buf += self.statsInfo()
         buf += self.skillsInfo()
         buf += self.guildInfo()
-        buf += self.inventoryInfo()
+        buf += self.describeInventory()
         buf += self.dmInfo()
         return(buf)
 
@@ -506,22 +509,6 @@ class Character(Storage, AttributeHelper):
             buf += ROW_FORMAT.format(onestat, str(getattr(self, onestat)))
         return(buf)
 
-    def inventoryInfo(self):
-        ''' Display inventory '''
-        buf = "Inventory:\n"
-        ROW_FORMAT = "  ({0:2}) {1:<60}\n"
-        itemlist = ''
-        for num, oneObj in enumerate(self._inventory):
-            dmInfo = '(' + str(oneObj.getId()) + ')'
-            itemlist += (ROW_FORMAT.format(num, oneObj.describe() +
-                         self.dmTxt(dmInfo)))
-
-        if itemlist:
-            buf += itemlist
-        else:
-            buf += "  Nothing\n"
-        return(buf)
-
     def skillsInfo(self):
         ''' Display character skills'''
         buf = ("Skills:")
@@ -580,8 +567,8 @@ class Character(Storage, AttributeHelper):
         buf = ''
 
         buf += (prefix + " carrying " +
-                str(self.calculateWeight(self.getInventory())) + "/" +
-                str(self._maxweight) + " lbs of items.\n")
+                str(self.getInventoryWeight()) + "/" +
+                str(self.getInventoryMaxWeight()) + " lbs of items.\n")
         buf += prefix + ' wearing '
         if self.getEquippedArmor() is None:
             buf += 'no armor, '
@@ -919,7 +906,7 @@ class Character(Storage, AttributeHelper):
         self.setMaxHP()
         self.setMaxSP()
         self.setExpForLevel()
-        self.setMaxWeight()
+        self.setMaxWeightForCharacter()
         return(None)
 
     def setMaxHP(self):
@@ -1086,6 +1073,9 @@ class Character(Storage, AttributeHelper):
     def getLevel(self):
         return(self._level)
 
+    def isCarryable(self):
+        return(False)
+
     def setInputCommand(self, cmd):
         self._lastInputCommand = cmd
 
@@ -1106,25 +1096,6 @@ class Character(Storage, AttributeHelper):
 
     def getSkillPercentage(self, skill='slash'):
         return(getattr(self, skill))
-
-    def getInventory(self):
-        return(self._inventory)
-
-    def removeFromInventory(self, objObj):
-        self.unEquip(objObj)
-        self.setAc()
-        self._inventory.remove(objObj)
-        self.save()
-        return(True)
-
-    def addToInventory(self, objObj):
-        self._inventory.append(objObj)
-        self.save()
-        return(True)
-
-    def truncateInventory(self, num):
-        ''' remove everything from inventory that exceeds <num> items '''
-        del self._inventory[num:]
 
     def checkCooldown(self, secs):
         secsSinceLastAttack = secsSinceDate(self._lastAttack)
@@ -1163,6 +1134,20 @@ class Character(Storage, AttributeHelper):
     def getAttacking(self):
         return(self._attackTargets)
 
+    def canSeeInvisible(self):
+        if self.isDm:
+            return(True)
+        return(False)
+
+    def canSeeHidden(self):
+        if self.isDm:
+            return(True)
+        if self.getClass().lower() == "rogue":
+            return(True)
+        if random.randint(1, 100) < int(self.getLuck() / 3):
+            return(True)
+        return(False)
+
     def getCoins(self):
         return(self._coins)
 
@@ -1181,22 +1166,6 @@ class Character(Storage, AttributeHelper):
         if self._coins >= int(num):
             return(True)
         return(False)
-
-    def weightAvailable(self):
-        weight = self._maxweight - self.calculateWeight(self._inventory)
-        return(int(weight))
-
-    def canCarryAdditionalWeight(self, num):
-        if self.weightAvailable() >= int(num):
-            return(True)
-        return(False)
-
-    def calculateWeight(self, inventory=[]):
-        ''' Calculate the weight of a list of objects '''
-        weight = 0
-        for oneObj in list(inventory):
-            weight += oneObj.getWeight()
-        return(weight)
 
     def condition(self):
         ''' Return a non-numerical health status '''
@@ -1366,7 +1335,7 @@ class Character(Storage, AttributeHelper):
         # consider adjustments for charisma, alignment, luck
         return(price)
 
-    def setMaxWeight(self):
+    def setMaxWeightForCharacter(self):
         ''' Maxweight varies depending on attributes '''
         weight = 10 * max(7, int(self.strength))
-        self._maxweight = weight
+        self.setInventoryMaxWeight(weight)

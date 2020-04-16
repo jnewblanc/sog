@@ -10,15 +10,18 @@ import textwrap
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
-from common.general import rreplace, getNeverDate, differentDay, secsSinceDate
+from common.editwizard import EditWizard
+from common.general import getNeverDate, differentDay, secsSinceDate
+from common.inventory import Inventory
 from common.paths import DATADIR
 from object import ObjectFactory, Door
 
 
-class Room(Storage, AttributeHelper):
+class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     attributesThatShouldntBeSaved = ['gameObj', "_creatureList",   # Storage
-                                     '_characterList', '_objectList']
+                                     '_characterList', '_objectList',
+                                     '_inventory']
     _instanceDebug = False
 
     directionNameDict = {
@@ -40,11 +43,22 @@ class Room(Storage, AttributeHelper):
     strAttributes = ['_shortDesc', '_desc']
     # list attributes
     listAttributes = ['_permanentCreatureList', '_permanentObjectList',
-                      '_creatureList', '_characterList', '_objectList']
+                      '_inventory', '_characterList']
 
     # obsolete attributes (to be removed)
     obsoleteAttributes = ['notifyDM', 'safe', 'antiMagic', 'dark', 'out',
-                          'priceBonus', 'encounterTime' 'encounterList']
+                          'priceBonus', 'encounterTime' 'encounterList',
+                          '_objectlist', '_creatureList']
+
+    wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w"]
+
+    attributeInfo = {
+        "_shortDesc": "short room description when brief prompt is used",
+        "_desc": "full room description when normal prompt is used",
+        "n": "the room in the north direction (0 for none)",
+        "s": "the room in the south direction (0 for none)",
+        "e": "the room in the east direction (0 for none)",
+        "w": "the room in the west direction (0 for none)"}
 
     def __init__(self, roomNum=1):
         self._roomNum = int(roomNum)  # the room number, not seen by players
@@ -60,6 +74,7 @@ class Room(Storage, AttributeHelper):
         self._permanentObjectList = []    # perm object instances
         self._timeOfLastEncounter = getNeverDate()
         self._timeOfLastAttack = getNeverDate()
+        self._instanceDebug = Room._instanceDebug
 
         # These are tmp properties that get reset everytime the room is empty
         self.initTmpAttributes()
@@ -87,10 +102,6 @@ class Room(Storage, AttributeHelper):
     def getType(self):
         return(self.__class__.__name__)
 
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_shortDesc", "_desc", "n", "s", "e", "w"])
-
     def getInfo(self):
         buf = ''
         ROW_FORMAT = "{0:14}: {1:<30}\n"
@@ -117,19 +128,16 @@ class Room(Storage, AttributeHelper):
                 " ".join(self.getPermanentCreatureList()) + '\n')
         buf += ("Perm Object List:       " +
                 " ".join(self.getPermanentObjectList()) + '\n')
-        buf += ("Current Creature List:  " +
-                " ".join(self.getCreatureList()) + '\n')
-        buf += ("Current Object List:    " +
-                " ".join(self.getObjectList()) + '\n')
+        buf += ("Current Inventory:  " +
+                " ".join(self.getInventory()) + '\n')
         buf += ("Current Character List: " +
                 " ".join(self.getCharacterList()) + '\n')
         return(buf)
 
     def initTmpAttributes(self):
         ''' Reset attributes that are not supposed to persist '''
-        self._creatureList = []
         self._characterList = []
-        self._objectList = []
+        self._inventory = []
         return(True)
 
     def fixAttributes(self):
@@ -158,11 +166,6 @@ class Room(Storage, AttributeHelper):
         # clean up room if needed
         charObj.setRoom(roomNum)
         # stop creatures attack of the player
-        return(None)
-
-    def insertCreature(self, creature, svrObj):
-        self._creatureList.append(creature)
-        svrObj.spoolOut(creature + 'has entered the room')
         return(None)
 
     def cleanRoom(self):
@@ -205,7 +208,7 @@ class Room(Storage, AttributeHelper):
                 exitTxt += ', '
         exitTxt = exitTxt.rstrip(', ')
         if exitTxt != '':
-            buf += "Obvious exits are " + exitTxt + ".\n"
+            buf += "Obvious exits are " + exitTxt + "." + '\n'
         return(buf)
 
     def dmTxt(self, charObj, msg):
@@ -216,50 +219,13 @@ class Room(Storage, AttributeHelper):
 
     def displayItems(self, charObj):     # noqa C901
         ''' show items in current room '''
-        buf = ''
-
-        sightList = ''
-
-        # show creatures, objects, and players
-        for onecreature in self.getCreatureList():
-            dmInfo = '(' + str(onecreature.getId()) + ')'
-            if onecreature.isInvisible():
-                dmInfo += "[INV]"
-            if onecreature.isHidden():
-                dmInfo += "[HID]"
-            if (((onecreature.isInvisible() and not charObj.canSeeInvisible())
-                 or (onecreature.isHidden() and not charObj.canSeeHidden()))):
-                pass
-            else:
-                sightList += (onecreature.getName() +
-                              self.dmTxt(charObj, dmInfo) + ", ")
-
-        for obj in self.getObjectList():
-            dmInfo = '(' + str(obj.getId()) + ')'
-            if obj.isInvisible():
-                dmInfo += "[INV]"
-            if obj.isHidden():
-                dmInfo += "[HID]"
-            if (((obj.isInvisible() and not charObj.canSeeInvisible())
-                 or (obj.isHidden() and not charObj.canSeeHidden()))):
-                pass
-            else:
-                sightList += (obj.describe() + self.dmTxt(charObj, dmInfo) +
-                              ", ")
-
-        # toDo: compact lists by grouping duplicates as plurals
-
-        if sightList != '':
-            # Pretty up the list of objects/creatures to make it more readable
-            sightList = sightList.rstrip(', ')
-            if sightList.count(', ') > 2:
-                andTxt = ', and '
-            else:
-                andTxt = ' and '
-            sightList = rreplace(sightList, ', ', andTxt)
-            buf += "You see " + sightList
-
-        return(textwrap.fill(buf, width=80) + '\n')
+        buf = self.describeInvAsList(showDm=charObj.isDm(),
+                                     showHidden=charObj.canSeeHidden(),
+                                     showInvisible=charObj.canSeeInvisible())
+        logging.debug("di:" + buf)
+        if buf != '':
+            buf = "You see " + buf
+        return(buf)
 
     def displayPlayers(self, charObj):
         ''' show players in current room '''
@@ -292,13 +258,13 @@ class Room(Storage, AttributeHelper):
         buf = ''
         # show attackers
         for onecreature in self.getCreatureList():
-            if onecreature.attacking != '':
-                buf = (buf + onecreature.name + ' is attacking ' +
-                       onecreature.attacking)
+            if onecreature.isAttacking():
+                buf += (onecreature.describe() + ' is attacking ' +
+                        onecreature.getAttackPlayer())
 
         # show who you are attacking
         for creature in charObj.getAttacking():
-            buf += 'You\'re attacking ' + creature.getName()
+            buf += 'You\'re attacking ' + creature.describe()
 
         # todo: show other players who are attacking each other
         return(buf)
@@ -324,7 +290,7 @@ class Room(Storage, AttributeHelper):
         filename = ''
 
         if isinstance(self.getRoomNum(), int):
-            filename = os.path.abspath(DATADIR + "/room/" +
+            filename = os.path.abspath(DATADIR + "/Room/" +
                                        str(self.getRoomNum()) +
                                        '.pickle')
         return(filename)
@@ -369,14 +335,10 @@ class Room(Storage, AttributeHelper):
             return(True)
         return(False)
 
-    def getAllObjects(self):
-        ''' Returns a list of all objects '''
-        return(list(self.getObjectList()))
-
     def getDoorsAndPortals(self):
         ''' returns a list of door and portal objects '''
         dpList = []
-        for oneobj in self.getAllObjects():
+        for oneobj in self.getInventory():
             if oneobj.type == 'portal' or oneobj.type == 'door':
                 dpList.append(oneobj)
         return(dpList)
@@ -396,29 +358,27 @@ class Room(Storage, AttributeHelper):
 
     def getCreatureList(self):
         ''' return list of creatures in room '''
-        return self._creatureList
+        creatureList = []
+        for obj in self.getInventory():
+            if obj.getType() == 'Creature':
+                creatureList.append(obj)
+        return (creatureList)
 
     def addCreature(self, creatureObj):
         ''' add creature to list of creatures in room '''
-        self._creatureList.append(creatureObj)
+        self.addToInventory(creatureObj)
 
     def removeCreature(self, creatureObj):
         ''' remove creature to list of creatures in room '''
-        if creatureObj in self._creatureList:
-            self._creatureList.remove(creatureObj)
-
-    def getObjectList(self):
-        ''' return list of objects in room '''
-        return self._objectList
+        self.removeFromInventory(creatureObj)
 
     def addObject(self, itemObj):
         ''' add object to list of objects in room '''
-        self._objectList.append(itemObj)
+        self.addToInventory(itemObj)
 
     def removeObject(self, itemObj):
         ''' remove object to list of objects in room '''
-        if itemObj in self._objectList:
-            self._objectList.remove(itemObj)
+        self.removeFromInventory(itemObj)
 
     def getPermanentCreatureList(self):
         ''' return list of permanentCreature IDs for room '''
@@ -467,10 +427,9 @@ class Room(Storage, AttributeHelper):
         ''' Load/instanciate permanents, and add them to the tmp lists '''
         pcl = self.getPermanentCreatureList()
         pol = self.getPermanentObjectList()
-        if len(pcl):
-            self._creatureList = self.getPermanents(pcl)
-        if len(pol):
-            self._objectList = self.getPermanents(pol)
+        for perm in self.getPermanents(pcl) + self.getPermanents(pol):
+            if perm not in self.getInventory():
+                self.addToInventory(perm)
         return(True)
 
     def getPermanents(self, idList=[]):
@@ -497,7 +456,7 @@ class Room(Storage, AttributeHelper):
 
     def savePermanents(self):
         ''' save permanents to disk '''
-        for obj in self.getObjectList():
+        for obj in self.getInventory():
             if obj.isPermanent():
                 obj.save()
         return(True)
@@ -505,13 +464,13 @@ class Room(Storage, AttributeHelper):
     def reloadPermanentObject(self, objId):
         ''' reload a permanent from disk, replacing the original
             * if a door changes state, we'll need to reload it '''
-        for oneObj in self._objectList:
+        for oneObj in self.getInventory():
             if oneObj.getId() == objId:
                 oneObj.load()
         return(True)
 
     def closeSpringDoors(self):
-        for obj in self.getObjectList():
+        for obj in self.getInventory():
             if isinstance(obj, Door):
                 if obj.hasSpring():
                     obj.close()

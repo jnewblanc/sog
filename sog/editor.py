@@ -4,12 +4,13 @@
 '''
 import logging
 from pathlib import Path
+import pprint
 import re
 import sys
 
 # from account import Account
 from character import Character
-# from creature import Creature
+from creature import Creature
 from common.ioLib import IoLib
 from common.paths import LOGDIR
 from common.storage import getNextUnusedFileNumber
@@ -32,35 +33,61 @@ class Editor(IoLib):
         attType = re.sub(r"^<class '(.*)'>.*", r'\1', attType)
         return(attType)
 
-    def changeListValue(self, obj, name, type):
+    def changeListValue(self, obj, name, type, value):
         changed = False
-        attObj = getattr(obj, name)
-        attType = 'unknown'
-        if len(attObj) > 0:
-            attType = self.getAttributeType(attObj[0])
-        prompt = "Editing list " + name + "(type: " + attType + "):\n"
-        prompt += "To append a value, enter \'a <value>\'\n"
-        prompt += 'To remove a value, enter \'r <value>\'\n'
-        prompt += 'To clear all values, enter \'clear\'\n'
-        prompt += "List command for " + name + ": "
-        cmdargs = input(prompt).split(' ')
-        if cmdargs[0] == 'clear':
+        stop = False
+        while not stop:
+            attObj = getattr(obj, name)
+            attType = 'unknown'
             if len(attObj) > 0:
-                setattr(obj, name, [])
+                attType = self.getAttributeType(attObj[0])
+            prompt = "Editing list " + name + "(type: " + attType + "):\n"
+            prompt += "Old Value: " + str(value) + '\n'
+            prompt += "  To append a value, enter \'a\' <value>\n"
+            prompt += '  To remove a value, enter \'r\' <value>\n'
+            prompt += '  To clear all values, enter \'clear\'\n'
+            prompt += '  Press [enter] to leave unchanged\n'
+            prompt += '  Enter \'done\' when you are done editing this list\n'
+            prompt += "List command for " + name + ": "
+            cmdargs = input(prompt).split(' ')
+            if cmdargs[0] == '':
+                pass
+            elif cmdargs[0] == 'done':
+                stop = True
+            elif cmdargs[0] == 'clear':
+                if len(attObj) > 0:
+                    setattr(obj, name, [])
+                    changed = True
+            elif len(cmdargs) > 1 and cmdargs[0] == "a":
+                attObj.append(cmdargs[1])
+                setattr(obj, name, attObj)
                 changed = True
-        elif len(cmdargs) > 1 and cmdargs[0] == "a":
-            attObj.append(cmdargs[1])
-            setattr(obj, name, attObj)
-            changed = True
-        elif len(cmdargs) > 1 and cmdargs[0] == "r":
-            attObj.remove(cmdargs[1])
-            setattr(obj, name, attObj)
-            changed = True
-        else:
-            print("List command unsupported")
+            elif len(cmdargs) > 1 and (cmdargs[0] == "r" or cmdargs[0] == "d"):
+                if cmdargs[1] in attObj:
+                    attObj.remove(cmdargs[1])
+                    setattr(obj, name, attObj)
+                changed = True
+            else:
+                print("List command unsupported")
         return(changed)
 
-    def changeValue(self, obj, name, type):
+    def promptForNewValue(self, obj, attName, attType, attValue):
+        ''' prompt for new values '''
+        helpStr = obj.getWizHelp(attName)
+        if helpStr != '':
+            print(attName, "-", helpStr)
+        print("Old Value: " + str(attValue))
+        buf = ("Enter the new " + attType + " value for " + str(attName) +
+               " or [enter] " + "to leave unchanged: ")
+        newval = input(buf)
+        if newval == '':
+            return(attValue)   # no change
+        elif newval == "''" or newval == '""':
+            return('')         # empty str
+        else:
+            return(newval)
+
+    def changeValue(self, obj, name, type, value):
         changed = False
         ''' Alter instance, given the object, field name, and field type
             return True/False depending on whether the instance was changed '''
@@ -72,18 +99,18 @@ class Editor(IoLib):
             setattr(obj, name, newval)
             changed = True
         elif (type) == "int":
-            newval = input("Enter " + type + " value for " + name + ": ")
+            newval = self.promptForNewValue(obj, name, type, value)
             if re.match('^[0-9]+$', str(newval)):
                 setattr(obj, name, int(newval))
                 changed = True
             else:
                 print("Value" + newval + "is not an int.  Skipping...")
         elif (type) == "str":
-            newval = input("Enter " + type + " value for " + name + ": ")
+            newval = self.promptForNewValue(obj, name, type, value)
             setattr(obj, name, newval)
             changed = True
         elif (type) == "list":
-            changed = self.changeListValue(obj, name, type)
+            changed = self.changeListValue(obj, name, type, value)
         else:
             print("Editing of", type,
                   "types is not supported yet.")
@@ -91,7 +118,6 @@ class Editor(IoLib):
 
     def wizard(self, objName, obj):
         ''' Prompt for field input '''
-        ROW_FORMAT = "({0:3}) {1:25s}({2:4s}): {3}\n"
         wizFields = obj.getWizFields()
         if len(wizFields) > 0:
             print('===== ' + objName.capitalize() + " Wizard -- Editing " +
@@ -100,14 +126,12 @@ class Editor(IoLib):
                 print("Doors are single objects that have a " +
                       "corresponding door in the room to which they point.  " +
                       "Thus, doors should always be created in pairs")
-            for attributeName in wizFields:
-                if attributeName in vars(obj):
+            for attName in wizFields:
+                if attName in vars(obj):
                     # Change the given fields immediately
-                    attributeValue = getattr(obj, attributeName)
-                    attributeType = self.getAttributeType(attributeValue)
-                    print(ROW_FORMAT.format('OLD', attributeName,
-                          attributeType, attributeValue), end='')
-                    if self.changeValue(obj, attributeName, attributeType):
+                    attValue = getattr(obj, attName)
+                    attType = self.getAttributeType(attValue)
+                    if self.changeValue(obj, attName, attType, attValue):
                         pass
         return(True)
 
@@ -120,23 +144,24 @@ class Editor(IoLib):
             instanceAttributes = vars(obj)
 
             varDict = {}
-            for num, attributeName in enumerate(instanceAttributes):
-                if attributeName == "svrObj" or attributeName == "gameObj":
+            for num, attName in enumerate(instanceAttributes):
+                if attName in ["svrObj", "gameObj", "acctObj"]:
                     pass  # don't want these
                 else:
-                    attributeValue = getattr(obj, attributeName)
-                    attributeType = self.getAttributeType(attributeValue)
+                    attValue = getattr(obj, attName)
+                    attType = self.getAttributeType(attValue)
 
                     varDict[num] = {}
-                    varDict[num]['name'] = attributeName
-                    varDict[num]['type'] = attributeType
-                    varDict[num]['value'] = attributeValue
-                    buf += (ROW_FORMAT.format(num, attributeName,
-                            attributeType, attributeValue))
+                    varDict[num]['name'] = attName
+                    varDict[num]['type'] = attType
+                    varDict[num]['value'] = attValue
+                    buf += (ROW_FORMAT.format(num, attName,
+                            attType, attValue))
             print(buf)
             inStr = input("Enter [s]ave, [q]uit, or a number to edit: ")
             if ((inStr == 's' or inStr == 'sq' or
                  inStr == 'wq' or inStr == "save")):
+                # save edited item
                 if str(obj.getId()) == '' or str(obj.getId()) == "0":
                     print("ERROR", objName, "could not be saved.  Bad Id:",
                           obj.getId())
@@ -147,7 +172,9 @@ class Editor(IoLib):
                     print("ERROR", objName, "could not be saved")
             if ((inStr == 'q' or inStr == 'sq' or
                  inStr == 'wq' or inStr == '')):
+                # quit
                 if changedSinceLastSave:
+                    # warn if user is quitting with unsaved changes
                     verifyStr = input("You have made changes since your " +
                                       "last save.\nAre you sure that " +
                                       "you want to abandon these changes" +
@@ -158,11 +185,30 @@ class Editor(IoLib):
                         break
                 else:
                     break
-            # process results of prompt
-            if re.match('^[0-9]+$', inStr):
+
+            if re.match('^d [0-9]+$', inStr):
+                # delete attribute
+                cmd, inNum = inStr.split(" ")
+                inNum = int(inNum)
+                print("Attribute " + varDict[inNum]['name'] + "deleted")
+                delattr(obj, varDict[inNum]['name'])
+                changedSinceLastSave = True
+            elif re.match('^[0-9]+$', inStr):
+                # number entry - edit the corresponding field
                 inNum = int(inStr)
-                self.changeValue(obj, varDict[inNum]['name'],
-                                 varDict[inNum]['type'])
+                attName = varDict[inNum]['name']
+                attType = varDict[inNum]['type']
+                attValue = varDict[inNum]['value']
+                self.changeValue(obj, attName, attType, attValue)
+            elif re.match('^_[^ ]+$', inStr):    # named entry
+                try:
+                    attValue = getattr(obj, inStr)
+                except AttributeError:
+                    print("Can't edit that by name")
+                    return(False)
+                attName = inStr
+                attType = self.getAttributeType(attValue)
+                self.changeValue(obj, attName, attType, attValue)
         return(True)
 
     def processCommand(self, inputStr):
@@ -180,11 +226,9 @@ class Editor(IoLib):
             print("<object> [num] - edit <object>")
             # print("account - edit account")
             print("character - edit character")
-            # print("creature - edit creature")
+            print("creature - edit creature")
             print("quit - quit editor")
         elif cmd == "account":
-            print("Not implemented")
-        elif cmd == "creature":
             print("Not implemented")
         else:
             if not self.initAndEdit(cmdargs):
@@ -193,42 +237,27 @@ class Editor(IoLib):
         return(True)
 
     def initAndEdit(self, cmdargs):
-        objId = self.findId(cmdargs)
-        if isinstance(objId, int):
-            if objId <= 0:
-                print("Invalid input")
-                return(False)
+        ''' load the object and kick off the editor '''
 
-        if cmdargs[0] == 'room' or cmdargs[0] == 'shop':
-            obj = RoomFactory(cmdargs[0], objId)
-        elif cmdargs[0].lower() == 'character':
-            prompt = ("Enter the Account email address for character " +
-                      objId + ": ")
-            acctName = self.promptForInput(prompt)
-            obj = Character(None, acctName)
-            obj.setName(objId)
-        elif cmdargs[0] in getObjectFactoryTypes():
-            obj = ObjectFactory(cmdargs[0], objId)
-        else:
-            return(False)
+        itemObj = self.getItemObj(cmdargs)
 
         changeFlag = False
-        if not obj:
+        if not itemObj:
             msg = "Object doesn't exist.  Aborting..."
             print(msg + '\n')
             logging.warning(msg)
             return(False)
-        if not obj.load():
-            if obj.getId() == 0:
+        if not itemObj.load():
+            if itemObj.getId() == 0:
                 msg = "Couldn't load object and ID is 0.  Aborting..."
                 print(msg + '\n')
                 logging.warning(msg)
                 return(False)
-            print("WARN:", cmdargs[0], objId, "doesn't exist - Creating")
-            self.wizard(cmdargs[0], obj)
+            print("WARN:", " ".join(cmdargs), "doesn't exist - Creating")
+            self.wizard(cmdargs[0], itemObj)
             changeFlag = True
 
-        if self.editRaw(cmdargs[0], obj, changeFlag):
+        if self.editRaw(cmdargs[0], itemObj, changeFlag):
             return(True)
         return(False)
 
@@ -258,6 +287,31 @@ class Editor(IoLib):
                 return(int(num))
         return(0)
 
+    def getItemObj(self, cmdargs):
+        ''' Returns the item object to be edited '''
+        itemId = self.findId(cmdargs)
+        if isinstance(itemId, int):
+            if itemId <= 0:
+                print("Invalid input")
+                return(None)
+
+        if cmdargs[0] == 'room' or cmdargs[0] == 'shop':
+            itemObj = RoomFactory(cmdargs[0], itemId)
+        elif cmdargs[0].lower() == 'character':
+            prompt = ("Enter the Account email address for character " +
+                      itemId + ": ")
+            acctName = self.promptForInput(prompt)
+            itemObj = Character(None, acctName)
+            itemObj.setName(itemId)
+        elif cmdargs[0].lower() == 'creature':
+            itemObj = Creature(itemId)
+        elif cmdargs[0] in getObjectFactoryTypes():
+            itemObj = ObjectFactory(cmdargs[0], itemId)
+        else:
+            print("Can not determine object type.")
+            return(None)
+        return(itemObj)
+
     def isRunning(self):
         if self._running:
             return(True)
@@ -266,7 +320,7 @@ class Editor(IoLib):
     def start(self):
         ''' Start the editor '''
         # Set up logging
-        logpath = Path('logs')
+        logpath = Path(LOGDIR)
         logpath.mkdir(parents=True, exist_ok=True)
         FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
         logging.basicConfig(filename=(LOGDIR + '/editor.log'),

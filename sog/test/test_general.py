@@ -150,6 +150,17 @@ class TestGeneral(unittest.TestCase):
                     status = False
                 self.assertEqual(status, True, out)
 
+    def testGetRandomItemFromList(self):
+        inputs = [['bacon', 'eggs', 'toast'],
+                  ['toast'],
+                  [1, 2, 3, 4, 5],
+                  ]
+        for num, input in enumerate(inputs):
+            resultlist = common.general.getRandomItemFromList(input)
+            out = ("Input: " + str(input) + " - Output: " + str(resultlist))
+            status = bool(str(resultlist) != '')
+            self.assertEqual(status, True, out)
+
 
 if __name__ == '__main__':
     unittest.main()

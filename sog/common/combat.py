@@ -1,7 +1,6 @@
 ''' attack functions '''
 
 import random
-from common import AttributeHelper
 
 attackList = {
     'attack': {

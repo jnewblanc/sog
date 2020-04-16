@@ -7,14 +7,15 @@ import pprint
 import random
 # import re
 
-from common.storage import Storage
 from common.attributes import AttributeHelper
+from common.editwizard import EditWizard
+from common.storage import Storage
 
 # create obj staff in chest in 3001,ty=magdevice,magic=true,spell=3,
 #    value=1000,charges=2
 
 
-class Object(Storage):
+class Object(Storage, EditWizard):
     ''' object class '''
 
     _instanceDebug = False
@@ -33,6 +34,29 @@ class Object(Storage):
                           '_alignmentAllowed', '_genderAllowed']
 
     attributesThatShouldntBeSaved = ['']
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_weight", "_value"]
+
+    attributeInfo = {
+        "_name": "single word that you use when interacting with item",
+        "_article": "the article of speech.  For example: a, an, some.",
+        "_singledesc": "the description for one of these, minus the article.",
+        "_pluraldesc": "the description for two or more of these.",
+        "_longdesc": "full description when item is examined.",
+        "_weight": "how much the item weighs.  Range 0-80 lbs.",
+        "_value": "the base amount used when calculating the sale value.",
+        "_spell": "the spell that is cast when using this item.",
+        "_maxCharges": "the number of times that item can be used when full.",
+        "_ac": "the amount of damage this prevents - Range is 0 (none) to 10.",
+        "_dodgeBonus": "increases chance that player is not hit when attacked",
+        "_isMetal": "metal can't be used by some classes.",
+        "_minimumDamage": "minimim amount of damage inflicted.  Range 0-50.",
+        "_maximumDamage": "maximum amount of damage inflicted.  Range 0-80.",
+        "_toWhere": "The room that this item takes you to i.e. 35 or Shop/30",
+        "_correspondingDoorId": "The id of the corresponding door i.e. Door/5",
+        "_lockId": "The id of the lock used to connects a key with a lock",
+        "_worksInRoomId": "The id of the room where this item works"}
 
     def __init__(self, objId=0):
         self.objId = objId
@@ -150,11 +174,6 @@ class Object(Storage):
     def getPlural(self):
         return(self._pluraldesc)
 
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_weight", "_value"])
-
     def limitationsAreSatisfied(self, charObj):
         ''' Return True if an items limitations are met '''
         if ((self._classesAllowed and
@@ -218,6 +237,10 @@ class Object(Storage):
 
 class Exhaustible(Object):
     ''' superclass of objects that have a limited lifespan '''
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_maxCharges", "_weight", "_value"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._maxCharges = 100    # max number of charges (constant)
@@ -301,11 +324,6 @@ class Exhaustible(Object):
             return(True)
         return(False)
 
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_maxCharges", "_weight", "_value"])
-
     def adjustPrice(self, price):
         ''' adjust price based on percentage of charges remaining'''
         price *= (self.percentOfChargesRemaining() / 100)
@@ -335,6 +353,10 @@ class MagicalDevice(Exhaustible):
         devices.  Unlike casting a spell from memory, there are no int
         requirements and no spell points required to activate spells from
         these items '''
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_spell", "_weight", "_value"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._spell = ''
@@ -352,11 +374,6 @@ class MagicalDevice(Exhaustible):
 
     def getSpell(self):
         return(self._spell)
-
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_spell", "_weight", "_value"])
 
 
 class Closable(Object):
@@ -668,6 +685,11 @@ class Closable(Object):
 
 
 class Armor(Equippable, Exhaustible):
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_ac", "_dodgeBonus", "_maxCharges",
+                        "_weight", "_value", "_isMetal"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._dodgeBonus = 0       # Percent - Extra chance of not being hit
@@ -677,12 +699,6 @@ class Armor(Equippable, Exhaustible):
         self.equippedSlotName = '_equippedArmor'  # see Character Class
 
         return(None)
-
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_ac", "_dodgeBonus", "_maxCharges",
-                "_weight", "_value", "_isMetal"])
 
     def getAc(self):
         return(self._ac)
@@ -703,6 +719,11 @@ class Weapon(Equippable, Exhaustible):
         repair shop (room 18) as long as “strikesleft” is more than 0.
         There’s a 50% chance that the repair will be botched if the weapon is
         magical or has MH more than 30.'''
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_minimumDamage", "_maximumDamage",
+                        "_maxCharges", "_weight", "_value"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._minimumDamage = 0
@@ -712,14 +733,13 @@ class Weapon(Equippable, Exhaustible):
 
         return(None)
 
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_minimumDamage", "_maximumDamage",
-                "_maxCharges", "_weight", "_value"])
-
 
 class Shield(Equippable, Exhaustible):
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_ac", "_dodgeBonus", "_maxCharges",
+                        "_weight", "_value"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._dodgeBonus = 0       # Percent - Extra chance of not being hit
@@ -733,14 +753,12 @@ class Shield(Equippable, Exhaustible):
     def getDodgeBonus(self):
         return(self._dodgeBonus)
 
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_ac", "_dodgeBonus", "_maxCharges",
-                "_weight", "_value"])
-
 
 class Portal(Object):
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_toWhere"]
+
     ''' Portals are similar to doors, but are one-way and not closable '''
     def __init__(self, objId=0):
         super().__init__(objId)
@@ -749,11 +767,6 @@ class Portal(Object):
         self._carry = False
         self._permanent = True
         return(None)
-
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_toWhere"])
 
     def getToWhere(self):
         return(self._toWhere)
@@ -767,6 +780,11 @@ class Portal(Object):
 class Door(Portal, Closable):
     ''' Doors are Closables which have a corresponding door who's open/closed
         state is kept in sync '''
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_toWhere", "_correspondingDoorId",
+                        '_weight']
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._carry = False
@@ -776,11 +794,6 @@ class Door(Portal, Closable):
         self._weight = 50          # weight impacts smashability
         self._correspondingDoorId = ""
         return(None)
-
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_toWhere", "_correspondingDoorId", '_weight'])
 
     def canBeEntered(self, charObj):
         if self.isClosed():
@@ -809,6 +822,10 @@ class Door(Portal, Closable):
 
 
 class Container(Closable):
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._closed = False
@@ -826,22 +843,16 @@ class Container(Closable):
         self._inventory = []
         return(None)
 
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc"])
-
 
 class Key(Exhaustible):
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_lockId"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._lockId = 0   # id=1000 will open any door
         return(None)
-
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_lockId"])
 
 
 class Card(Object):
@@ -895,33 +906,31 @@ class Teleport(MagicalDevice):
         to access special areas like the Thieves’ lair. Usually the departure
         room is set, so it will only work from one room; the player may need
         to work out clues to figure out where a teleportdevice works.'''
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_worksInRoomId", "_toWhere", "_weight",
+                        "_value"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._departureRoom = 0  # 0=any room
         self._toWhere = ""
         return(None)
 
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_departureRoom", "_toWhere", "_weight",
-                "_value"])
-
 
 class Coins(Object):
     ''' Many kinds of coins with certain exchange rates.
         When picked up the disappear and value is converted to shillings'''
+
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
+                        "_longdesc", "_value"]
+
     def __init__(self, objId=0):
         super().__init__(objId)
         self._multiplier = 1  # currency exchange regenerate
         # Copper=1, silver=20, electrum=50, gold=100, platinum=127.
 
         return(None)
-
-    def getWizFields(self):
-        ''' Editor uses to determine which fields to prompt for '''
-        return(["_name", "_article", "_singledesc", "_pluraldesc",
-                "_longdesc", "_value"])
 
 
 class Ring(Equippable):

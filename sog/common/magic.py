@@ -11,6 +11,7 @@ SpellList = ['null',
              'passdoor', 'enchant', 'bless', 'protect', 'curse',
              'poison', 'intoxicate', 'turn', 'identify', 'appeal',
              'removecurse']
+# ['psiblast', 'polymorph', 'summon', 'animate', 'charm', 'illuminate']
 
 SpellDict = {
     '0': {

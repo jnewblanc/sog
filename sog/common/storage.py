@@ -27,6 +27,7 @@ class Storage():
 
     def getDataFilename(self):
         ''' returns the filename - should always be overridden '''
+        logging.error("storage.getDataFilename: method not overwritten")
         return(self._datafile)
 
     def setDataFilename(self, dfStr=''):
@@ -62,9 +63,11 @@ class Storage():
         return(False)
 
     def getId(self):
+        ''' available for override '''
         return(None)
 
     def getSubClassName(self):
+        ''' return the name of the subclass '''
         return(self.__class__.__name__)
 
     def save(self, logStr=''):
@@ -214,15 +217,19 @@ class Storage():
         return(False)
 
     def initTmpAttributes(self):
+        ''' available for override '''
         return(True)
 
     def fixAttributes(self):
+        ''' available for override '''
         return(True)
 
     def postLoad(self):
+        ''' available for override '''
         return(True)
 
     def isValid(self):
+        ''' available for override '''
         return(True)
 
 
