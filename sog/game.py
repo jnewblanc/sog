@@ -422,7 +422,7 @@ class _Game(cmd.Cmd):
             logging.debug(debugPrefix + 'adding creature to room: ' +
                           str(creatureObj.describe()))
             roomObj.addCreature(creatureObj)
-            self.roomMsg(creatureObj.describe + ' has arrived')
+            self.roomMsg(creatureObj.describe() + ' has arrived')
             creatureObj.setEnterRoomTime()
             roomObj.setLastEncounter()
         return(None)
@@ -560,7 +560,7 @@ class GameCmd(cmd.Cmd):
 
             if itemList[0].canBeEntered(charObj):
                 roomnum = itemList[0].getToWhere()
-                dLog("GAME move obj = " + roomnum,
+                dLog("GAME move obj = " + str(roomnum),
                      self._instanceDebug)
                 self.gameObj.joinRoom(roomnum, charObj)
                 currentRoom = charObj.getRoom()

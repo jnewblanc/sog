@@ -111,6 +111,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._undead = False         # can be turned by clerics and paladins
         self._rust = False           # causes armor to rust and lose extra hits
         self._steal = False          # chance to steal from player
+        self._carry = False          # creature is carryable (ultra-rare)
         self._spellCaster = False    # can cast spells
         self._antiMagic = False      # immune to spells
         self._magicImmunity = False  # immune to attacks from non-magic weapons
@@ -208,6 +209,24 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def isHidden(self):
         return(self._hidden)
 
+    def isCarryable(self):
+        return(self._carry)
+
+    def isPermanent(self):
+        return(self._permanent)
+
+    def isUsable(self):
+        return(False)
+
+    def isMagic(self):
+        return(self._magicImmunity)
+
+    def isAntiMagic(self):
+        return(self._antiMagic)
+
+    def isUndead(self):
+        return(self._undead)
+
     def getWeight(self):
         return(self._weight)
 
@@ -289,6 +308,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             if "/" not in itemId:
                 continue
 
+            logging.debug("api: obj = " + itemId)
             oType, oNum = itemId.split('/')
             obj1 = ObjectFactory(oType, oNum)
             obj1.load()
