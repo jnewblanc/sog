@@ -62,6 +62,11 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     def __init__(self, roomNum=1):
         self._roomNum = int(roomNum)  # the room number, not seen by players
+
+        super().__init__()
+        Storage.__init__(self)
+        Inventory.__init__(self)
+
         self._shortDesc = ''     # the brief description of a room
         self._desc = ''          # the full description of a room
         self._notifyDM = False    # notify DM if someone enters this room
@@ -189,12 +194,12 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             buf += "(" + str(self.getRoomNum()) + ") "
 
         if self.getRoomNum() == 0 or self._shortDesc == "":
-            buf += "You are in a non descript room with no exits."
+            buf += "You are in a non descript room with no exits.\n"
             return(buf)
 
         if self._dark:
             if not charObj.canSeeInTheDark():
-                buf += "It's too dark to see anything."
+                buf += "It's too dark to see anything.\n"
                 return(buf)
 
         if charObj.getPromptSize() == 'brief':

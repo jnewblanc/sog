@@ -53,7 +53,7 @@ class IoLib():
     def promptForInput(self, promptStr, regex='', requirementsTxt=''):
         ''' prompt for string input - return str or empty if none '''
         for x in range(1, self.getMaxPromptRetries()):
-            logging.debug("PromptForInput try " + str(x))
+            # logging.debug("PromptForInput try " + str(x))
             self.spoolOut(promptStr)
             oneStr = ''
             if self._sendAndReceive():

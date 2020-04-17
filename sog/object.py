@@ -193,6 +193,7 @@ class Object(Storage, EditWizard):
             return(False)
         if not charObj.getLevel() >= self._minLevelAllowed:
             charObj.svrObj.spoolOut("You are not experienced enough.\n")
+            return(False)
         if not charObj.getLevel() <= self._maxLevelAllowed:
             charObj.svrObj.spoolOut("You are over experienced.\n")
             return(False)
@@ -233,6 +234,10 @@ class Object(Storage, EditWizard):
     def getDodgeBonus(self):
         ''' This is meant to be overridden if needed '''
         return(0)
+
+    def canBeEntered(self, charObj):
+        ''' This is meant to be overridden if needed '''
+        return(False)
 
 
 class Exhaustible(Object):

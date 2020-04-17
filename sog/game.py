@@ -32,7 +32,7 @@ class _Game(cmd.Cmd):
         ''' game-wide attributes '''
         self.instance = "Instance at %d" % self.__hash__()
         self._activeRooms = []
-        self._characterList = []
+        self._activePlayers = []
         self._startdate = datetime.now()
 
         self._instanceDebug = True
@@ -48,13 +48,13 @@ class _Game(cmd.Cmd):
 
         gameCmd = GameCmd(svrObj)      # each user gets their own cmd shell
 
-        self.addCharacterToGame(charObj)
+        self.addToActivePlayerList(charObj)
 
         # in-game broadcast announcing game entry
         msg = svrObj.txtBanner(charObj.getName() +
                                ' has entered the game', bChar='=')
         self.gameMsg(msg + '\n')
-        logging.info(msg)
+        logging.info("JOINED GAME " + charObj.getId())
 
         # add room to charObj and then display the room
         if self.joinRoom(1, charObj):
@@ -62,28 +62,35 @@ class _Game(cmd.Cmd):
             try:
                 gameCmd.cmdloop()           # start the game cmdloop
             finally:
-                msg = svrObj.txtBanner(charObj.getName() +
-                                       ' has left the game', bChar='=')
-                self.gameMsg(msg + '\n')
-                logging.info(msg)
-                svrObj.charObj.save()
-                self.leaveRoom(svrObj.charObj)
-                self.leaveGame(svrObj)
+                if svrObj.charObj:
+                    self.leaveGame(svrObj)
         return(False)
 
     def leaveGame(self, svrObj):
         ''' Handle details of leaving a game '''
-        self.removeCharacterFromGame(svrObj.charObj)
-        svrObj.charObj.save(logStr=__class__.__name__)
-        msg = svrObj.txtBanner(svrObj.charObj.getName() +
+        charObj = svrObj.charObj
+
+        self.leaveRoom(charObj)
+
+        # remove character from game character list
+        self.removeFromActivePlayerList(charObj)
+
+        # final character save before throwing away charObj
+        charObj.save(logStr=__class__.__name__)
+
+        # notification and logging
+        msg = svrObj.txtBanner(charObj.getName() +
                                ' has left the game', bChar='=')
-        svrObj.charObj = None
         self.gameMsg(msg + '\n')
-        logging.info(msg)
+        logging.info("LEFT GAME " + charObj.getId())
+
+        # Discard charObj
+        charObj = None
+        svrObj.charObj = None
         return(True)
 
     def getCharacterList(self):
-        return(self._characterList)
+        return(self._activePlayers)
 
     def gameMsg(self, msg):
         ''' shown to everyone in the game '''
@@ -152,15 +159,15 @@ class _Game(cmd.Cmd):
                         recieved = True    # sent to at least one recipient
         return(recieved)
 
-    def addCharacterToGame(self, charObj):
+    def addToActivePlayerList(self, charObj):
         ''' add character to list of characters in game '''
         if charObj not in self.getCharacterList():
-            self._characterList.append(charObj)
+            self._activePlayers.append(charObj)
 
-    def removeCharacterFromGame(self, charObj):
-        ''' remove character to list of characters in game '''
+    def removeFromActivePlayerList(self, charObj):
+        ''' remove character from list of characters in game '''
         if charObj in self.getCharacterList():
-            self._characterList.remove(charObj)
+            self._activePlayers.remove(charObj)
 
     def getActiveRoomList(self):
         return(self._activeRooms)
@@ -312,10 +319,9 @@ class _Game(cmd.Cmd):
 
         return(True)
 
-    def buyTransaction(self, obj, price, prompt,
+    def buyTransaction(self, charObj, obj, price, prompt,
                        successTxt='Ok.', abortTxt='Ok.'):
         ''' buy an item '''
-        charObj = self.charObj
         roomObj = charObj.getRoom()
 
         if charObj.svrObj.promptForYN(prompt):
@@ -325,16 +331,15 @@ class _Game(cmd.Cmd):
                 roomObj.recordTransaction(obj)      # update stats
                 roomObj.recordTransaction("sale/" + str(price))
                 charObj.recordTax(roomObj.getTaxAmount(price))
-            self.charMsg(self.charObj, self.selfMsg(successTxt))
+            self.charMsg(charObj, successTxt)
             return(True)
         else:
-            self.charMsg(self.charObj, self.selfMsg(abortTxt))
+            self.charMsg(charObj, abortTxt)
         return(False)
 
-    def sellTransaction(self, obj, price, prompt,
+    def sellTransaction(self, charObj, obj, price, prompt,
                         successTxt='Ok.', abortTxt='Ok.'):
         ''' sell an item '''
-        charObj = self.charObj
         roomObj = charObj.getRoom()
 
         if charObj.svrObj.promptForYN(prompt):
@@ -344,10 +349,10 @@ class _Game(cmd.Cmd):
                 roomObj.recordTransaction(obj)       # update stats
                 roomObj.recordTransaction("purchase/" + str(price))
                 charObj.recordTax(roomObj.getTaxAmount(price))
-            self.charMsg(self.charObj, self.selfMsg(successTxt))
+            self.charMsg(charObj, successTxt)
             return(True)
         else:
-            self.charMsg(self.charObj, self.selfMsg(abortTxt))
+            self.charMsg(charObj, abortTxt)
             return(False)
 
     def kidnap(self, charObj, roomNum=184):
@@ -577,13 +582,15 @@ class GameCmd(cmd.Cmd):
                 self.selfMsg("That is not somewhere you can go!\n")
                 return(False)
 
-            if itemList[0].canBeEntered(charObj):
-                roomnum = itemList[0].getToWhere()
-                dLog("GAME move obj = " + str(roomnum),
-                     self._instanceDebug)
-                self.gameObj.joinRoom(roomnum, charObj)
-                currentRoom = charObj.getRoom()
-                moved = True
+            if not itemList[0].canBeEntered(charObj):
+                return(False)
+
+            roomnum = itemList[0].getToWhere()
+            dLog("GAME move obj = " + str(roomnum),
+                 self._instanceDebug)
+            self.gameObj.joinRoom(roomnum, charObj)
+            currentRoom = charObj.getRoom()
+            moved = True
 
         if moved:
             charObj.setHidden(False)
@@ -668,38 +675,38 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("You can't do that here.  Find a vendor\n")
             return(False)
 
-            if len(cmdargs) < 1 or not isIntStr(cmdargs[0]):
-                self.selfMsg("usage: buy <item> [#]\n")
-                return(False)
-            catList = roomObj.getcatalog()
-            if ((int(cmdargs[0]) < 0 or
-                 int(cmdargs[0]) > (len(catList)) - 1)):
-                self.selfMsg("Bad item number.  Aborted\n")
-                return(False)
-            catItem = catList[int(cmdargs[0])]
-            oType, oNum = catItem.split('/')
-            obj1 = ObjectFactory(oType, oNum)
-            obj1.load()
-            price = self.gameObj.calculateObjectPrice(charObj, obj1)
+        if len(cmdargs) < 1 or not isIntStr(cmdargs[0]):
+            self.selfMsg("usage: buy <item> [#]\n")
+            return(False)
+        catList = roomObj.getcatalog()
+        if ((int(cmdargs[0]) < 0 or
+             int(cmdargs[0]) > (len(catList)) - 1)):
+            self.selfMsg("Bad item number.  Aborted\n")
+            return(False)
+        catItem = catList[int(cmdargs[0])]
+        oType, oNum = catItem.split('/')
+        obj1 = ObjectFactory(oType, oNum)
+        obj1.load()
+        price = self.gameObj.calculateObjectPrice(charObj, obj1)
 
-            # check if player has the funds
-            if not charObj.canAffordAmount(price):
-                self.selfMsg(roomObj.getCantAffordTxt())
-                return(False)
-            # check if player can carry the Weight
-            weight = obj1.getWeight()
-            if not charObj.canCarryAdditionalWeight(weight):
-                self.selfMsg(roomObj.getCantCarryTxt(weight))
-                return(False)
+        # check if player has the funds
+        if not charObj.canAffordAmount(price):
+            self.selfMsg(roomObj.getCantAffordTxt())
+            return(False)
+        # check if player can carry the Weight
+        weight = obj1.getWeight()
+        if not charObj.canCarryAdditionalWeight(weight):
+            self.selfMsg(roomObj.getCantCarryTxt(weight))
+            return(False)
 
-            # prompt player for confirmation
-            prompt = ("You are about to spend " + str(price) +
-                      " shillings for " + obj1.getArticle() + " " +
-                      obj1.getName() + ".  Proceed?")
-            successTxt = roomObj.getSuccessTxt()
-            abortTxt = roomObj.getAbortedTxt()
-            self.gameObj.buyTransaction(obj1, price, prompt,
-                                        successTxt, abortTxt)
+        # prompt player for confirmation
+        prompt = ("You are about to spend " + str(price) +
+                  " shillings for " + obj1.getArticle() + " " +
+                  obj1.getName() + ".  Proceed?")
+        successTxt = roomObj.getSuccessTxt()
+        abortTxt = roomObj.getAbortedTxt()
+        self.gameObj.buyTransaction(charObj, obj1, price, prompt,
+                                    successTxt, abortTxt)
 
     def do_cast(self, line):
         ''' magic '''
@@ -1024,7 +1031,7 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(charObj.healthInfo())
 
     def do_help(self, line):
-        enterHelp()
+        enterHelp(self.svrObj)
 
     def do_hide(self, line):
         # cmdargs = line.split(' ')
@@ -1067,8 +1074,12 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(line + " not implemented yet\n")
         self.charObj.setHidden(False)
 
+    def do_laugh(self, line):
+        self.roomMsg(self.charObj.getName(), " falls down laughing\n")
+        self.charObj.setHidden(False)
+
     def do_list(self, line):
-        pass
+        return(self.do_catalog())
 
     def do_lock(self, line):
         ''' lock an object with a key '''
@@ -1113,7 +1124,12 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_lose(self, line):
-        pass
+        self.selfMsg(line + " not implemented yet\n")
+
+    def do_lunge(self, line):
+        ''' combat '''
+        self.selfMsg(line + " not implemented yet\n")
+        self.charObj.setHidden(False)
 
     def do_n(self, line):
         self.move(self._lastinput[0])  # pass first letter
@@ -1122,7 +1138,7 @@ class GameCmd(cmd.Cmd):
         self.move(self._lastinput[0])  # pass first letter
 
     def do_now(self, line):
-        pass
+        return(self.do_clock())
 
     def do_o(self, line):
         self.move(self._lastinput[0])  # pass first letter
@@ -1190,7 +1206,7 @@ class GameCmd(cmd.Cmd):
                 successTxt = ("It's all yours.  Don't tell anyone " +
                               "that you got it from me")
                 abortTxt = "Another time, perhaps."
-                self.gameObj.buyTransaction(saleItem, price, prompt,
+                self.gameObj.buyTransaction(charObj, saleItem, price, prompt,
                                             successTxt, abortTxt)
             else:
                 self.selfMsg("I have nothing to sell.\n")
@@ -1338,7 +1354,7 @@ class GameCmd(cmd.Cmd):
             return(False)
 
     def do_return(self, line):
-        self.selfMsg(line + " not implemented yet\n")
+        return(self.do_unequip())
 
     def do_roominfo(self, line):
         '''' dm - show room info '''
@@ -1391,7 +1407,7 @@ class GameCmd(cmd.Cmd):
         prompt = ("You are about to pawn " + obj1.getArticle() +
                   " " + obj1.getName() + " for " + str(price) +
                   " shillings.  Proceed?")
-        self.gameObj.sellTransaction(obj1, price, prompt,
+        self.gameObj.sellTransaction(charObj, obj1, price, prompt,
                                      roomObj.getSuccessTxt(),
                                      roomObj.getAbortedTxt())
 
@@ -1451,7 +1467,7 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(self.charObj.StatsInfo())
 
     def do_status(self, line):
-        pass
+        return(self.do_health())
 
     def do_steal(self, line):
         self.selfMsg(line + " not implemented yet\n")
@@ -1468,8 +1484,7 @@ class GameCmd(cmd.Cmd):
             return(False)
         charObj = self.charObj
         charName = charObj.getName()
-        self.leaveRoom(charObj)
-        self.removeCharacterFromGame(charObj)
+        self.gameObj.leaveGame(self.svrObj)
         msg = self.svrObj.txtBanner(charName +
                                     ' has shuffled off this mortal coil',
                                     bChar='=')

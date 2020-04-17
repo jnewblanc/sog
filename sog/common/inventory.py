@@ -12,7 +12,7 @@ class Inventory():
         * a char/creature inventory contains objects
         * a room inventory may contain objects and/or creatures'''
 
-    _instanceDebug = True
+    _instanceDebug = False
 
     def __init__(self, id=0):
         # id is unused in this case, but super often passes id anyway

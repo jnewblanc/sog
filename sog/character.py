@@ -5,6 +5,7 @@ import logging
 import os
 import pprint
 import random
+import re
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
@@ -151,6 +152,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self._acctName = acctName
 
         super().__init__()
+        Storage.__init__(self)
         Inventory.__init__(self)
         self.setName('')
 
@@ -288,7 +290,7 @@ class Character(Storage, AttributeHelper, Inventory):
             * return True if character is _creature
             * return False and scrub character if character was not created
             '''
-        self.__init__(self.svrObj)
+        self.__init__(self.svrObj, self.svrObj.acctObj.getEmail())
         self.setName(charName)
         self.setPromptSize('full')
         self.setLoginDate()
@@ -307,13 +309,13 @@ class Character(Storage, AttributeHelper, Inventory):
 
             self.resetTempStats()
         else:
-            self.__init__(self.svrObj)
+            self.__init__(self.svrObj, self.svrObj.acctObj.getEmail())
             return(False)
 
         if self.isValid():
             self.save()
         else:
-            self.__init__(self.svrObj)
+            self.__init__(self.svrObj, self.svrObj.acctObj.getEmail())
             return(False)
         return(True)
 
@@ -596,6 +598,7 @@ class Character(Storage, AttributeHelper, Inventory):
         ''' prompt user to select a character to load
             store resulting character name into self._name
             return True/False'''
+        logPrefix = __class__.__name__ + " selectCharacter: "
         characterList = self.svrObj.acctObj.getCharacterList()
         numOfCharacters = len(characterList)
         openCharacterSlots = (self.svrObj.acctObj.getMaxNumOfCharacters() -
@@ -627,25 +630,29 @@ class Character(Storage, AttributeHelper, Inventory):
                           ' characters long.')
                 charName = self.svrObj.promptForInput(prompt, r'^[A-Za-z][A-Za-z0-9_\- ]{2,}$', errmsg)  # noqa: E501
                 if charName == "":
-                    dLog("selectCharacter: name is blank",
-                         self._instanceDebug)
+                    dLog(logPrefix + "name is blank", self._instanceDebug)
                     return(False)
                 elif charName in self.svrObj.acctObj.getCharactersOnDisk():
                     msg = ("Invalid Character Name.  You already have a " +
                            "character named " + charName + ".\n")
                     self.svrObj.spoolOut(msg)
-                    dLog("selectCharacter: " + msg, self._instanceDebug)
-                    return(False)
+                    dLog(logPrefix + msg, self._instanceDebug)
+                    continue
                 elif not self.svrObj.acctObj.characterNameIsUnique(charName):
                     msg = ("Name is already in use.  Please try again\n")
                     self.svrObj.spoolOut(msg)
-                    dLog("selectCharacter: " + msg, self._instanceDebug)
-                    return(False)
+                    dLog(logPrefix + msg, self._instanceDebug)
+                    continue
                 self.setName(charName)
-                return(True)
+                break
             else:   # use existing character name, as defined in characterList
                 self.setName(characterList[inNum - 1])
-                return(True)
+                break
+
+        if re.match("^.+@.+\..+/.+$", self.getId()):
+            return(True)
+
+        logging.error(logPrefix + "Could not generate ID - " + self.getId())
         return(False)
 
     def getArticle(gender):
@@ -744,8 +751,6 @@ class Character(Storage, AttributeHelper, Inventory):
         # get the index numbers of the named elements to use for dict lookup
         classKey = self.getClassKey()
         genderKey = self.genderList.index(self._gender)
-
-        logging.debug("customizeStats - alignment=" + str(self._alignment))
 
         self.setMaxHP()
         self.setMaxSP()
@@ -1113,6 +1118,9 @@ class Character(Storage, AttributeHelper, Inventory):
     def setName(self, name):
         self._name = str(name)
 
+    def getId(self):
+        return(self._acctName + "/" + str(self.getName()))
+
     def getStrength(self):
         return(self.strength)
 
@@ -1258,9 +1266,6 @@ class Character(Storage, AttributeHelper, Inventory):
     def removeRoom(self):
         self._roomObj = None
 
-    def getId(self):
-        return(self._acctName + "/" + str(self.getName()))
-
     def equip(self, objObj):
         # Deal with currently equipped item
         equippedObj = getattr(self, objObj.getEquippedSlotName())
@@ -1287,6 +1292,7 @@ class Character(Storage, AttributeHelper, Inventory):
     def setDataFilename(self, dfStr=''):
         ''' sets the data file name.  - Override the superclass because we
             want the account info to be in the account directory. '''
+        logPrefix = __class__.__name__ + " setDataFilename-c: "
 
         # generate the data file name based on class and id
         try:
@@ -1294,11 +1300,19 @@ class Character(Storage, AttributeHelper, Inventory):
         except AttributeError:
             pass
 
-        if id and id != '':
-            self._datafile = os.path.abspath(DATADIR + '/Account/' +
-                                             '/' + str(id) + '.pickle')
-            return(True)
-        return(False)
+        if not id:
+            logging.error(logPrefix + "Could not retrieve Id to " +
+                          "generate filename")
+            return(False)
+
+        if not re.match(r"^.+@.+\..+/.+$", id):
+            logging.error(logPrefix + "ID is blank while generating filename")
+            return(False)
+
+        self._datafile = os.path.abspath(DATADIR + '/Account/' +
+                                         str(id) + '.pickle')
+
+        return(True)
 
     def setHidden(self, val=True):
         self._hidden = val

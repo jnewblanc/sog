@@ -36,6 +36,7 @@ class Storage():
             based on the class and ID.  We can also override this method
             to use a different filename '''
         id = ''
+        logPrefix = __class__.__name__ + " setDataFilename: "
 
         if dfStr == '':
             # generate the data file name based on class and id
@@ -44,31 +45,31 @@ class Storage():
             except AttributeError:
                 pass
 
-            if id and id != '':
-                self._datafile = os.path.abspath(DATADIR + '/' +
-                                                 self.__class__.__name__ +
-                                                 '/' + str(id) + '.pickle')
-                if self._debugStorage:
-                    logging.debug("setDataFilename: _datafile = " +
-                                  self._datafile)
-                return(True)
-            else:
-                logging.error("setDataFilename: Could not get id from " +
-                              "object")
+            if not id:
+                logging.error(logPrefix + "Could not retrieve Id to " +
+                              "generate filename")
                 return(False)
+
+            if id == '':
+                logging.error(logPrefix + "ID is empty while generating " +
+                              "datafile name")
+                return(False)
+
+            self._datafile = os.path.abspath(DATADIR + '/' +
+                                             self.__class__.__name__ +
+                                             '/' + str(id) + '.pickle')
         else:
             # set data file name to name provided
             self._datafile = os.path.abspath(str(dfStr))
-            return(True)
-        return(False)
+
+        if self._debugStorage:
+            logging.debug(logPrefix + "_datafile = " +
+                          self._datafile)
+        return(True)
 
     def getId(self):
         ''' available for override '''
         return(None)
-
-    def getSubClassName(self):
-        ''' return the name of the subclass '''
-        return(self.__class__.__name__)
 
     def save(self, logStr=''):
         ''' save to persistant storage '''
@@ -80,13 +81,13 @@ class Storage():
         # the datafile info as a local variable so that there is no conflict.
         filename = self._datafile
 
-        subclassname = self.getSubClassName()
+        logPrefix = self.__class__.__name__ + " save: "
         if filename == "":
-            logging.error(subclassname + " Could not determine filename " +
+            logging.error(logPrefix + "Could not determine filename " +
                           " while saving " + logStr + str(self.getId()))
             return(False)
         if not self.isValid():  # if the instance we are saving is not valid
-            logging.error(subclassname + " Save aborted - " + logStr +
+            logging.error(logPrefix + "Save aborted - " + logStr +
                           str(self.getId()) + " is not valid")
             return(False)
 
@@ -105,7 +106,7 @@ class Storage():
                 pass
             setattr(self, attName, None)
             if self._debugStorage:
-                logging.debug(subclassname + " ignoring " +
+                logging.debug(logPrefix + "ignoring " +
                               attName + " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
@@ -115,7 +116,7 @@ class Storage():
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
         if self._debugStorage:
-            logging.debug(subclassname + " saved " + logStr +
+            logging.debug(logPrefix + "saved " + logStr + " - " +
                           str(self.getId()))
         return(True)
 
@@ -133,12 +134,15 @@ class Storage():
         # the datafile info as a local variable so that there is no conflict.
         filename = self._datafile
 
-        subclassname = self.getSubClassName()
+        logPrefix = self.__class__.__name__ + " load: "
 
         if filename == "":
-            logging.error(subclassname + "Could not determine " +
+            logging.error(logPrefix + " Could not determine " +
                           "filename for loading " + logStr)
             return(False)
+
+        if self._debugStorage:
+            logging.debug(logPrefix + "Loading " + filename + "...")
 
         if self.dataFileExists():
             with open(filename, 'rb') as inputfilehandle:
@@ -148,7 +152,7 @@ class Storage():
             # filter out instance attributes that we want to ignore
             for onevar in self.attributesThatShouldntBeSaved:
                 if self._debugStorage:
-                    logging.debug(subclassname + " ignoring " +
+                    logging.debug(logPrefix + " ignoring " +
                                   logStr + "attribute " +
                                   onevar + " during import")
                 instanceAttributes = list(filter((onevar).__ne__,
@@ -172,10 +176,10 @@ class Storage():
                      isinstance(value, list))):
                     buf += '=' + str(value)
                 if self._debugStorage:
-                    logging.debug(subclassname + " " + buf + '\n')
+                    logging.debug(logPrefix + " " + buf + '\n')
 
             if self._debugStorage:
-                logging.debug(subclassname + " loaded " + logStr +
+                logging.debug(logPrefix + " loaded " + logStr +
                               str(self.getId()))
             self.initTmpAttributes()
             self.fixAttributes()
@@ -183,35 +187,35 @@ class Storage():
             if self.isValid():
                 return(True)
         else:
-            logging.warn(subclassname + " " + logStr +
-                         'info doesn\'t exist at ' + self._datafile)
+            logging.warn(logPrefix + " " + logStr +
+                         'datafile doesn\'t exist at ' + self._datafile)
         return(False)
 
     def delete(self, logStr=''):
-        subclassname = self.getSubClassName()
+        logPrefix = self.__class__.__name__  + " delete: "
         self.setDataFilename()
         filename = self._datafile
         if filename == "":
-            logging.error(subclassname + " Could not determine filename " +
+            logging.error(logPrefix + " Could not determine filename " +
                           " while deleting " + logStr + str(self.getId()))
             return(False)
         if not os.path.isfile(filename):
-            logging.error(subclassname + " Could not delete " + filename +
+            logging.error(logPrefix + " Could not delete " + filename +
                           " because it is not a file ")
             return(False)
         if self.dataFileExists():
-            logging.info(subclassname + " Preparing to delete " +
+            logging.info(logPrefix + " Preparing to delete " +
                          logStr + " " + filename)
             os.remove(filename)
             if os.path.isfile(filename):
-                logging.error(subclassname + " " + filename + " could not " +
+                logging.error(logPrefix + " " + filename + " could not " +
                               "be deleted")
                 return(False)
             else:
-                logging.info(subclassname + " " + filename + " deleted")
+                logging.info(logPrefix + " " + filename + " deleted")
                 return(True)
         else:
-            logging.error(subclassname + " " + filename + " could not " +
+            logging.error(logPrefix + " " + filename + " could not " +
                           "be deleted because it doesn't exist")
             return(False)
         return(False)

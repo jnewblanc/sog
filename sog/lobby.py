@@ -201,9 +201,9 @@ class LobbyCmd(cmd.Cmd):
             self.svrObj.gameObj.joinGame(self.svrObj)
         else:
             self.svrObj.charObj = None
-            msg = "Error: Could not login to game"
+            msg = "Could not login to game"
             logging.warning(msg)
-            self.svrObj.spoolOut(msg + '\n')
+            self.svrObj.spoolOut('Error: ' + msg + '\n')
             self.acctObj.save(logStr=__class__.__name__)
         return(False)
 
