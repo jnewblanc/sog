@@ -405,7 +405,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         exp = 0
 
         level = min(1, self.getLevel())
-        exp += self.getMaxHitPoints() + self._levelDefaultsDict[level]['exp']
+        exp += self.getMaxHitPoints() + self._levelDefaultsDict[level]['_exp']
 
         # Monster level	Bonus
         monsterLevelBonus = (((self.getAttributeCount('primary') + 2) *
