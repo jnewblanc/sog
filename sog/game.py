@@ -66,7 +66,7 @@ class _Game(cmd.Cmd):
                     self.leaveGame(svrObj)
         return(False)
 
-    def leaveGame(self, svrObj):
+    def leaveGame(self, svrObj, saveChar=True):
         ''' Handle details of leaving a game '''
         charObj = svrObj.charObj
 
@@ -76,7 +76,9 @@ class _Game(cmd.Cmd):
         self.removeFromActivePlayerList(charObj)
 
         # final character save before throwing away charObj
-        charObj.save(logStr=__class__.__name__)
+        if saveChar:
+            # saveChar is False when it's a suicide
+            charObj.save(logStr=__class__.__name__)
 
         # notification and logging
         msg = svrObj.txtBanner(charObj.getName() +
@@ -1484,12 +1486,13 @@ class GameCmd(cmd.Cmd):
             return(False)
         charObj = self.charObj
         charName = charObj.getName()
-        self.gameObj.leaveGame(self.svrObj)
+        self.gameObj.leaveGame(self.svrObj, saveChar=False)
         msg = self.svrObj.txtBanner(charName +
                                     ' has shuffled off this mortal coil',
                                     bChar='=')
         charObj.delete()
         charObj = None
+        self.charObj = None
         self.acctObj.removeCharacterFromAccount(charName)
         self.gameObj.gameMsg(msg)
         logging.info("Character deleted: " + charName)

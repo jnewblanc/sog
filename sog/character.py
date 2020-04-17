@@ -649,7 +649,7 @@ class Character(Storage, AttributeHelper, Inventory):
                 self.setName(characterList[inNum - 1])
                 break
 
-        if re.match("^.+@.+\..+/.+$", self.getId()):
+        if re.match(r"^.+@.+\..+/.+$", self.getId()):
             return(True)
 
         logging.error(logPrefix + "Could not generate ID - " + self.getId())

@@ -192,7 +192,7 @@ class Storage():
         return(False)
 
     def delete(self, logStr=''):
-        logPrefix = self.__class__.__name__  + " delete: "
+        logPrefix = self.__class__.__name__ + " delete: "
         self.setDataFilename()
         filename = self._datafile
         if filename == "":
@@ -206,7 +206,12 @@ class Storage():
         if self.dataFileExists():
             logging.info(logPrefix + " Preparing to delete " +
                          logStr + " " + filename)
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except OSError as e:
+                logging.error(logPrefix + "Failed with:" + e.strerror)
+                logging.error(logPrefix + "Error code:" + e.code)
+
             if os.path.isfile(filename):
                 logging.error(logPrefix + " " + filename + " could not " +
                               "be deleted")
