@@ -334,6 +334,8 @@ class _Game(cmd.Cmd):
                 roomObj.recordTransaction("sale/" + str(price))
                 charObj.recordTax(roomObj.getTaxAmount(price))
             self.charMsg(charObj, successTxt)
+            logging.info("PURCHASE " + charObj.getId() + " bought " +
+                         obj.describe() + " for " + str(price))
             return(True)
         else:
             self.charMsg(charObj, abortTxt)
@@ -352,6 +354,9 @@ class _Game(cmd.Cmd):
                 roomObj.recordTransaction("purchase/" + str(price))
                 charObj.recordTax(roomObj.getTaxAmount(price))
             self.charMsg(charObj, successTxt)
+            logging.info("SALE " + charObj.getId() + " sold " +
+                         obj.describe() + " for " + str(price))
+
             return(True)
         else:
             self.charMsg(charObj, abortTxt)
@@ -1560,6 +1565,8 @@ class GameCmd(cmd.Cmd):
                 damage = 0
             charObj.setlastAttackDamageType("slash")  # should depend on attk
             self.gameObj.playerAttacksCreature(charObj, targetList[0], damage)
+        else:
+            self.selfMsg("You can't slay " + line + '\n')
         return(False)
 
     def do_smash(self, line):

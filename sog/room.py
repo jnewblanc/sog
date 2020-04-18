@@ -19,9 +19,6 @@ from object import ObjectFactory, Door
 
 class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
-    attributesThatShouldntBeSaved = ['gameObj', "_creatureList",   # Storage
-                                     '_characterList', '_objectList',
-                                     '_inventory', '_creatureCache']
     _instanceDebug = True
 
     directionNameDict = {
@@ -48,11 +45,13 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
     # obsolete attributes (to be removed)
     obsoleteAttributes = ['notifyDM', 'safe', 'antiMagic', 'dark', 'out',
                           'priceBonus', 'encounterTime' 'encounterList',
-                          '_objectlist', '_creatureList']
+                          '_objectlist', '_creatureList', 'gameObj']
+
+    attributesThatShouldntBeSaved = ["_creatureList", '_instanceDebug',
+                                     '_characterList', '_objectList',
+                                     '_inventory', '_creatureCache']
 
     wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w"]
-
-    attributesThatShouldntBeSaved = ['_instanceDebug']
 
     attributeInfo = {
         "_shortDesc": "short room description when brief prompt is used",
