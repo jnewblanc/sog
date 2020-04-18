@@ -22,7 +22,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
     attributesThatShouldntBeSaved = ['gameObj', "_creatureList",   # Storage
                                      '_characterList', '_objectList',
                                      '_inventory', '_creatureCache']
-    _instanceDebug = False
+    _instanceDebug = True
 
     directionNameDict = {
         "n": "north",
@@ -52,6 +52,8 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w"]
 
+    attributesThatShouldntBeSaved = ['_instanceDebug']
+
     attributeInfo = {
         "_shortDesc": "short room description when brief prompt is used",
         "_desc": "full room description when normal prompt is used",
@@ -73,13 +75,16 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         self._safe = False        # players/monsters can't attack here
         self._antiMagic = False   # can't use magic spells here
         self._dark = False        # players can't see here
-        self._encounterTime = 0   # average seconds between encounters
+        self._encounterTime = 60  # average seconds between encounters
         self._encounterList = []  # list of creature numbers for encounters
         self._permanentCreatureList = []  # perm creature instances
         self._permanentObjectList = []    # perm object instances
         self._timeOfLastEncounter = getNeverDate()
         self._timeOfLastAttack = getNeverDate()
         self._instanceDebug = Room._instanceDebug
+
+        # Override the inventory class  - Set the number of items allowed in
+        self.setInventoryTruncSize(12)  # room before the items roll away
 
         # These are tmp properties that get reset everytime the room is empty
         self.initTmpAttributes()
@@ -236,7 +241,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         buf = self.describeInvAsList(showDm=charObj.isDm(),
                                      showHidden=charObj.canSeeHidden(),
                                      showInvisible=charObj.canSeeInvisible())
-        logging.debug("di:" + buf)
+        logging.debug("displayItems:" + buf)
         if buf != '':
             buf = "You see " + buf
         return(buf)
@@ -274,7 +279,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         for onecreature in self.getCreatureList():
             if onecreature.isAttacking():
                 buf += (onecreature.describe() + ' is attacking ' +
-                        onecreature.getAttackPlayer())
+                        onecreature.getCurrentlyAttacking())
 
         # show who you are attacking
         for creature in charObj.getAttacking():
@@ -491,19 +496,40 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     def readyForEncounter(self):
         ''' returns true if the room is ready for an encounter '''
+        debugPrefix = "Room readyForEncounter (" + str(self.getId()) + "): "
+
+        # Room has no encounter time.  Will never be ready
         if not self._encounterTime:
+            if self._instanceDebug:
+                logging.debug(debugPrefix + "Room has no encounter time")
             return(False)
 
+        # Room has no encounter list.  Will never be ready
         if not self._encounterList:
+            if self._instanceDebug:
+                logging.debug(debugPrefix + "Room has no creatureList")
             return(False)
 
-        if random.randint(1, 3) == 3:  # 33% chance that there is no encounter
+        # % chance that room will have no encounter this time
+        if random.randint(1, 3) == 3:
             self.setLastEncounter()
+            if self._instanceDebug:
+                logging.debug(debugPrefix + "Encounter randomly discarded")
             return(False)
 
-        if secsSinceDate(self._timeOfLastEncounter) > self._encounterTime:
-            return(True)
-        return(False)
+        # Check if the appropriate amount of time has pased
+        if self._timeOfLastEncounter != getNeverDate():
+            secsSinceLastEncounter = secsSinceDate(self._timeOfLastEncounter)
+            timeLeft = self._encounterTime - secsSinceLastEncounter
+            if timeLeft > 0:
+                if self._instanceDebug:
+                    logging.debug(debugPrefix + "Encounter discarded due " +
+                                  "to time - " + str(timeLeft) + " secs left")
+                return(False)
+
+        if self._instanceDebug:
+            logging.debug(debugPrefix + "Room is ready for encounter")
+        return(True)
 
     def setLastEncounter(self):
         self._timeOfLastEncounter = datetime.now()

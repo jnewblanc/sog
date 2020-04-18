@@ -1,5 +1,7 @@
 ''' common attribute superClass '''
 
+import logging
+
 
 class AttributeHelper():
     ''' SuperClass for attribute maintenance and testing '''
@@ -26,31 +28,51 @@ class AttributeHelper():
             that are saved.  This method lets us do that.  This is the
             generic case, but subClasses may choose to do more class
             specific fixes '''
-        # integer attributes
+        logPrefix = "fixAttributes: "
+        changed = False
 
         for attName in self.intAttributes:
             try:
-                newVal = int(getattr(self, attName, 0))
+                if not isinstance(getattr(self, attName), int):
+                    newVal = int(getattr(self, attName, 0))
+                    setattr(self, attName, newVal)
+                    changed = True
+                    logging.warning(logPrefix + "Changed " + attName +
+                                    " to int")
             except ValueError:
-                newVal = 0
-            setattr(self, attName, newVal)
+                setattr(self, attName, 0)
+                logging.warning(logPrefix + "Set " + attName + "= 0")
         for attName in self.boolAttributes:
             try:
-                newVal = bool(getattr(self, attName, False))
+                if not isinstance(getattr(self, attName), bool):
+                    newVal = bool(getattr(self, attName, False))
+                    setattr(self, attName, newVal)
+                    changed = True
+                    logging.warning(logPrefix + "Changed " + attName +
+                                    " to bool")
             except ValueError:
-                newVal = False
-            setattr(self, attName, newVal)
+                setattr(self, attName, False)
+                logging.warning(logPrefix + "Set " + attName + "= False")
         for attName in self.strAttributes:
             try:
-                newVal = str(getattr(self, attName, False))
+                if not isinstance(getattr(self, attName), str):
+                    newVal = str(getattr(self, attName, False))
+                    setattr(self, attName, newVal)
+                    changed = True
+                    logging.warning(logPrefix + "Changed " + attName +
+                                    " to str")
             except ValueError:
-                newVal = ''
-            setattr(self, attName, newVal)
+                setattr(self, attName, '')
+                logging.warning(logPrefix + "Set " + attName + "= ''")
         for attName in (self.obsoleteAttributes):
             try:
-                delattr(self, attName)
+                if hasattr(self, attName):
+                    delattr(self, attName)
+                    changed = True
+                    logging.warning(logPrefix + "Removed " + attName)
             except AttributeError:
                 pass
+        return(changed)
 
     def test_attributes(self):
         ''' Generic test to check attribute types '''

@@ -15,7 +15,7 @@ from common.general import isIntStr, dateStr, dLog
 from common.general import splitTargets, targetSearch
 from common.general import getRandomItemFromList
 from common.help import enterHelp
-from common.magic import Spell
+from common.magic import Spell, SpellList
 from room import RoomFactory
 from object import ObjectFactory
 # from object import Potion, Scroll, Teleport, Staff
@@ -370,7 +370,7 @@ class _Game(cmd.Cmd):
         self.gameObj.joinRoom(roomNum, charObj)
         return(True)
 
-    def castSpell(self, spellObj, target):
+    def castSpell(self, charObj, spellObj, target):
         ''' perform the spell
             * assume that all other checks are complete
         '''
@@ -379,6 +379,8 @@ class _Game(cmd.Cmd):
 
         if not target:
             return(False)
+
+        charObj.setlastAttackDamageType("magic")
 
         # roll/check for spell success
         if isinstance(target, Character):   # use on Character
@@ -408,12 +410,12 @@ class _Game(cmd.Cmd):
               * room encounter rates and encounter list
               * creature frequency
         '''
-        debugPrefix = 'ce (' + str(roomObj.getId()) + ') '
+        debugPrefix = 'Game creatureEncounter (' + str(roomObj.getId()) + '): '
         if not roomObj.readyForEncounter():
-            logging.debug(debugPrefix + 'not ready for encounter')
+            logging.debug(debugPrefix + 'Room not ready for encounter')
             return(False)
 
-        if roomObj.len(roomObj.getInventoryByType('Creature')) >= 6:
+        if len(roomObj.getInventoryByType('Creature')) >= 6:
             self.roomMsg(roomObj, 'Others arrive, but wander off because ' +
                          'of the crowd.\n')
             return(False)
@@ -422,33 +424,32 @@ class _Game(cmd.Cmd):
         # creatures every time we check for encounters.  These creatures are
         # never actually encountered.  They just exist for reference
         if len(roomObj.getCreatureCache()) == 0:
+            logging.debug(debugPrefix + 'Populating room creature cache')
             # loop through all possible creatures for room and fill cache
-            for cNum in roomObj.getEncounterList():
-                cObj = Creature(cNum)
-                # todo: should probably cache this, but loot changes on load
-                cObj.load()
-                roomObj.creatureCachePush(cObj)
+            for ccNum in roomObj.getEncounterList():
+                ccObj = Creature(ccNum)
+                ccObj.load()
+                roomObj.creatureCachePush(ccObj)
+                logging.debug(debugPrefix + 'Cached ' + ccObj.describe())
 
         # Determine which creatures, from the cache, can be encountered, by
-        # comparing their frequency attribute to a random roll.
-        matchingCreatureList = []
-        for cObj in roomObj.getCreatureCache():
-            if cObj.getFrequency() >= random.randint(1, 100):
+        # comparing their frequency attribute to a random roll.  Fill a
+        # eligibleCreatureList with possible creatures for encounter.
+        eligibleCreatureList = []
+        for ccObj in roomObj.getCreatureCache():
+            if ccObj.getFrequency() >= random.randint(1, 100):
                 # Load creature to be encountered
-                cObj = Creature(cNum)
+                cObj = Creature(ccObj.getId())
                 cObj.load()
-                roomObj.creatureCacheAdd(cObj)
-                matchingCreatureList.append(cObj)
-                logging.debug(debugPrefix + 'Creature ' +
-                              str(matchingCreatureList) + ' is eligible for' +
-                              ' insertion into room')
+                eligibleCreatureList.append(cObj)
+                logging.debug(debugPrefix + cObj.describe() + ' is eligible')
 
-        creatureObj = getRandomItemFromList(matchingCreatureList)
+        creatureObj = getRandomItemFromList(eligibleCreatureList)
         if creatureObj:
-            logging.debug(debugPrefix + 'adding creature to room: ' +
-                          str(creatureObj.describe()))
-            roomObj.addCreature(creatureObj)
-            self.roomMsg(roomObj, creatureObj.describe() + ' has arrived')
+            roomObj.addToInventory(creatureObj)
+            logging.debug(debugPrefix + str(creatureObj.describe()) +
+                          ' added to room')
+            self.roomMsg(roomObj, creatureObj.describe() + ' has arrived\n')
             creatureObj.setEnterRoomTime()
             roomObj.setLastEncounter()
         return(None)
@@ -456,19 +457,95 @@ class _Game(cmd.Cmd):
     def creatureAttack(self, roomObj):
         for creatureObj in roomObj.getCreatureList():
             if creatureObj.isAttacking():
-                creatureObj.attack(creatureObj.getAttackPlayer())
+                creatureObj.attack(creatureObj.getCurrentlyAttacking())
             else:
                 if not creatureObj.isHostile():
                     continue
                 # creature initates attack
                 for charObj in random.shuffle(roomObj.getCharacterList()):
                     if creatureObj.initiateAttack(charObj):
-                        charObj.svrObj.spoolOut(creatureObj.describe() +
-                                                " attacks you!")
+                        self.charMsg(charObj, creatureObj.describe() +
+                                     " attacks you!\n")
                         # notify other players in the room
                         creatureObj.attack(charObj)
                         break
         return(None)
+
+    def playerAttacksCreature(self, charObj, target, damage=0):
+        logPrefix = "Game playerAttacksCreature:"
+        roomObj = charObj.getRoom()
+
+        if not target:
+            return(False)
+
+        dLog(logPrefix + charObj.getName() + " attacks " + target.getName() +
+             " for " + str(damage) + " damage.", self._instanceDebug)
+
+        if charObj.getCurrentlyAttacking() != target:
+            charObj.setCurrentlyAttacking(target)
+            self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
+                                 " attacks " + target.describe() + "\n")
+
+        if damage == 0:
+            pass
+            # todo: check for fumble
+            # todo: calculate damage
+
+        if target.diesFromDamage(damage):
+            dLog(logPrefix + "target dies", self._instanceDebug)
+
+            self.charMsg(charObj, "You killed " + target.describe() + "\n")
+            self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
+                                 " kills " + target.describe() + "\n")
+            truncsize = roomObj.getInventoryTruncSize()
+            for item in target.getInventory():
+                if roomObj.addToInventory(item, maxSize=truncsize):
+                    self.roomMsg(roomObj, item.describe() +
+                                 " falls to the floor\n")
+                else:
+                    self.roomMsg(roomObj, item.describe() +
+                                 "falls to the floor and rolls away")
+            # build attacking players list so we can dole out the experience
+            attackingPlayers = []
+            attckPlayerLevelSum = 0
+            for player in roomObj.getCharacterList():
+                if player.getCurrentlyAttacking() == target:
+                    attackingPlayers.append(player)
+                    attckPlayerLevelSum += player.getLevel()
+
+            # dole out experience - non killers get some % exp
+            creatureExp = target.getExp()
+            if len(attackingPlayers) == 1:
+                charObj.addExp(creatureExp)
+            else:
+                # Killer gets 50%, right off the bat
+                charObj.addExp(int(creatureExp * .50))
+                # remaining 50% gets split amoungst attackers (killer included)
+                # should be scaled according to level
+                remainingExp = (creatureExp * .50)
+                baseExpPerPlayer = remainingExp / len(attackingPlayers)
+                averageLevel = attckPlayerLevelSum / len(attackingPlayers)
+                for player in attackingPlayers:
+                    if player.getLevel() >= averageLevel:
+                        charObj.addExp(baseExpPerPlayer)
+                        remainingExp -= baseExpPerPlayer
+                    else:
+                        exp = baseExpPerPlayer
+                        charObj.addExp(exp)
+                        remainingExp -= exp
+                charObj.addExp(int(remainingExp))
+
+            # determine if skill is increased
+            if charObj.getLevel() >= target.getLevel():
+                charObj.rollToBumpSkillForLevel()
+
+            # destroy creature
+            roomObj.removeFromInventory(target)
+        else:
+            dLog(logPrefix + "target takes damage", self._instanceDebug)
+            self.charMsg(charObj, "You inflict " + damage + "damage to " +
+                         target.describe() + "\n")
+            target.takeDamage(damage)
 
 
 class GameCmd(cmd.Cmd):
@@ -610,13 +687,17 @@ class GameCmd(cmd.Cmd):
 
     def do_attack(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_backstab(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_balance(self, line):
         charObj = self.charObj
@@ -635,8 +716,10 @@ class GameCmd(cmd.Cmd):
 
     def do_block(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_break(self, line):
         return(self.do_smash(line))
@@ -712,7 +795,31 @@ class GameCmd(cmd.Cmd):
 
     def do_cast(self, line):
         ''' magic '''
-        self.selfMsg(line + " not implemented yet\n")
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        if list == '':
+            self.selfMsg("Cast what spell?\n")
+
+        spell, targetline = list.split(line(' ', 1))
+
+        if spell not in SpellList:
+            self.selfMsg("That's not a valid spell.\n")
+            return(False)
+
+        # Need to check if player knows spell and meets spell requirements
+
+        allTargets = roomObj.getInventory() + roomObj.getCharacterList()
+        targetList = self.getObjFromCmd(allTargets, targetline)
+
+        if targetList[0]:
+            target = targetList[0]
+        else:
+            target = charObj
+
+        spellObj = Spell(charObj.getClass(), spell)
+
+        self.castSpell(charObj, spellObj, target)
 
     def do_catalog(self, line):
         ''' get the catalog of items from a vendor '''
@@ -743,8 +850,10 @@ class GameCmd(cmd.Cmd):
 
     def do_circle(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_climb(self, line):
         cmdargs = line.split(' ')
@@ -958,8 +1067,10 @@ class GameCmd(cmd.Cmd):
 
     def do_feint(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_file(self, line):
         self.selfMsg(self.acctObj.showCharacterList())
@@ -1050,8 +1161,10 @@ class GameCmd(cmd.Cmd):
 
     def do_hit(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_hold(self, line):
         return(self.do_use(line))
@@ -1073,8 +1186,10 @@ class GameCmd(cmd.Cmd):
 
     def do_kill(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_laugh(self, line):
         self.roomMsg(self.charObj.getName(), " falls down laughing\n")
@@ -1130,8 +1245,10 @@ class GameCmd(cmd.Cmd):
 
     def do_lunge(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_n(self, line):
         self.move(self._lastinput[0])  # pass first letter
@@ -1425,6 +1542,26 @@ class GameCmd(cmd.Cmd):
     def do_skills(self, line):
         self.selfMsg(self.charObj.SkillsInfo())
 
+    def do_slay(self, line):
+        ''' combat '''
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        creatureList = roomObj.getInventoryByType('Creature')
+        logging.debug("slay: creatureList" + str(creatureList))
+        targetList = self.getObjFromCmd(creatureList, line)
+
+        logging.debug("slay: targetList" + str(targetList))
+
+        if targetList:
+            if self.charObj.isDm():
+                damage = 99999
+            else:
+                damage = 0
+            charObj.setlastAttackDamageType("slash")  # should depend on attk
+            self.gameObj.playerAttacksCreature(charObj, targetList[0], damage)
+        return(False)
+
     def do_smash(self, line):
         charObj = self.charObj
         roomObj = charObj.getRoom()
@@ -1476,8 +1613,10 @@ class GameCmd(cmd.Cmd):
 
     def do_strike(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_suicide(self, line):
         if not self.svrObj.promptForYN("DANGER: This will permanently " +
@@ -1509,8 +1648,10 @@ class GameCmd(cmd.Cmd):
 
     def do_thrust(self, line):
         ''' combat '''
-        self.selfMsg(line + " not implemented yet\n")
+        damageType = self.charObj.getEquippedWeaponDamageType()
+        self.charObj.setlastAttackDamageType(damageType)
         self.charObj.setHidden(False)
+        self.selfMsg(line + " not implemented yet\n")
 
     def do_track(self, line):
         self.selfMsg(line + " not implemented yet\n")
@@ -1609,7 +1750,7 @@ class GameCmd(cmd.Cmd):
             if not obj2:           # if second target is not defined
                 obj2 = charObj     # current character is the target
 
-            self.castSpell(spellObj, obj2)
+            self.castSpell(charObj, spellObj, obj2)
             charObj.removeFromInventory(obj1)     # remove item
         elif obj1.isMagicItem():
             if obj1.getCharges() <= 0:
@@ -1623,7 +1764,7 @@ class GameCmd(cmd.Cmd):
             if not obj2:           # if second target is not defined
                 obj2 = charObj     # current character is the target
 
-            self.castSpell(spellObj, obj2)
+            self.castSpell(charObj, spellObj, obj2)
             obj1.decrementChargeCounter()
 
             if roomObj:  # tmp - remove later if not needed

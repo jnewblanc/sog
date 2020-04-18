@@ -28,8 +28,7 @@ class Character(Storage, AttributeHelper, Inventory):
         '_slash': 'swords and axes come easily to you',
         '_bludgeon': 'hammers and maces are an extention of your arms',
         '_pierce': 'you gravitate toward daggers and spears',
-        '_magicuse': 'an inner confidence that enhances spells',
-        '_heal': 'a natural ability to mend and cure',
+        '_magic': 'an inner confidence that enhances spells',
         '_dodge': 'being quick on your feet helps avoid blows'}
 
     genderDict = {
@@ -124,14 +123,14 @@ class Character(Storage, AttributeHelper, Inventory):
             }
         }  # end classDict
 
-    attributesThatShouldntBeSaved = ['svrObj']
+    attributesThatShouldntBeSaved = ['svrObj', '_instanceDebug']
 
     # int attributes
     intAttributes = ['_expToNextLevel', '_level', '_maxhitpoints',
                      '_hitpoints', '_maxspellpoints', '_spellpoints',
                      '_statsearnedlastlevel', '_limitedSpellsLeft',
                      '_broadcastLimit', '_slash', '_bludgeon', '_pierce',
-                     '_magicuse', '_heal', '_dodge', '_coins', '_ac',
+                     '_magic', '_dodge', '_coins', '_ac',
                      '_weenykills', '_matchedkills', '_valiantkills',
                      '_epickills', '_playerkills', '_bankBalance',
                      '_taxesPaid', '_bankFeesPaid', '_dodgeBonus']
@@ -145,7 +144,7 @@ class Character(Storage, AttributeHelper, Inventory):
     listAttributes = ['_knownSpells', '_doubleUpStatLevels']
 
     # obsolete attributes (to be removed)
-    obsoleteAtt = ['_money']
+    obsoleteAtt = ['_money', '_heal']
 
     def __init__(self, svrObj=None, acctName=''):
         self.svrObj = svrObj
@@ -358,6 +357,8 @@ class Character(Storage, AttributeHelper, Inventory):
         self._lastInput = getNeverDate()
         self._lastAttack = getNeverDate()
         self._lastHeal = getNeverDate()
+        self._currentlyAttacking = None
+        self._lastAttackDamageType = ""
 
         # Check if it's a different day
         if differentDay(datetime.now(), self._lastLogoutDate):
@@ -504,7 +505,7 @@ class Character(Storage, AttributeHelper, Inventory):
         ''' Display character skills'''
         buf = ("Skills:")
         ROW_FORMAT = "  {0:14}: {1:<30}\n"
-        if self._achievedSkillForLevel:
+        if self.hasAchievedSkillForLevel():
             buf += ('  Proficiency earned for level ' + str(self.getLevel()) +
                     '\n')
         else:
@@ -535,11 +536,11 @@ class Character(Storage, AttributeHelper, Inventory):
         buf = ("Experience:\n")
         buf += ROW_FORMAT.format("Level", str(self.getLevel()))
         if self.getPromptSize() == 'full':
-            buf += ('  ' + str(self._expToNextLevel) +
+            buf += ('  ' + str(max(0, self._expToNextLevel)) +
                     " experience needed to get to level " +
                     str(int(self.getLevel()) + 1) + '\n')
         else:
-            buf += " - " + str(self._expToNextLevel) + " to go."
+            buf += " - " + str(max(0, self._expToNextLevel)) + " to go."
         return(buf)
 
     def guildInfo(self):
@@ -1042,6 +1043,9 @@ class Character(Storage, AttributeHelper, Inventory):
     def setInvisible(self, val=True):
         self._invisible = val
 
+    def addExp(self, num):
+        self._expToNextLevel -= num
+
     def isHidden(self):
         return(self._hidden)
 
@@ -1081,6 +1085,35 @@ class Character(Storage, AttributeHelper, Inventory):
     def isCarryable(self):
         return(False)
 
+    def isAttacking(self):
+        if self._currentlyAttacking is not None:
+            return(True)
+        return(False)
+
+    def getCurrentlyAttacking(self):
+        if self.isAttacking():
+            return(self._currentlyAttacking)
+        return(None)
+
+    def setCurrentlyAttacking(self, player):
+        self._currentlyAttacking = player
+
+    def getlastAttackDamageType(self):
+        return(self._lastAttackDamageType)
+
+    def setlastAttackDamageType(self, skill):
+        ''' only set this if it matches a known skill '''
+        if not re.match("^_", skill):
+            skill = "_" + skill
+        if skill in self.skillDict.keys():
+            self._lastAttackDamageType = skill
+
+    def getEquippedWeaponDamageType(self):
+        damageType = '_bludgeon'  # default is hand attack
+        if self.getEquippedWeapon():
+            damageType = self.charObj.getEquippedWeapon().getDamageType()
+        return(damageType)
+
     def setInputCommand(self, cmd):
         self._lastInputCommand = cmd
 
@@ -1099,8 +1132,38 @@ class Character(Storage, AttributeHelper, Inventory):
     def getEquippedNecklace(self):
         return(self._equippedNecklace)
 
-    def getSkillPercentage(self, skill='slash'):
-        return(getattr(self, skill))
+    def getSkillPercentage(self, skill):
+        try:
+            return(getattr(self, skill))
+        except KeyError:
+            pass
+        return(0)
+
+    def hasAchievedSkillForLevel(self):
+        return(self._achievedSkillForLevel)
+
+    def rollToBumpSkillForLevel(self, percentChance=33):
+        ''' given a skill name, if eligible, bump character's skill
+            * Only one skill bump allowed per level
+            * There's a random (default=33%) chance that skill is bumped
+            * maximum skill is 50%
+            '''
+
+        skill = self.getlastAttackDamageType()
+
+        if self.hasAchievedSkillForLevel():
+            return(False)
+
+        skilllevel = self.getSkillPercentage(skill)
+
+        if skilllevel > 50:
+            return(False)
+
+        if random.randint(1, 100) <= percentChance:
+            setattr(self, skill, skilllevel + 10)
+            self._achievedSkillForLevel = True
+            return(True)
+        return(False)
 
     def checkCooldown(self, secs):
         secsSinceLastAttack = secsSinceDate(self._lastAttack)

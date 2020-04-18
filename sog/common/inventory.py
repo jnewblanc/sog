@@ -51,7 +51,15 @@ class Inventory():
     def getInventoryMaxWeight(self):
         return(self._maxweight)
 
-    def addToInventory(self, item):
+    def setInventoryTruncSize(self, num=12):
+        self._inventoryTruncSize = int(num)
+
+    def getInventoryTruncSize(self):
+        return(self._inventoryTruncSize)
+
+    def addToInventory(self, item, maxSize=99999):
+        if len(self.getInventory()) >= maxSize:
+            return(False)
         self._inventory.append(item)
         self._setInventoryWeight()
         self._setInventoryValue()

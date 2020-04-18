@@ -23,17 +23,18 @@ class Object(Storage, EditWizard):
     # integer attributes
     intAttributes = ['_weight', '_value']
     # boolean attributes
-    boolAttributes = ['_carry', '_equipable', '_hidden', '_invisible',
-                      '_magic', '_permanent', '_usable']
+    boolAttributes = ['_carry', '_hidden', '_invisible',
+                      '_magic', '_permanent']
     strAttributes = ['_name', '_article', '_singledesc', '_pluraldesc',
                      '_longdesc']
     listAttributes = ['_classesAllowed', '_alignmentsAllowed',
                       '_gendersAllowed']
     # obsolete attributes (to be removed)
     obsoleteAttributes = ['_correspondingRoomNum', "_classeAllowed",
-                          '_alignmentAllowed', '_genderAllowed']
+                          '_alignmentAllowed', '_genderAllowed', '_isMetal',
+                          '_equippable', '_equipable', '_usable']
 
-    attributesThatShouldntBeSaved = ['']
+    attributesThatShouldntBeSaved = ['_instanceDebug']
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
                         "_longdesc", "_weight", "_value"]
@@ -50,7 +51,7 @@ class Object(Storage, EditWizard):
         "_maxCharges": "the number of times that item can be used when full.",
         "_ac": "the amount of damage this prevents - Range is 0 (none) to 10.",
         "_dodgeBonus": "increases chance that player is not hit when attacked",
-        "_isMetal": "metal can't be used by some classes.",
+        "_hasMetal": "metal can't be used by some classes.",
         "_minimumDamage": "minimim amount of damage inflicted.  Range 0-50.",
         "_maximumDamage": "maximum amount of damage inflicted.  Range 0-80.",
         "_toWhere": "The room that this item takes you to i.e. 35 or Shop/30",
@@ -67,12 +68,10 @@ class Object(Storage, EditWizard):
         self._longdesc = ''
 
         self._carry = True
-        self._equippable = False
         self._hidden = False
         self._invisible = False
         self._magic = False
         self._permanent = False
-        self._usable = False
         self._cursed = False
 
         self._weight = 1
@@ -84,7 +83,13 @@ class Object(Storage, EditWizard):
         self._minLevelAllowed = 0
         self._maxLevelAllowed = 100
 
+        if self._instanceDebug:
+            logging.debug("Object init called for " + str(self.getId()))
         return(None)
+
+    def __del__(self):
+        if self._instanceDebug:
+            logging.debug("Object destructor called for " + str(self.getId()))
 
     def describe(self, count=1):
         if count > 1:
@@ -98,13 +103,10 @@ class Object(Storage, EditWizard):
         return(self._longdesc)
 
     def isUseable(self):
-        return(self._usable)
+        return(True)
 
     def setName(self, name):
         self._name = str(name)
-
-    def setUseable(self):
-        self._usable = True
 
     def use(self):
         return(False)
@@ -126,17 +128,22 @@ class Object(Storage, EditWizard):
             involves casting types or removing obsolete vars, but we could
             also use this for copying values from one attribute to another '''
 
+        try:
+            self._hasMetal = self.isMetal
+        except (AttributeError, TypeError):
+            pass
+
         AttributeHelper.fixAttributes(self)
         return(True)
 
     def isEquippable(self):
-        return(self._equipable)
+        return(False)
 
     def isInvisible(self):
         return(self._invisible)
 
     def isHidden(self):
-        return(self._invisible)
+        return(self._hidden)
 
     def isCarryable(self):
         return(self._carry)
@@ -145,7 +152,7 @@ class Object(Storage, EditWizard):
         return(self._permanent)
 
     def isUsable(self):
-        return(self._usable)
+        return(False)
 
     def isMagic(self):
         return(self._magic)
@@ -199,7 +206,7 @@ class Object(Storage, EditWizard):
             return(False)
         return(True)
 
-    def adjustPrice(price):
+    def adjustPrice(self, price):
         ''' adjust price based on object attributes '''
         return(price)
 
@@ -343,14 +350,18 @@ class Equippable(Object):
     def __init__(self, objId=0):
         super().__init__(objId)
         self._equippedSlotName = ''
-        self._equipable = "True"
-        self._usable = "True"
 
     def setEquippedSlotName(self, slotStr):
         self._equippedSlotName = str(slotStr)
 
     def getEquippedSlotName(self):
         return(self._equippedSlotName)
+
+    def isEquippable(self):
+        return(True)
+
+    def isUseable(self):
+        return(True)
 
 
 class MagicalDevice(Exhaustible):
@@ -370,7 +381,6 @@ class MagicalDevice(Exhaustible):
         # 10:wish, 11:passdoor, 12:enchant, 13:bless, 14:protection, 15:curse,
         # 16:poison, 17:intoxicate.
         self._magicLvlRequired = 0
-        self._usable = True
         self._magic = True
         return(None)
 
@@ -379,6 +389,9 @@ class MagicalDevice(Exhaustible):
 
     def getSpell(self):
         return(self._spell)
+
+    def isUseable(self):
+        return(True)
 
 
 class Closable(Object):
@@ -693,15 +706,14 @@ class Armor(Equippable, Exhaustible):
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
                         "_longdesc", "_ac", "_dodgeBonus", "_maxCharges",
-                        "_weight", "_value", "_isMetal"]
+                        "_weight", "_value", "_hasMetal"]
 
     def __init__(self, objId=0):
         super().__init__(objId)
         self._dodgeBonus = 0       # Percent - Extra chance of not being hit
         self._ac = 0               # Each point is 5% damage reduction
-        self._isMetal = True
-        self.setUseable()
-        self.equippedSlotName = '_equippedArmor'  # see Character Class
+        self._hasMetal = True
+        self._equippedSlotName = '_equippedArmor'  # see Character Class
 
         return(None)
 
@@ -734,9 +746,22 @@ class Weapon(Equippable, Exhaustible):
         self._minimumDamage = 0
         self._maximumDamage = 10
         self._toHitBonus = 0  # Each 1 is a +5% chance to hit
-        self.equippedSlotName = '_equippedWeapon'  # see Character Class
+        self._equippedSlotName = '_equippedWeapon'  # see Character Class
+        self._damageType = 'bludgeon'
 
         return(None)
+
+    def getMinimumDamage(self):
+        return(self._minimumDamage)
+
+    def getMaximumDamage(self):
+        return(self._maximumDamage)
+
+    def getToHitBonus(self):
+        return(self._toHitBonus)
+
+    def getDamageType(self):
+        return(self._damageType)
 
 
 class Shield(Equippable, Exhaustible):
@@ -749,7 +774,7 @@ class Shield(Equippable, Exhaustible):
         super().__init__(objId)
         self._dodgeBonus = 0       # Percent - Extra chance of not being hit
         self._ac = 0               # Each point is 5% damage reduction
-        self.equippedSlotName = '_equippedShield'  # see Character Class
+        self._equippedSlotName = '_equippedShield'  # see Character Class
         return(None)
 
     def getAc(self):
@@ -942,7 +967,7 @@ class Ring(Equippable):
     ''' Rings can be equipped '''
     def __init__(self, objId=0):
         super().__init__(objId)
-        self.equippedSlotName = '_equippedRing'  # see Character Class
+        self._equippedSlotName = '_equippedRing'  # see Character Class
         return(None)
 
 
@@ -952,7 +977,7 @@ class Necklace(Equippable):
         super().__init__(objId)
         self._dodgeBonus = 0       # Percent - Extra chance of not being hit
         self._ac = 0               # Each point is 5% damage reduction
-        self.equippedSlotName = '_equippedNecklace'  # see Character Class
+        self._equippedSlotName = '_equippedNecklace'  # see Character Class
         return(None)
 
     def getAc(self):

@@ -12,6 +12,7 @@ import sys
 # from account import Account
 from character import Character
 from creature import Creature
+from common.attributes import AttributeHelper
 from common.ioLib import IoLib
 from common.paths import LOGDIR
 from common.storage import getNextUnusedFileNumber
@@ -23,7 +24,7 @@ from object import getObjectFactoryTypes, ObjectFactory
 from room import RoomFactory
 
 
-class Editor(IoLib):
+class Editor(IoLib, AttributeHelper):
 
     def __init__(self):
         self._running = True
@@ -43,17 +44,17 @@ class Editor(IoLib):
             if len(attObj) > 0:
                 attType = self.getAttributeType(attObj[0])
             prompt = "Editing list " + name + "(type: " + attType + "):\n"
-            prompt += "Old Value: " + str(value) + '\n'
-            prompt += "  To append a value, enter \'a\' <value>\n"
-            prompt += '  To remove a value, enter \'r\' <value>\n'
-            prompt += '  To clear all values, enter \'clear\'\n'
-            prompt += '  Press [enter] to leave unchanged\n'
-            prompt += '  Enter \'done\' when you are done editing this list\n'
+            prompt += "  Old Value: " + str(value) + '\n'
+            prompt += "  * To append a value, enter \'a\' <value>\n"
+            prompt += '  * To remove a value, enter \'r\' <value>\n'
+            prompt += '  * To clear all values, enter \'clear\'\n'
+            prompt += '  * Press [enter] to leave unchanged\n'
+            prompt += '  * Enter \'done\' to stop editing this list\n'
             prompt += "List command for " + name + ": "
             cmdargs = input(prompt).split(' ')
             if cmdargs[0] == '':
                 pass
-            elif cmdargs[0] == 'done':
+            elif cmdargs[0] == 'done' or cmdargs[0] == 'stop':
                 stop = True
             elif cmdargs[0] == 'clear':
                 if len(attObj) > 0:
@@ -77,7 +78,7 @@ class Editor(IoLib):
         helpStr = obj.getWizHelp(attName)
         if helpStr != '':
             print(attName, "-", helpStr)
-        print("Old Value: " + str(attValue))
+        print("  Old Value: " + str(attValue))
         buf = ("Enter the new " + attType + " value for " + str(attName) +
                " or [enter] " + "to leave unchanged: ")
         newval = input(buf)
@@ -123,14 +124,27 @@ class Editor(IoLib):
         attValue = getattr(obj, attName)
         objType = obj.getType()
         print("defaults start: ", attName, objType, str(attValue))
-        if objType.lower() == 'creature' and attName == '_level':
-            print("Setting defaults for creature level")
-            for oneAtt in obj._levelDefaultsDict[attValue].keys():
-                newval = obj._levelDefaultsDict[attValue][oneAtt]
-                if oneAtt in ['_exp', '_maxhp']:
-                    newval = int(newval * (random.randint(0, 9) / 100))
-                print("defaults: " + oneAtt + " = " + str(newval))
-                setattr(obj, oneAtt, newval)
+        if objType.lower() == 'creature':
+            if attName == '_level':
+                print("Setting defaults for creature level")
+                for oneAtt in obj._levelDefaultsDict[attValue].keys():
+                    newval = obj._levelDefaultsDict[attValue][oneAtt]
+                    if oneAtt in ['_exp', '_maxhp']:
+                        if random.randint(0, 1) == 1:
+                            percent = 1 + random.randint(0, 9) / 100
+                        else:
+                            percent = 1 - random.randint(0, 9) / 100
+                        newval = int(newval * percent)
+                    print("defaults: " + oneAtt + " = " + str(newval))
+                    setattr(obj, oneAtt, newval)
+            elif attName == '_parleyAction':
+                print("Setting defaults for _parleyTxt")
+                try:
+                    newval = obj._parleyDefaultsDict[obj._parleyAction]
+                except KeyError:
+                    newval = obj._parleyDefaultsDict['None']
+                print("defaults: " + '_parleyTxt = ' + str(newval))
+                setattr(obj, '_parleyTxt', newval)
 
     def wizard(self, objName, obj):
         ''' Prompt for field input '''
@@ -154,6 +168,8 @@ class Editor(IoLib):
 
     def editRaw(self, objName, obj, changedSinceLastSave=False):   # noqa C901
         ROW_FORMAT = "({0:3}) {1:25s}({2:4s}): {3}\n"
+        logging.info("Editing " + objName.capitalize())
+        self.fixAttributes()
         while True:
             buf = ('===== Editing ' + objName.capitalize() + " " +
                    str(obj.getId()) + ' =====\n')
@@ -184,6 +200,7 @@ class Editor(IoLib):
                           obj.getId())
                 elif obj.save():
                     print(objName.capitalize(), obj.getId(), "saved")
+                    logging.info(objName + " changes saved")
                     changedSinceLastSave = False   # reset flag after save
                 else:
                     print("ERROR", objName, "could not be saved")

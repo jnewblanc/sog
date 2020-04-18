@@ -297,7 +297,8 @@ def main(email=''):
             try:
                 clientsock, clientAddress = serverHandle.accept()
             except OSError:
-                logging.error("Nobody listening - socket accept() failed")
+                # This seems to happen when timeout occurs, but isn't fatal
+                logging.warning("socket accept() failed - timeout?")
                 break
 
             newthread = ServerThread(clientsock, clientAddress,
