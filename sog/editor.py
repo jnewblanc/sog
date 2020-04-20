@@ -123,7 +123,6 @@ class Editor(IoLib, AttributeHelper):
             of other fields '''
         attValue = getattr(obj, attName)
         objType = obj.getType()
-        print("defaults start: ", attName, objType, str(attValue))
         if objType.lower() == 'creature':
             if attName == '_level':
                 print("Setting defaults for creature level")
@@ -145,6 +144,9 @@ class Editor(IoLib, AttributeHelper):
                     newval = obj._parleyDefaultsDict['None']
                 print("defaults: " + '_parleyTxt = ' + str(newval))
                 setattr(obj, '_parleyTxt', newval)
+        elif attName == '_maxCharges':
+            print("Setting defaults for _charges to be equal to _maxcharges")
+            setattr(obj, '_charges', attValue)
 
     def wizard(self, objName, obj):
         ''' Prompt for field input '''
@@ -230,10 +232,13 @@ class Editor(IoLib, AttributeHelper):
             elif re.match('^[0-9]+$', inStr):
                 # number entry - edit the corresponding field
                 inNum = int(inStr)
-                attName = varDict[inNum]['name']
-                attType = varDict[inNum]['type']
-                attValue = varDict[inNum]['value']
-                self.changeValue(obj, attName, attType, attValue)
+                try:
+                    attName = varDict[inNum]['name']
+                    attType = varDict[inNum]['type']
+                    attValue = varDict[inNum]['value']
+                    self.changeValue(obj, attName, attType, attValue)
+                except KeyError:
+                    print("Invalid number")
             elif re.match('^_[^ ]+$', inStr):    # named entry
                 try:
                     attValue = getattr(obj, inStr)
@@ -264,6 +269,10 @@ class Editor(IoLib, AttributeHelper):
             print("quit - quit editor")
         elif cmd == "account":
             print("Not implemented")
+        elif cmd == "list":
+            if len(cmdargs) > 1:
+                targetObj = cmdargs[1]
+            # in progress
         else:
             if not self.initAndEdit(cmdargs):
                 print("Command failed")

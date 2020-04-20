@@ -141,16 +141,18 @@ class IoLib():
     def welcome(self, welcomeMsg=''):
         ''' Welcome banner '''
 
-        pyfiglet_spec = importlib.util.find_spec("pyfiglet")
+        self.spoolOut(welcomeMsg)
 
-        if welcomeMsg == '':
-            self.spoolOut(self.txtBanner("Welcome") + "\n")
-        else:
-            self.spoolOut(welcomeMsg)
-
-        if pyfiglet_spec:
-            welcomeMsg = pyfiglet.figlet_format(welcomeMsg,    # noqa: F821
-                                                font="slant")
+        # pyfiglet_spec = importlib.util.find_spec("pyfiglet")
+        #
+        # if welcomeMsg == '':
+        #     self.spoolOut(self.txtBanner("Welcome") + "\n")
+        # else:
+        #     self.spoolOut(welcomeMsg)
+        #
+        # if pyfiglet_spec:
+        #     welcomeMsg = pyfiglet.figlet_format(welcomeMsg,    # noqa: F821
+        #                                         font="slant")
         return(None)
 
     def txtBanner(self, msg, bChar='-'):
