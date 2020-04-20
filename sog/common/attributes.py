@@ -74,26 +74,39 @@ class AttributeHelper():
                 pass
         return(changed)
 
-    def test_attributes(self):
+    def testAttributes(self):
         ''' Generic test to check attribute types '''
         RF = "Attribute {0} should be a {1}\n"
+
+        passed = True
+        msg = ''
 
         for attName in self.intAttributes:
             attVal = getattr(self, attName)
             typeCheck = isinstance(attVal, int)
-            self.assertTrue(typeCheck, RF.format(attName, "int"))
+            if not typeCheck:
+                passed = False
+                msg += RF.format(attName, "int")
 
         for attName in self.boolAttributes:
             attVal = getattr(self, attName)
             typeCheck = isinstance(attVal, bool)
-            self.assertTrue(typeCheck, RF.format(attName, "bool"))
+            if not typeCheck:
+                passed = False
+                msg += RF.format(attName, "bool")
 
         for attName in self.strAttributes:
             attVal = getattr(self, attName)
             typeCheck = isinstance(attVal, str)
-            self.assertTrue(typeCheck, RF.format(attName, "str"))
+            if not typeCheck:
+                passed = False
+                msg += RF.format(attName, "str")
 
         for attName in self.listAttributes:
             attVal = getattr(self, attName)
             typeCheck = isinstance(attVal, list)
-            self.assertTrue(typeCheck, RF.format(attName, "list"))
+            if not typeCheck:
+                passed = False
+                msg += RF.format(attName, "list")
+
+        return(passed, msg)

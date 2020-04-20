@@ -4,6 +4,7 @@ import importlib
 import logging
 import queue
 import re
+import sys
 
 
 class IoLib():
@@ -45,7 +46,11 @@ class IoLib():
         dataToSend = self.popOutSpool()  # get data from spool
 
         print(dataToSend, end='')        # show data
-        clientdata = input('')           # accept input
+        try:
+            clientdata = input('')           # accept input
+        except KeyboardInterrupt:
+            sys.exit(1)
+
         self.setInputStr(clientdata)     # store input
 
         return(True)

@@ -8,9 +8,12 @@
 import cmd
 from datetime import datetime
 import logging
+import pprint
 import random
 import re
 
+from common.combat import Combat
+from common.ipc import Ipc
 from common.general import isIntStr, dateStr, dLog
 from common.general import splitTargets, targetSearch
 from common.general import getRandomItemFromList
@@ -24,9 +27,11 @@ from character import Character
 from creature import Creature
 
 
-class _Game(cmd.Cmd):
+class _Game(cmd.Cmd, Combat, Ipc):
     ''' Single instance of the Game class, shared by all users
         (see instanciation magic at the bottom of the file)'''
+
+    _instanceDebug = False
 
     def __init__(self):
         ''' game-wide attributes '''
@@ -35,9 +40,15 @@ class _Game(cmd.Cmd):
         self._activePlayers = []
         self._startdate = datetime.now()
 
-        self._instanceDebug = True
+        self._instanceDebug = _Game._instanceDebug
 
         return(None)
+
+    def debug(self):
+        return(pprint.pformat(vars(self)))
+
+    def toggleInstanceDebug(self):
+        self._instanceDebug = not self._instanceDebug
 
     def joinGame(self, svrObj):
         ''' Perform required actions related to joining the game '''
@@ -93,73 +104,6 @@ class _Game(cmd.Cmd):
 
     def getCharacterList(self):
         return(self._activePlayers)
-
-    def gameMsg(self, msg):
-        ''' shown to everyone in the game '''
-        for oneChar in self.getCharacterList():
-            oneChar.svrObj.spoolOut(msg)
-
-    def directMsg(self, charName, msg):
-        ''' show only to specified user '''
-        recieved = False
-        if not charName:
-            return(False)
-
-        for oneChar in self.getCharacterList():         # get chars in game
-            if re.match(charName, oneChar.getName()):   # if name matches
-                oneChar.svrObj.spoolOut(msg)            # notify
-                recieved = True
-        return(recieved)
-
-    def charMsg(self, charObj, msg):
-        ''' show only to yourself '''
-        recieved = False
-        if charObj:
-            charObj.svrObj.spoolOut(msg)
-            recieved = True
-        return(recieved)
-
-    def roomMsg(self, roomObj, msg):
-        ''' shown to everyone in the room '''
-        recieved = False
-        if not roomObj:
-            return(False)
-
-        for oneChar in roomObj.getCharacterList():
-            status = self.charMsg(oneChar, msg)
-            if status:
-                recieved = True    # sent to at least one recipient
-        return(recieved)
-
-    def othersInRoomMsg(self, charObj, roomObj, msg, ignore=False):
-        ''' shown to others in room, but not you '''
-        recieved = False
-        if ignore:             # may get set to True if player is hidden
-            return(False)
-
-        for oneChar in roomObj.getCharacterList():
-            if charObj:
-                if oneChar == charObj:
-                    continue              # skip yourself
-            status = self.charMsg(oneChar, msg)
-            if status:
-                recieved = True    # sent to at least one recipient
-        return(recieved)
-
-    def yellMsg(self, roomObj, msg):
-        ''' shown to your room and rooms in adjoining directions '''
-        recieved = False
-        if not roomObj:
-            return(False)
-
-        exitDict = roomObj.getExits()
-        for oneRoom in self.getActiveRoomList():    # foreach active room
-            if oneRoom.getId() in exitDict.keys():  # if room id is an exit
-                for oneChar in oneRoom.getCharacterList():  # get chars in room
-                    status = self.charMsg(oneChar, msg)
-                    if status:
-                        recieved = True    # sent to at least one recipient
-        return(recieved)
 
     def addToActivePlayerList(self, charObj):
         ''' add character to list of characters in game '''
@@ -362,19 +306,6 @@ class _Game(cmd.Cmd):
             self.charMsg(charObj, abortTxt)
             return(False)
 
-    def kidnap(self, charObj, roomNum=184):
-        ''' Instead of death:
-        * Player is teleported to room
-        * ??? monster will placed in the room connected to the door in room 7.
-        '''
-        self.charMsg(self.charObj, "Everything goes black...  As you start " +
-                                   "to come around, you find yourself in\n" +
-                                   "an awkward, and dangerous predicament.  " +
-                                   "You opt to remain perfectly still\n" +
-                                   "until you can assess the situation")
-        self.gameObj.joinRoom(roomNum, charObj)
-        return(True)
-
     def castSpell(self, charObj, spellObj, target):
         ''' perform the spell
             * assume that all other checks are complete
@@ -385,7 +316,7 @@ class _Game(cmd.Cmd):
         if not target:
             return(False)
 
-        charObj.setlastAttackDamageType("magic")
+        # charObj.setlastAttackDamageType("magic")
 
         # roll/check for spell success
         if isinstance(target, Character):   # use on Character
@@ -458,99 +389,6 @@ class _Game(cmd.Cmd):
             creatureObj.setEnterRoomTime()
             roomObj.setLastEncounter()
         return(None)
-
-    def creatureAttack(self, roomObj):
-        for creatureObj in roomObj.getCreatureList():
-            if creatureObj.isAttacking():
-                creatureObj.attack(creatureObj.getCurrentlyAttacking())
-            else:
-                if not creatureObj.isHostile():
-                    continue
-                # creature initates attack
-                for charObj in random.shuffle(roomObj.getCharacterList()):
-                    if creatureObj.initiateAttack(charObj):
-                        self.charMsg(charObj, creatureObj.describe() +
-                                     " attacks you!\n")
-                        # notify other players in the room
-                        creatureObj.attack(charObj)
-                        break
-        return(None)
-
-    def playerAttacksCreature(self, charObj, target, damage=0):
-        logPrefix = "Game playerAttacksCreature:"
-        roomObj = charObj.getRoom()
-
-        if not target:
-            return(False)
-
-        dLog(logPrefix + charObj.getName() + " attacks " + target.getName() +
-             " for " + str(damage) + " damage.", self._instanceDebug)
-
-        if charObj.getCurrentlyAttacking() != target:
-            charObj.setCurrentlyAttacking(target)
-            self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
-                                 " attacks " + target.describe() + "\n")
-
-        if damage == 0:
-            pass
-            # todo: check for fumble
-            # todo: calculate damage
-
-        if target.diesFromDamage(damage):
-            dLog(logPrefix + "target dies", self._instanceDebug)
-
-            self.charMsg(charObj, "You killed " + target.describe() + "\n")
-            self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
-                                 " kills " + target.describe() + "\n")
-            truncsize = roomObj.getInventoryTruncSize()
-            for item in target.getInventory():
-                if roomObj.addToInventory(item, maxSize=truncsize):
-                    self.roomMsg(roomObj, item.describe() +
-                                 " falls to the floor\n")
-                else:
-                    self.roomMsg(roomObj, item.describe() +
-                                 "falls to the floor and rolls away")
-            # build attacking players list so we can dole out the experience
-            attackingPlayers = []
-            attckPlayerLevelSum = 0
-            for player in roomObj.getCharacterList():
-                if player.getCurrentlyAttacking() == target:
-                    attackingPlayers.append(player)
-                    attckPlayerLevelSum += player.getLevel()
-
-            # dole out experience - non killers get some % exp
-            creatureExp = target.getExp()
-            if len(attackingPlayers) == 1:
-                charObj.addExp(creatureExp)
-            else:
-                # Killer gets 50%, right off the bat
-                charObj.addExp(int(creatureExp * .50))
-                # remaining 50% gets split amoungst attackers (killer included)
-                # should be scaled according to level
-                remainingExp = (creatureExp * .50)
-                baseExpPerPlayer = remainingExp / len(attackingPlayers)
-                averageLevel = attckPlayerLevelSum / len(attackingPlayers)
-                for player in attackingPlayers:
-                    if player.getLevel() >= averageLevel:
-                        charObj.addExp(baseExpPerPlayer)
-                        remainingExp -= baseExpPerPlayer
-                    else:
-                        exp = baseExpPerPlayer
-                        charObj.addExp(exp)
-                        remainingExp -= exp
-                charObj.addExp(int(remainingExp))
-
-            # determine if skill is increased
-            if charObj.getLevel() >= target.getLevel():
-                charObj.rollToBumpSkillForLevel()
-
-            # destroy creature
-            roomObj.removeFromInventory(target)
-        else:
-            dLog(logPrefix + "target takes damage", self._instanceDebug)
-            self.charMsg(charObj, "You inflict " + damage + "damage to " +
-                         target.describe() + "\n")
-            target.takeDamage(damage)
 
 
 class GameCmd(cmd.Cmd):
@@ -630,6 +468,32 @@ class GameCmd(cmd.Cmd):
         targetItems += [None] * 2          # Add two None items to the list
         return(targetItems)
 
+    def getCombatTarget(self, line):
+        ''' All combat commands need to determine the target '''
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        creatureList = roomObj.getInventoryByType('Creature')
+        targetList = self.getObjFromCmd(creatureList, line)
+        target = targetList[0]
+
+        if not target:
+            # Re-use old target if it still exists
+            lastTarget = charObj.getCurrentlyAttacking()
+            if lastTarget:
+                if lastTarget in creatureList:
+                    target = lastTarget
+
+        if not target:
+            if line == "":
+                self.selfMsg("No target.\n")
+            else:
+                self.selfMsg(line + " is not a valid target.\n")
+
+            return(None)
+
+        return(target)
+
     def selfMsg(self, msg):
         ''' send message using Game communnication.  This simply allows us
             to call it without passing the extra arg) '''
@@ -679,7 +543,7 @@ class GameCmd(cmd.Cmd):
         if moved:
             charObj.setHidden(False)
             self.selfMsg(charObj.getRoom().display(charObj))
-            return(False)
+            return(True)
         else:
             self.selfMsg("You can not go there!\n")
         return(False)
@@ -692,17 +556,26 @@ class GameCmd(cmd.Cmd):
 
     def do_attack(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_backstab(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+
+        # monster gets double damage on next attack
+
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_balance(self, line):
         charObj = self.charObj
@@ -720,11 +593,13 @@ class GameCmd(cmd.Cmd):
                      " shillings.\n")
 
     def do_block(self, line):
-        ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_break(self, line):
         return(self.do_smash(line))
@@ -734,7 +609,7 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        roomCreatureList = roomObj.getAllCreatures()
+        roomCreatureList = roomObj.getCreatureList()
         itemList = self.getObjFromCmd(roomCreatureList, line)
 
         if not itemList[0]:
@@ -803,16 +678,21 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        if list == '':
+        if line == '':
             self.selfMsg("Cast what spell?\n")
 
-        spell, targetline = list.split(line(' ', 1))
+        parts = line.split(' ', 1)
+        spell = parts[0]
+        if len(parts) > 1:
+            targetline = parts[1]
 
         if spell not in SpellList:
             self.selfMsg("That's not a valid spell.\n")
             return(False)
 
-        # Need to check if player knows spell and meets spell requirements
+        if not charObj.knowsSpell(spell):
+            self.selfMsg("You haven't learned that spell.\n")
+            return(False)
 
         allTargets = roomObj.getInventory() + roomObj.getCharacterList()
         targetList = self.getObjFromCmd(allTargets, targetline)
@@ -820,6 +700,9 @@ class GameCmd(cmd.Cmd):
         if targetList[0]:
             target = targetList[0]
         else:
+            if targetline != '':
+                self.selfMsg("Could not determine target for spell.\n")
+                return(False)
             target = charObj
 
         spellObj = Spell(charObj.getClass(), spell)
@@ -855,19 +738,18 @@ class GameCmd(cmd.Cmd):
 
     def do_circle(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_climb(self, line):
-        cmdargs = line.split(' ')
-
-        if cmdargs[0]:
-            if not self.move(line):
-                self.selfMsg("You can't climb that\n")
-        else:
-            self.selfMsg("You can't climb that\n")
+        if line == '':
+            self.selfMsg("Climb what?\n")
+        self.move(line)
 
     def do_clock(self, line):
         self.selfMsg(dateStr('now') + "\n")
@@ -914,7 +796,10 @@ class GameCmd(cmd.Cmd):
             buf += ('=== Debug Info for Room ' +
                     str(roomObj.getId()) + " ===\n")
             buf += roomObj.debug() + '\n'
-        if cmdargs[0].lower() == 'self':
+        elif cmdargs[0].lower() == 'game':
+            buf += ('=== Debug Info for game ===\n')
+            buf += self.gameObj.debug() + '\n'
+        elif cmdargs[0].lower() == 'self':
             buf += ('=== Debug Info for Self ' +
                     str(charObj.getId()) + " ===\n")
             buf += charObj.debug() + '\n'
@@ -1046,13 +931,9 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(line + " not implemented yet\n")
 
     def do_enter(self, line):
-        cmdargs = line.split(' ')
-
-        if cmdargs[0]:
-            if not self.move(line):
-                self.selfMsg("You can't enter that\n")
-        else:
-            self.selfMsg("You can't enter that\n")
+        if line == '':
+            self.selfMsg("Enter what?\n")
+        self.move(line)
 
     def do_equip(self, line):
         return(self.do_use(line))
@@ -1072,10 +953,13 @@ class GameCmd(cmd.Cmd):
 
     def do_feint(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_file(self, line):
         self.selfMsg(self.acctObj.showCharacterList())
@@ -1155,6 +1039,8 @@ class GameCmd(cmd.Cmd):
         # cmdargs = line.split(' ')
         charObj = self.charObj
 
+        # todo: can't hide while being attacked
+
         if line == '':
             charObj.attemptToHide()
             self.selfMsg("You hide in the shadows\n")
@@ -1166,10 +1052,13 @@ class GameCmd(cmd.Cmd):
 
     def do_hit(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_hold(self, line):
         return(self.do_use(line))
@@ -1191,10 +1080,13 @@ class GameCmd(cmd.Cmd):
 
     def do_kill(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_laugh(self, line):
         self.roomMsg(self.charObj.getName(), " falls down laughing\n")
@@ -1242,7 +1134,7 @@ class GameCmd(cmd.Cmd):
                          "don't see that here\n")
             return(False)
 
-        self.selfMsg(itemList[0].describe() + "\n")  # display the object
+        self.selfMsg(itemList[0].examine() + "\n")  # display the object
         return(False)
 
     def do_lose(self, line):
@@ -1250,10 +1142,13 @@ class GameCmd(cmd.Cmd):
 
     def do_lunge(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_n(self, line):
         self.move(self._lastinput[0])  # pass first letter
@@ -1308,7 +1203,7 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        roomCreatureList = roomObj.getAllCreatures()
+        roomCreatureList = roomObj.getCreatureList()
         itemList = self.getObjFromCmd(roomCreatureList, line)
 
         if not itemList[0]:
@@ -1549,24 +1444,17 @@ class GameCmd(cmd.Cmd):
 
     def do_slay(self, line):
         ''' combat '''
-        charObj = self.charObj
-        roomObj = charObj.getRoom()
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
 
-        creatureList = roomObj.getInventoryByType('Creature')
-        logging.debug("slay: creatureList" + str(creatureList))
-        targetList = self.getObjFromCmd(creatureList, line)
-
-        logging.debug("slay: targetList" + str(targetList))
-
-        if targetList:
-            if self.charObj.isDm():
-                damage = 99999
-            else:
-                damage = 0
-            charObj.setlastAttackDamageType("slash")  # should depend on attk
-            self.gameObj.playerAttacksCreature(charObj, targetList[0], damage)
+        if self.charObj.isDm():
+            atkcmd = 'slay'
         else:
-            self.selfMsg("You can't slay " + line + '\n')
+            atkcmd = 'attack'  # if your not a dm, this is a standard attack
+
+        self.gameObj.attackCreature(self.charObj, target, atkcmd)
+
         return(False)
 
     def do_smash(self, line):
@@ -1620,10 +1508,13 @@ class GameCmd(cmd.Cmd):
 
     def do_strike(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_suicide(self, line):
         if not self.svrObj.promptForYN("DANGER: This will permanently " +
@@ -1653,12 +1544,41 @@ class GameCmd(cmd.Cmd):
     def do_teach(self, line):
         self.selfMsg(line + " not implemented yet\n")
 
+    def do_toggle(self, line):
+        ''' dm command to set flags '''
+        if self.charObj.isDm():
+            if line == "Character":
+                self.charObj.toggleInstanceDebug()
+            elif line == "Room":
+                self.roomObj.toggleInstanceDebug()
+            elif line == "Game":
+                self.gameObj.toggleInstanceDebug()
+            elif line == "Server":
+                self.svrObj.toggleInstanceDebug()
+            else:
+                roomObj = self.charObj.getRoom()
+                itemList = self.getObjFromCmd(roomObj.getInventory(), line)
+                if itemList[0]:
+                    itemList[0].toggleInstanceDebug()
+                else:
+                    self.selfMsg("Can't toggle " + line + '\n')
+                    return(False)
+        else:
+            self.selfMsg("Unknown Command\n")
+            return(False)
+
+        self.selfMsg("Ok\n")
+        return(False)
+
     def do_thrust(self, line):
         ''' combat '''
-        damageType = self.charObj.getEquippedWeaponDamageType()
-        self.charObj.setlastAttackDamageType(damageType)
-        self.charObj.setHidden(False)
-        self.selfMsg(line + " not implemented yet\n")
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_track(self, line):
         self.selfMsg(line + " not implemented yet\n")
@@ -1675,9 +1595,7 @@ class GameCmd(cmd.Cmd):
     def do_unequip(self, line):
         charObj = self.charObj
 
-        charObjList = charObj.getInventory()
-
-        targetList = self.getObjFromCmd(charObjList, line)
+        targetList = self.getObjFromCmd(charObj.getInventory(), line)
 
         if not targetList[0]:
             self.selfMsg("Unequip what?\n")
@@ -1687,7 +1605,7 @@ class GameCmd(cmd.Cmd):
         else:
             obj1 = None
 
-        if charObj.unequip(obj1):
+        if charObj.unEquip(obj1):
             self.selfMsg("Ok\n")
         else:
             self.selfMsg("You can't do that\n")

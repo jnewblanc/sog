@@ -5,7 +5,7 @@ import datetime
 import logging
 import pprint
 import random
-# import re
+import re
 
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
@@ -30,14 +30,18 @@ class Object(Storage, EditWizard):
     listAttributes = ['_classesAllowed', '_alignmentsAllowed',
                       '_gendersAllowed']
     # obsolete attributes (to be removed)
-    obsoleteAttributes = ['_correspondingRoomNum', "_classeAllowed",
+    obsoleteAttributes = ['_correspondingRoomNum', "_classAllowed", "_AC",
                           '_alignmentAllowed', '_genderAllowed', '_isMetal',
-                          '_equippable', '_equipable', '_usable']
+                          '_equippable', '_equipable', '_usable',
+                          'equippedSlotName', 'damageReduction',
+                          '_multiplier']
 
     attributesThatShouldntBeSaved = ['_instanceDebug']
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
                         "_longdesc", "_weight", "_value"]
+
+    validSkills = ['_slash', '_bludgeon', '_pierce', '_magic', '_dodge']
 
     attributeInfo = {
         "_name": "single word that you use when interacting with item",
@@ -49,6 +53,7 @@ class Object(Storage, EditWizard):
         "_value": "the base amount used when calculating the sale value.",
         "_spell": "the spell that is cast when using this item.",
         "_maxCharges": "the number of times that item can be used when full.",
+        "_maxAmount": "the maximum number of coins in this batch.",
         "_ac": "the amount of damage this prevents - Range is 0 (none) to 10.",
         "_dodgeBonus": "increases chance that player is not hit when attacked",
         "_hasMetal": "metal can't be used by some classes.",
@@ -83,6 +88,8 @@ class Object(Storage, EditWizard):
         self._minLevelAllowed = 0
         self._maxLevelAllowed = 100
 
+        self._instanceDebug = Object._instanceDebug
+
         if self._instanceDebug:
             logging.debug("Object init called for " + str(self.getId()))
         return(None)
@@ -98,6 +105,9 @@ class Object(Storage, EditWizard):
 
     def debug(self):
         return(pprint.pformat(vars(self)))
+
+    def toggleInstanceDebug(self):
+        self._instanceDebug = not self._instanceDebug
 
     def examine(self):
         return(self._longdesc)
@@ -747,21 +757,29 @@ class Weapon(Equippable, Exhaustible):
         self._maximumDamage = 10
         self._toHitBonus = 0  # Each 1 is a +5% chance to hit
         self._equippedSlotName = '_equippedWeapon'  # see Character Class
-        self._damageType = 'bludgeon'
+        self._damageType = '_bludgeon'
 
         return(None)
 
     def getMinimumDamage(self):
-        return(self._minimumDamage)
+        return(max(0, self._minimumDamage))
 
     def getMaximumDamage(self):
-        return(self._maximumDamage)
+        return(max(1, self._maximumDamage))
+
+    def setMaximumDamage(self, num=1):
+        self._maximumDamage = int(num)
 
     def getToHitBonus(self):
         return(self._toHitBonus)
 
     def getDamageType(self):
-        return(self._damageType)
+        skill = self._damageType
+        if '_' not in skill:
+            skill = "_" + skill
+        if skill not in self.validSkills:
+            return('_bludgeon')
+        return(skill)
 
 
 class Shield(Equippable, Exhaustible):
@@ -953,14 +971,22 @@ class Coins(Object):
         When picked up the disappear and value is converted to shillings'''
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
-                        "_longdesc", "_value"]
+                        "_longdesc", "_value", "_maxAmount"]
 
     def __init__(self, objId=0):
         super().__init__(objId)
-        self._multiplier = 1  # currency exchange regenerate
-        # Copper=1, silver=20, electrum=50, gold=100, platinum=127.
-
+        self._minAmount = 1
+        self._maxAmount = 5
+        self._count = 1       # auto-generated number of coins in current batch
         return(None)
+
+    def describe(self):
+        if self._count > 1:
+            return(self._count + " " + self._pluraldesc)
+        return(self._article + " " + self._singledesc)
+
+    def getTotalValue(self):
+        return(self._count * self._value)
 
 
 class Ring(Equippable):
@@ -973,18 +999,24 @@ class Ring(Equippable):
 
 class Necklace(Equippable):
     ''' Neclaces are rings for the neck '''
+
     def __init__(self, objId=0):
         super().__init__(objId)
-        self._dodgeBonus = 0       # Percent - Extra chance of not being hit
-        self._ac = 0               # Each point is 5% damage reduction
+        self._slashPercent = 0
+        self._bludgeonPercent = 0
+        self._piercePercent = 0
+        self._magicPercent = 0
+        self._dodgePercent = 0
         self._equippedSlotName = '_equippedNecklace'  # see Character Class
         return(None)
 
-    def getAc(self):
-        return(self._ac)
-
-    def getDodgeBonus(self):
-        return(self._dodgeBonus)
+    def getProtectionFromSkill(self, skill):
+        ''' return the amount of protection that a given skill provides '''
+        percent = 0
+        skill = re.sub('^_', '', skill)  # get rid of leading underbars, if any
+        if skill in ['slash', 'bludgeon', 'pierce', 'magic', 'dodge']:
+            percent = getattr(self, "_" + skill + "Percent")
+        return(percent)
 
 
 class Treasure(Object):

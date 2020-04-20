@@ -12,6 +12,7 @@ from common.attributes import AttributeHelper
 from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
 from common.paths import DATADIR
+from object import Weapon
 
 
 class Character(Storage, AttributeHelper, Inventory):
@@ -19,17 +20,30 @@ class Character(Storage, AttributeHelper, Inventory):
 
     _instanceDebug = False
 
-    statList = ['strength', 'dexterity', 'intelligence', 'piety',
-                'charisma', 'constitution', 'luck']
-    genderList = ['male', 'female', 'fluid']
-    alignmentList = ['lawful', 'neutral', 'chaotic']
-    classList = ['fighter', 'rogue', 'mage', 'cleric', 'ranger', 'paladin']
-    skillDict = {
-        '_slash': 'swords and axes come easily to you',
-        '_bludgeon': 'hammers and maces are an extention of your arms',
-        '_pierce': 'you gravitate toward daggers and spears',
-        '_magic': 'an inner confidence that enhances spells',
-        '_dodge': 'being quick on your feet helps avoid blows'}
+    attributesThatShouldntBeSaved = \
+        ['svrObj', '_instanceDebug', '_currentlyAttacking', '_vulnerable',
+         '_secondsUntilNextAttack']
+
+    # int attributes
+    intAttributes = ['_expToNextLevel', '_level', '_maxhitpoints',
+                     '_hitpoints', '_maxspellpoints', '_spellpoints',
+                     '_statsearnedlastlevel', '_limitedSpellsLeft',
+                     '_broadcastLimit', '_slash', '_bludgeon', '_pierce',
+                     '_magic', '_dodge', '_coins', '_ac',
+                     '_weenykills', '_matchedkills', '_valiantkills',
+                     '_epickills', '_playerkills', '_bankBalance',
+                     '_taxesPaid', '_bankFeesPaid', '_dodgeBonus']
+    # boolean attributes
+    boolAttributes = ['_achievedSkillForLevel', '_poisoned', '_plagued',
+                      '_evil', '_invisible', '_nonexistent', '_playtester',
+                      '_hidden']
+    # string attributes
+    strAttributes = ['_name']
+    # list attributes
+    listAttributes = ['_knownSpells', '_doubleUpStatLevels']
+
+    # obsolete attributes (to be removed)
+    obsoleteAtt = ['_money', '_heal']
 
     genderDict = {
         0: {
@@ -48,6 +62,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'possisivepronoun': 'their',
             'bonusStats': ['piety', 'dexterity']}
         }
+
     classDict = {
         0: {
             'name': 'fighter',
@@ -123,28 +138,17 @@ class Character(Storage, AttributeHelper, Inventory):
             }
         }  # end classDict
 
-    attributesThatShouldntBeSaved = ['svrObj', '_instanceDebug']
-
-    # int attributes
-    intAttributes = ['_expToNextLevel', '_level', '_maxhitpoints',
-                     '_hitpoints', '_maxspellpoints', '_spellpoints',
-                     '_statsearnedlastlevel', '_limitedSpellsLeft',
-                     '_broadcastLimit', '_slash', '_bludgeon', '_pierce',
-                     '_magic', '_dodge', '_coins', '_ac',
-                     '_weenykills', '_matchedkills', '_valiantkills',
-                     '_epickills', '_playerkills', '_bankBalance',
-                     '_taxesPaid', '_bankFeesPaid', '_dodgeBonus']
-    # boolean attributes
-    boolAttributes = ['_achievedSkillForLevel', '_poisoned', '_plagued',
-                      '_evil', '_invisible', '_nonexistent', '_playtester',
-                      '_hidden']
-    # string attributes
-    strAttributes = ['_name']
-    # list attributes
-    listAttributes = ['_knownSpells', '_doubleUpStatLevels']
-
-    # obsolete attributes (to be removed)
-    obsoleteAtt = ['_money', '_heal']
+    classList = ['fighter', 'rogue', 'mage', 'cleric', 'ranger', 'paladin']
+    genderList = ['male', 'female', 'fluid']
+    alignmentList = ['lawful', 'neutral', 'chaotic']
+    statList = ['strength', 'dexterity', 'intelligence', 'piety',
+                'charisma', 'constitution', 'luck']
+    skillDict = {
+        '_slash': 'swords and axes come easily to you',
+        '_bludgeon': 'hammers and maces are an extention of your arms',
+        '_pierce': 'you gravitate toward daggers and spears',
+        '_magic': 'an inner confidence that enhances spells',
+        '_dodge': 'being quick on your feet helps avoid blows'}
 
     def __init__(self, svrObj=None, acctName=''):
         self.svrObj = svrObj
@@ -227,7 +231,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self._epickills = 0      # special kills
         self._playerkills = 0    # player kills
 
-        self.resetTempStats()
+        self.resetTmpStats()
         self.resetDailyStats()
 
         self._instanceDebug = Character._instanceDebug
@@ -240,6 +244,9 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def debug(self):
         return(pprint.pformat(vars(self)))
+
+    def toggleInstanceDebug(self):
+        self._instanceDebug = not self._instanceDebug
 
     def login(self):
         ''' Login to game with a particular character
@@ -306,10 +313,12 @@ class Character(Storage, AttributeHelper, Inventory):
             self._hitpoints = self.getMaxHP()
             self._spellpoints = self._maxspellpoints
 
-            self.resetTempStats()
+            self.resetTmpStats()
         else:
             self.__init__(self.svrObj, self.svrObj.acctObj.getEmail())
             return(False)
+
+        self.equipFist()
 
         if self.isValid():
             self.save()
@@ -329,9 +338,10 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def postLoad(self):
         self.truncateInventory(12)
-        self.resetTempStats()
+        self.resetTmpStats()
+        self.equipFist()
 
-    def resetTempStats(self):
+    def resetTmpStats(self):
         ''' Resets some stats that are not meant to be static/peristant
             This is typically used when re-entering the game '''
         self._equippedWeapon = None
@@ -358,7 +368,8 @@ class Character(Storage, AttributeHelper, Inventory):
         self._lastAttack = getNeverDate()
         self._lastHeal = getNeverDate()
         self._currentlyAttacking = None
-        self._lastAttackDamageType = ""
+        self._secondsUntilNextAttack = 0
+        self._vulnerable = False
 
         # Check if it's a different day
         if differentDay(datetime.now(), self._lastLogoutDate):
@@ -415,6 +426,11 @@ class Character(Storage, AttributeHelper, Inventory):
         buf = ("You have " + str(self.getCoins()) + " shillings in " +
                "your purse.\n")
         return(buf)
+
+    def knowsSpell(self, spell):
+        if spell in self._knownSpells:
+            return(True)
+        return(False)
 
     def getBankBalance(self):
         return(self._bankBalance)
@@ -723,6 +739,7 @@ class Character(Storage, AttributeHelper, Inventory):
             buf += "DM visible info:\n"
             ROW_FORMAT = "  {0:16}: {1:<30}\n"
             buf += (ROW_FORMAT.format('Prompt', self.getPromptSize()) +
+                    ROW_FORMAT.format('Hidden', str(self.getHidden())) +
                     ROW_FORMAT.format('2xStatLvls', dblstatList) +
                     ROW_FORMAT.format('DodgeBounus',
                                       str(self.getDodgeBonus())) +
@@ -872,12 +889,12 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def randomlyIncrementStat(self, points=1):
         """Randomly assign points to attributes"""
-        for x in range(1, points):
+        for x in range(1, points + 1):
             self.incrementStat(self.getRandomStat())
 
     def randomlyDecrementStat(self, points=1):
         """Randomly assign points to attributes"""
-        for x in range(1, points):
+        for x in range(1, points + 1):
             self.decrementStat(self.getRandomStat())
 
     def incrementStat(self, stat):
@@ -956,7 +973,7 @@ class Character(Storage, AttributeHelper, Inventory):
     def levelDownStats(self):
         ''' decrease stats - used when someone dies '''
         # Lose the number of stats gained last level
-        for numstat in range(1, self._statsearnedlastlevel):
+        for numstat in range(1, self._statsearnedlastlevel + 1):
             self.randomlyDecrementStat(self, 1)
         # Reduce stats an extra time if it's a double stat level.
         if self._level in self._doubleUpStatLevels:
@@ -1016,6 +1033,21 @@ class Character(Storage, AttributeHelper, Inventory):
     def setLastAttack(self):
         self._lastAttack = datetime.now()
 
+    def getLastAttack(self):
+        return(self._lastAttack)
+
+    def setSecondsUntilNextAttack(self, secs=3):
+        self._secondsUntilNextAttack = int(secs)
+
+    def getSecondsUntilNextAttack(self):
+        return(self._secondsUntilNextAttack)
+
+    def canAttack(self):
+        if self.checkCooldown(self.getSecondsUntilNextAttack(),
+                              "until next attack"):
+            return(True)
+        return(False)
+
     def setLastHeal(self):
         self._lastHeal = datetime.now()
 
@@ -1027,6 +1059,9 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def getClassName(self):
         return(self._classname)
+
+    def getAlignment(self):
+        return(self._alignment)
 
     def isDm(self):
         return(self._dm)
@@ -1098,21 +1133,19 @@ class Character(Storage, AttributeHelper, Inventory):
     def setCurrentlyAttacking(self, player):
         self._currentlyAttacking = player
 
-    def getlastAttackDamageType(self):
-        return(self._lastAttackDamageType)
+    def getEquippedWeaponDamage(self):
+        ''' Given the equipped weapon and attack type, return the damage '''
+        weapon = self.getEquippedWeapon()
 
-    def setlastAttackDamageType(self, skill):
-        ''' only set this if it matches a known skill '''
-        if not re.match("^_", skill):
-            skill = "_" + skill
-        if skill in self.skillDict.keys():
-            self._lastAttackDamageType = skill
+        if not weapon:
+            return(1)
+
+        damage = random.randint(weapon.getMinimumDamage(),
+                                weapon.getMaximumDamage())
+        return (damage)
 
     def getEquippedWeaponDamageType(self):
-        damageType = '_bludgeon'  # default is hand attack
-        if self.getEquippedWeapon():
-            damageType = self.charObj.getEquippedWeapon().getDamageType()
-        return(damageType)
+        return(self.getEquippedWeapon().getDamageType())
 
     def setInputCommand(self, cmd):
         self._lastInputCommand = cmd
@@ -1139,17 +1172,26 @@ class Character(Storage, AttributeHelper, Inventory):
             pass
         return(0)
 
+    def getEquippedSkillPercentage(self):
+        ''' includes bonuses from skills and gear '''
+        if self.isPlagued():
+            return(0)
+        skillName = self.getEquippedWeaponDamageType()
+        percent = self.getSkillPercentage(skillName)
+        necklace = self.getEquippedNecklace()
+        if necklace:
+            percent += necklace.getProtectionFromSkill(skillName)
+        return(percent)
+
     def hasAchievedSkillForLevel(self):
         return(self._achievedSkillForLevel)
 
-    def rollToBumpSkillForLevel(self, percentChance=33):
+    def rollToBumpSkillForLevel(self, skill, percentChance=33):
         ''' given a skill name, if eligible, bump character's skill
             * Only one skill bump allowed per level
             * There's a random (default=33%) chance that skill is bumped
             * maximum skill is 50%
             '''
-
-        skill = self.getlastAttackDamageType()
 
         if self.hasAchievedSkillForLevel():
             return(False)
@@ -1165,14 +1207,28 @@ class Character(Storage, AttributeHelper, Inventory):
             return(True)
         return(False)
 
-    def checkCooldown(self, secs):
-        secsSinceLastAttack = secsSinceDate(self._lastAttack)
-        if secsSinceLastAttack < secs:
+    def checkCooldown(self, secs, msgStr=''):
+        if self._lastAttack == getNeverDate():
             return(True)
-        else:
-            secsRemaining = secs - secsSinceDate(self._lastAttack)
-            self.svrObj.spoolOut("You must wait " + secsRemaining +
-                                 " seconds")
+
+        secsSinceLastAttack = secsSinceDate(self._lastAttack)
+        secsRemaining = secs - secsSinceLastAttack
+
+        # logging.debug("cooldown: ses(" + str(secs) +
+        #               ') - secsSinceLastAttack(' +
+        #               str(secsSinceLastAttack) + ") = secsRemaining(" +
+        #               str(secsRemaining) + ") - " +
+        #               dateStr(self._lastAttack))
+
+        if secsRemaining <= 0:
+            return(True)
+
+        buf = ("You are not ready.  " + str(secsRemaining) +
+               " seconds remain")
+        if msgStr != '':
+            buf += ' ' + msgStr
+        buf += ".\n"
+        self.svrObj.spoolOut(buf)
         return(False)
 
     def getName(self):
@@ -1240,6 +1296,7 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def condition(self):
         ''' Return a non-numerical health status '''
+        status = 'unknown'
         if self.getHitPoints() <= 0:
             status = 'dead'
         elif self.getHitPoints() < self.getMaxHP() * .10:
@@ -1258,7 +1315,7 @@ class Character(Storage, AttributeHelper, Inventory):
             # 76-99% of health remains
             status = 'healthy'
         elif self.getHitPoints() == self.getMaxHP():
-            # Less than 25% of health remains
+            # totally healthy
             status = 'fresh'
         return(status)
 
@@ -1270,7 +1327,7 @@ class Character(Storage, AttributeHelper, Inventory):
         classMult = 2 if self.getClass().lower() == "rogue" else 1
         skillMult = self._dodge + self._dodgeBonus
 
-        dodgeAdv = (self.getDex() * (classMult + skillMult)/10)
+        dodgeAdv = (self.getDexterity() * (classMult + skillMult)/10)
         dodgeCalc = (randX + dodgeAdv) * 2
         dLog("dodge - calc=" + dodgeCalc + " >? basePercent=" +
              basePercent, self._instanceDebug)
@@ -1278,12 +1335,15 @@ class Character(Storage, AttributeHelper, Inventory):
             return(True)
         return(False)
 
-    def takeDamage(self, damage=0):
+    def takeDamage(self, damage=0, nokill=False):
         ''' Take damage and check for death '''
         # reduce damage based on AC
-        damage *= (.05 * self.getAc())
+        acReduction = int(damage * (.05 * self.getAc()))
+        damage -= acReduction
 
         self._hitpoints = self.getHitPoints() - damage
+        if nokill:
+            self._hitpoints = 1
         condition = self.condition()
         self.save()
         if condition == 'dead':
@@ -1307,7 +1367,7 @@ class Character(Storage, AttributeHelper, Inventory):
         else:
             levelsToLose = 1
 
-        for numlvl in range(1, levelsToLose):
+        for numlvl in range(1, levelsToLose + 1):
             self._levelDownStats()
             self._level = self._level - 1
 
@@ -1329,27 +1389,46 @@ class Character(Storage, AttributeHelper, Inventory):
     def removeRoom(self):
         self._roomObj = None
 
-    def equip(self, objObj):
+    def equipFist(self):
+        obj = Weapon()
+        obj.setName("fist")
+        obj._article = 'a'
+        obj._singledesc = "fist"
+        obj.setMaximumDamage(1)
+        self.equip(obj)
+
+    def equip(self, obj):
         # Deal with currently equipped item
-        equippedObj = getattr(self, objObj.getEquippedSlotName())
+        equippedObj = getattr(self, obj.getEquippedSlotName())
         if equippedObj is None:            # Nothing is currently equipped
             pass
-        elif equippedObj == objObj:        # desired object is already in use
+        elif equippedObj == obj:        # desired object is already in use
             return(True)
-        elif objObj is not None:           # wearing some other item
-            self.unEquip(objObj)  # Pass object so we know which slot to vacate
+        elif obj is not None:           # wearing some other item
+            self.unEquip(obj)  # Pass object so we know which slot to vacate
 
-        slotName = objObj.getEquippedSlotName()
+        slotName = obj.getEquippedSlotName()
         if slotName:
-            setattr(self, slotName, objObj)
+            setattr(self, slotName, obj)
             self.setAc()
             return(True)
         return(False)
 
-    def unEquip(self, objObj):
-        if objObj.isEquippable():
-            setattr(self, objObj.getEquippedSlotName(), None)
-            self.setAc()
+    def unEquip(self, obj=None, slotName=''):
+        if obj and slotName == '':
+            # Use the current object to determine slot name
+            if obj.isEquippable():
+                slotName = obj.getEquippedSlotName()
+
+        if slotName == '':
+            return(False)
+
+        setattr(self, slotName, None)
+        self.setAc()
+
+        if self.getEquippedWeapon() is None:
+            self.equipFist()
+
         return(True)
 
     def setDataFilename(self, dfStr=''):
@@ -1416,3 +1495,27 @@ class Character(Storage, AttributeHelper, Inventory):
         ''' Maxweight varies depending on attributes '''
         weight = 10 * max(7, int(self.strength))
         self.setInventoryMaxWeight(weight)
+
+    def fumbles(self, basePercent=20):
+        ''' Return true if player fumbles.
+            * Fumble is a trip while attacking which causes player to unequip
+              weapon and shield and wait 30 seconds before attacking again
+            * random chance, partially based on dex.
+            * if fumble, player's weapon is unequipped
+        '''
+        fumbles = False
+
+        if self.getEquippedWeapon().getName() == 'fist':
+            return(False)
+
+        fumbleRoll = random.randint(1, 100)
+        if fumbleRoll == 1:  # always a 1% change of fumbling
+            fumbles = True
+        elif fumbleRoll < (basePercent - self.getDexterity()):
+            fumbles = True
+
+        if fumbles:
+            self.unEquip(slotName='_equippedWeapon')
+            self.unEquip(slotName='_equippedShield')
+            self.setSecondsUntilNextAttack(30)
+        return(fumbles)

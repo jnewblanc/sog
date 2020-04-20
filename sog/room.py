@@ -19,7 +19,7 @@ from object import ObjectFactory, Door
 
 class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
-    _instanceDebug = True
+    _instanceDebug = False
 
     directionNameDict = {
         "n": "north",
@@ -107,6 +107,9 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     def debug(self):
         return(pprint.pformat(vars(self)))
+
+    def toggleInstanceDebug(self):
+        self._instanceDebug = not self._instanceDebug
 
     def getType(self):
         return(self.__class__.__name__)
@@ -277,12 +280,16 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         # show attackers
         for onecreature in self.getCreatureList():
             if onecreature.isAttacking():
-                buf += (onecreature.describe() + ' is attacking ' +
-                        onecreature.getCurrentlyAttacking())
+                target = onecreature.getCurrentlyAttacking()
+                buf += onecreature.describe() + ' is attacking '
+                if target == charObj:
+                    buf += 'you\n'
+                else:
+                    buf += target.getName() + '\n'
 
         # show who you are attacking
         for creature in charObj.getAttacking():
-            buf += 'You\'re attacking ' + creature.describe()
+            buf += 'You are attacking ' + creature.describe()
 
         # todo: show other players who are attacking each other
         return(buf)

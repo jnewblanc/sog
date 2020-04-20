@@ -234,7 +234,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
         self._creationDate = datetime.now()   # ag - when creatObj was created
         self._enterRoomTime = getNeverDate()  # ag - when creture entered room
-        self._currentlyAttacking = ''         # ag - Who creature is attacking
+        self._currentlyAttacking = None       # ag - Who creature is attacking
 
         self._permanent = False      # stays in room when room is not active
         self._unique = False         # only one allowed in room at a time
@@ -243,6 +243,8 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._parleyAction = 'None'    # Which of the parley actions to take
         self._parleyTxt = self._parleyDefaultsDict['None']
         self._parleyTeleportRooms = []  # room to transport to.  empty=1-300
+
+        self._alignment = 'neutral'  # Values: neutral, good, evil
 
         self._instanceDebug = Creature._instanceDebug
 
@@ -259,6 +261,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
     def debug(self):
         return(pprint.pformat(vars(self)))
+
+    def toggleInstanceDebug(self):
+        self._instanceDebug = not self._instanceDebug
 
     def describe(self, count=1):
         if count > 1:
@@ -312,6 +317,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def getFrequency(self):
         return(self._frequency)
 
+    def getAlignment(self):
+        return(self._alignment)
+
     def fleesIfAttacked(self):
         return(self._fleeIfAttacked)
 
@@ -320,6 +328,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
     def isHidden(self):
         return(self._hidden)
+
+    def isHostile(self):
+        return(self._hostile)
 
     def isCarryable(self):
         return(self._carry)
@@ -417,8 +428,13 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         if not self._permanent:
             self.clearInventory()
 
-        for itemNum in range(1,
-                             getRandomItemFromList(self._numOfItemsCarried)):
+        # Randomly select the itemCount
+        itemCount = getRandomItemFromList(self._numOfItemsCarried)
+
+        if not itemCount:   # 0 items carried
+            return(True)
+
+        for itemNum in range(1, itemCount + 1):  # +1 due to exclusive ranges
             itemId = getRandomItemFromList(self._itemCatalog)
             if not itemId:
                 continue
@@ -478,7 +494,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
                              self.getAttributeCount('secondary')) *
                              (self.getMaxHitPoints() / 10))
 
-        if self.getLevel() in range(6, 8):
+        if self.getLevel() in range(6, 8 + 1):
             monsterLevelBonus *= 2
         elif self.getLevel() > 8:
             monsterLevelBonus *= 6

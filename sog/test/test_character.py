@@ -1,32 +1,84 @@
+''' test character '''
 import unittest
 import character
+import object
 
 
 class TestCharacter(unittest.TestCase):
 
-    def testIntAttributes(self):
-        charObj = character.Character()
-        for oneAtt in charObj.intAttributes:
-            val = getattr(charObj, oneAtt)
-            self.assertEqual(isinstance(val, int), True, oneAtt + " should be a int")  # noqa: E501
+    testCharName = "test99999"
+    testObjNumber = 99999
 
-    def testBoolAttributes(self):
+    def testCharAttributes(self):
         charObj = character.Character()
-        for oneAtt in charObj.boolAttributes:
-            val = getattr(charObj, oneAtt)
-            self.assertEqual(isinstance(val, bool), True, oneAtt + " should be a bool")  # noqa: E501
+        status, msg = charObj.testAttributes()
+        self.assertEqual(status, True, msg)
 
-    def testStrAttributes(self):
+    def testCharInstanciation(self):
+        ''' Test character instanciation + some basic attribute retrieval '''
         charObj = character.Character()
-        for oneAtt in charObj.strAttributes:
-            val = getattr(charObj, oneAtt)
-            self.assertEqual(isinstance(val, str), True, oneAtt + " should be a str")  # noqa: E501
+        charObj.setName(self.testCharName)
+        charObj._gender = "male"
+        charObj._classname = "fighter"
+        charObj._alignment = 'neutral'
+        charObj.setMaxHP(100)
+        charObj._hitpoints = 100
+        desc = charObj.getDesc()
+        msg = "Could not instanciate the character object"
+        self.assertEqual(desc != '', True, msg)
+        msg = "Could not retrieve character name"
+        self.assertEqual(charObj.getName() == self.testCharName, True, msg)
+        msg = "Could not retrieve classname"
+        self.assertEqual(charObj.getClassName() == 'fighter', True, msg)
+        msg = "Could not retrieve hit points"
+        self.assertEqual(charObj.getHitPoints() == 100, True, msg)
+        charObj.takeDamage(1)
+        msg = "takeDamage did not properly reduce hit points"
+        self.assertEqual(charObj.getHitPoints() == 99, True, msg)
 
-    def testListAttributes(self):
+    def testEquipWeapon(self):
+        ''' Create a character and an object.  Test equip/unequip of obj '''
         charObj = character.Character()
-        for oneAtt in charObj.listAttributes:
-            val = getattr(charObj, oneAtt)
-            self.assertEqual(isinstance(val, list), True, oneAtt + " should be a list")  # noqa: E501
+        charObj.setName(self.testCharName)
+        obj1 = object.Weapon(self.testObjNumber)
+        obj1.setName("testGranade")
+        charObj.equip(obj1)
+        obj2 = charObj.getEquippedWeapon()
+        msg = ("Created object " + obj1.getName() + " does not match " +
+               "equipped object " + obj2.getName())
+        self.assertEqual(obj1 == obj2, True, msg)
+        charObj.unEquip(obj2)
+        obj3 = charObj.getEquippedWeapon()
+        msg = "Item is not unequipped"
+        self.assertEqual(obj3 is None, True, msg)
+
+    def testArmorEffectiveness(self):
+        ''' Test armor AC effectiveness '''
+        charObj = character.Character()
+        charObj.setName(self.testCharName)
+        charObj._hitpoints = 100
+        obj1 = object.Armor(self.testObjNumber)
+        obj1._ac = 4
+        obj1._dodgeBonus = 10
+        obj1.setName("testArmor")
+        charObj.equip(obj1)
+        obj2 = charObj.getEquippedArmor()
+        msg = ("Created object " + obj1.getName() + " does not match " +
+               "equipped object " + obj2.getName())
+        self.assertEqual(obj1 == obj2, True, msg)
+        damage = 10
+        percent = obj1.getAc() * .05 * charObj.getLevel()
+        reduction = int(damage - (damage * percent))
+        expectedResult = charObj.getHitPoints() - reduction
+        charObj.takeDamage(damage)
+        msg = ("takeDamage did not properly reduce hit points - " +
+               "ac(" + str(obj1.getAc()) + ") * .05 * level(" +
+               str(charObj.getLevel()) + ") = " + str(percent) + "% of " +
+               "damage(" + str(damage) + ") means that damage should be " +
+               "reduced by " + str(reduction) + ".  Damage should be " +
+               str(expectedResult) + " but is set to " +
+               str(charObj.getHitPoints()))
+        self.assertEqual(charObj.getHitPoints() == expectedResult, True, msg)
 
 
 if __name__ == '__main__':
