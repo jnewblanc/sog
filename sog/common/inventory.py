@@ -1,5 +1,8 @@
 ''' inventory class '''   # noqa
 
+import inflect
+import logging
+import re
 import textwrap
 
 
@@ -92,10 +95,12 @@ class Inventory():
         ''' show inventory items as compact list
             typically used by room object, as player sees it '''
         buf = ''
-        sightList = ''
 
-        # show creatures and objects in inventory
+        # create a list of items in inventory and a dict of related DM info
+        dmDict = {}
+        itemList = []
         for oneitem in self.getInventory():
+            itemStr = ''
             dmInfo = '(' + str(oneitem.getId()) + ')'
             if oneitem.isInvisible():
                 dmInfo += "[INV]"
@@ -105,20 +110,43 @@ class Inventory():
                  or (oneitem.isHidden() and not showHidden))):
                 pass
             else:
-                sightList += oneitem.describe()
-                if showDm:
-                    sightList += dmInfo
-                sightList += ", "
-        # toDo: compact lists by grouping duplicates as plurals
+                itemStr += oneitem.getSingular()
+#                itemStr += oneitem.describe()
+                itemList.append(itemStr)
+                try:
+                    if re.match(dmInfo, dmDict[itemStr]):
+                        dmDict[itemStr] += dmInfo
+                except KeyError:
+                    dmDict[itemStr] = dmInfo
 
-        if sightList != '':
-            # Pretty up the list of objects/creatures to make it more readable
-            sightList = sightList.rstrip(', ')
-            if sightList.count(', ') > 2:
-                andTxt = ', and '
+#        logging.debug("itemDict: " + str())
+
+        # instanciate a inflect engine
+        p = inflect.engine()
+
+        # create a list of unique items
+        uniqueItemNames = set(itemList)
+
+        # create a list of items with their counts
+        countedList = []
+        for name in uniqueItemNames:
+            itemStr = ''
+            itemCnt = itemList.count(name)
+#            itemStr = p.num(itemCnt, '') + " " + p.plural_noun(name, itemCnt)
+            if itemCnt == 1:
+                # we just want the article, but p.a returns the noun
+                words = p.a(name).split(' ', 1)
+                itemStr += words[0]
             else:
-                andTxt = ' and '
-            sightList = rreplace(sightList, ', ', andTxt)
+                itemStr += p.number_to_words(p.num(itemCnt))
+            itemStr += ' ' + p.plural_noun(name, itemCnt) + dmDict[name]
+            countedList.append(itemStr)
+
+        # join our list with commas and 'and'
+        sightList = p.join(countedList)
+
+        # intelligently wrap the resulting string
+        if sightList != '':
             buf = textwrap.fill(sightList, width=80) + '\n'
 
         dLog("inv descAsList: " + buf, Inventory._instanceDebug)

@@ -716,7 +716,7 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def getHiddenInfo(self):
         buf = ''
-        if self.getHidden() != '':
+        if self.isHidden() != '':
             buf = 'You are hidden.\n'
         return(buf)
 
@@ -739,7 +739,7 @@ class Character(Storage, AttributeHelper, Inventory):
             buf += "DM visible info:\n"
             ROW_FORMAT = "  {0:16}: {1:<30}\n"
             buf += (ROW_FORMAT.format('Prompt', self.getPromptSize()) +
-                    ROW_FORMAT.format('Hidden', str(self.getHidden())) +
+                    ROW_FORMAT.format('Hidden', str(self.isHidden())) +
                     ROW_FORMAT.format('2xStatLvls', dblstatList) +
                     ROW_FORMAT.format('DodgeBounus',
                                       str(self.getDodgeBonus())) +

@@ -1,6 +1,6 @@
 ''' attack functions '''
 
-#import logging
+# import logging
 import random
 
 from common.general import dLog

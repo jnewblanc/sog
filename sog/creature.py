@@ -282,6 +282,15 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def getType(self):
         return(self.__class__.__name__)
 
+    def getArticle(self):
+        return(self._article)
+
+    def getSingular(self):
+        return(self._singledesc)
+
+    def getPlural(self):
+        return(self._pluraldesc)
+
     def getLevel(self):
         return(self._level)
 

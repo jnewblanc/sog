@@ -867,26 +867,26 @@ class GameCmd(cmd.Cmd):
         roomObjList = self.getObjFromCmd(roomObj.getInventory(), line)
         if roomObjList[0]:
             roomObj.removeObject(roomObjList[0])
-            self.selfMsg("ok")
+            self.selfMsg("ok\n")
             return(False)
 
         charObjList = self.getObjFromCmd(charObj.getInventory(), line)
         if charObjList[0]:
             roomObj.removeFromInventory(charObjList[0])
-            self.selfMsg("ok")
+            self.selfMsg("ok\n")
             return(False)
 
     def do_dm_on(self, line):
         ''' admin - Turn DM mode on '''
         if self.acctObj.isAdmin():
             self.charObj.setDm()
-            self.selfMsg("ok")
+            self.selfMsg("ok\n")
 
     def do_dm_off(self, line):
         ''' dm - turn dm mode off '''
         if self.charObj.isDm():
             self.charObj.removeDm()
-            self.selfMsg("ok")
+            self.selfMsg("ok\n")
 
     def do_dmstats(self, line):
         ''' dm - show char info that isn't directly avaliable to players '''
@@ -1014,7 +1014,7 @@ class GameCmd(cmd.Cmd):
             return(False)
 
         if len(cmdargs) == 0:
-            self.selfMsg("usage: goto <room>")
+            self.selfMsg("usage: goto <room>\n")
             return(False)
 
         self.gameObj.joinRoom(cmdargs[0], charObj)
@@ -1185,12 +1185,12 @@ class GameCmd(cmd.Cmd):
         if obj1.open(charObj):
             self.selfMsg("It opens.")
             self.othersMsg(roomObj, charObj.getName() + " opens the " +
-                           obj1.getSingular(), charObj.isHidden())
+                           obj1.getSingular(), charObj.isHidden() + '\n')
             if obj1.gettype() == "Door":
                 self.gameObj.modifyCorrespondingDoor(obj1)
             return(False)
         else:
-            self.selfMsg("You fail to open the door.")
+            self.selfMsg("You fail to open the door.\n")
         return(False)
 
     def do_out(self, line):
@@ -1470,28 +1470,28 @@ class GameCmd(cmd.Cmd):
         obj1 = itemList[0]
 
         if not obj1.isSmashable():
-            self.selfMsg("This is not smashable!")
+            self.selfMsg("This is not smashable!\n")
             return(False)
 
         if obj1.smash(charObj):
             self.othersMsg(roomObj, charObj.getName() + " smashes the " +
-                           obj1.getSingular() + " open.")
-            self.selfMsg("You smash it open!")
+                           obj1.getSingular() + " open.\n")
+            self.selfMsg("You smash it open!\n")
             otherRoom = self.gameObj.getCorrespondingRoomObj(obj1)
             if otherRoom:
                 self.roomMsg(otherRoom, obj1.getSingular() +
-                             " smashes open")
+                             " smashes open\n")
             if obj1.gettype() == "Door":
                 self.gameObj.modifyCorrespondingDoor(obj1)
             return(False)
         else:
             self.othersMsg(roomObj, charObj.getName() +
-                           " fails to smash " + obj1.describe() + " open.")
-            self.selfMsg("Bang! You fail to smash it open!")
+                           " fails to smash " + obj1.describe() + " open.\n")
+            self.selfMsg("Bang! You fail to smash it open!\n")
             otherRoom = self.gameObj.getCorrespondingRoomObj(obj1)
             if otherRoom:
-                self.roomMsg(otherRoom, "You hear a noise on " +
-                             "the other side of the " + obj1.getSingular())
+                self.roomMsg(otherRoom, "You hear a noise on the other side " +
+                             "of the " + obj1.getSingular() + '\n')
         return(False)
 
     def do_south(self, line):
@@ -1625,23 +1625,23 @@ class GameCmd(cmd.Cmd):
         obj2 = itemList[1]
 
         if not obj2:
-            self.selfMsg("You need a key before you can unlock anything")
+            self.selfMsg("You need a key before you can unlock anything\n")
         if not obj1.isUnlockable():
-            self.selfMsg("You can't unlock that.")
+            self.selfMsg("You can't unlock that.\n")
             return(False)
         # need to get lock ID and see if the given key matches
         # if keys have charges, we need to modify key
         if obj1.unlock(charObj):
-            self.selfMsg("You unlock the lock.")
+            self.selfMsg("You unlock the lock.\n")
             self.othersMsg(roomObj, charObj.getName() + " unlocks the " +
-                           "lock on the " + obj1.getSingular(),
+                           "lock on the " + obj1.getSingular() + '\n',
                            charObj.isHidden())
             return(False)
         else:
-            self.selfMsg("You fail to unlock the lock.")
+            self.selfMsg("You fail to unlock the lock.\n")
             self.othersMsg(roomObj, charObj.getName() + " fails to " +
                            "unlock the lock on the " +
-                           obj1.getSingular(), charObj.isHidden())
+                           obj1.getSingular() + '\n', charObj.isHidden())
             return(False)
         return(False)
 
@@ -1724,7 +1724,7 @@ class GameCmd(cmd.Cmd):
                 if oneChar.hearsWhispers():
                     oneChar.svrObj.spoolOut("You overhear " +
                                             self.charObj.getName() +
-                                            ' whisper ' + msg)
+                                            ' whisper ' + msg + '\n')
                     self.charObj.setHidden(False)
         return(recieved)
 
