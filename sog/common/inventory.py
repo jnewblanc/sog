@@ -1,12 +1,12 @@
 ''' inventory class '''   # noqa
 
 import inflect
-import logging
+# import logging
 import re
 import textwrap
 
 
-from common.general import rreplace, getRandomItemFromList, dLog
+from common.general import getRandomItemFromList, dLog
 
 
 class Inventory():

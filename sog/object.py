@@ -971,7 +971,7 @@ class Coins(Object):
         When picked up the disappear and value is converted to shillings'''
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
-                        "_longdesc", "_value", "_maxAmount"]
+                        "_longdesc", "_value", "_minAmount", "_maxAmount"]
 
     def __init__(self, objId=0):
         super().__init__(objId)

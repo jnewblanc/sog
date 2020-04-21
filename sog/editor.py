@@ -16,6 +16,7 @@ from common.attributes import AttributeHelper
 from common.ioLib import IoLib
 from common.paths import LOGDIR
 from common.storage import getNextUnusedFileNumber
+from common.general import isIntStr
 # from object import Portal, Door
 # from object import Armor, Weapon, Shield, Container, Key
 # from object import Card, Scroll, Potion, Wand, Teleport, Ring, Necklace
@@ -29,6 +30,123 @@ class Editor(IoLib, AttributeHelper):
     def __init__(self):
         self._running = True
         super().__init__()
+
+    def processCommand(self, inputStr):
+        ''' Process the editor commands '''
+
+        cmdargs = inputStr.split(' ')
+        cmd = cmdargs[0]
+
+        if cmd == "exit" or cmd == "quit" or cmd == "q":
+            self.stop()
+            return(False)
+        if cmd == "help":
+            print("room [num] - edit room")
+            print("shop [num] - edit shop")
+            print("<object> [num] - edit <object>")
+            # print("account - edit account")
+            print("character - edit character")
+            print("creature - edit creature")
+            print("quit - quit editor")
+        elif cmd == "account":
+            print("Not implemented")
+        elif cmd == "list":
+            if len(cmdargs) < 3:
+                print("Usage: list <type> <number-range | all>\n")
+                print("  For example: list creature all")
+                return(False)
+            targetStr = cmdargs[1]
+            listNums = str.rstrip(cmdargs[2], '\n')
+            self.showList(targetStr, listNums)
+        else:
+            if not self.initAndEdit(cmdargs):
+                print("Command failed")
+        return(True)
+
+    def initAndEdit(self, cmdargs):
+        ''' load the object and kick off the editor '''
+
+        itemId = self.findId(cmdargs)
+        if isinstance(itemId, int):
+            if itemId <= 0:
+                print("Invalid input")
+                return(None)
+
+        secondId = ''
+        if cmdargs[0].lower() == 'character':
+            prompt = ("Enter the Account email address for character " +
+                      str(itemId) + ": ")
+            secondId = self.promptForInput(prompt)
+
+        itemObj = self.getItemObj(cmdargs[0], itemId, secondId)
+
+        changeFlag = False
+
+        if hasattr(itemObj, '_isNew'):
+            delattr(itemObj, '_isNew')
+            self.wizard(cmdargs[0], itemObj)
+            changeFlag = True
+
+        if self.editRaw(cmdargs[0], itemObj, changeFlag):
+            return(True)
+        return(False)
+
+    def findId(self, cmdargs):
+        ''' Return object id. Get it from previous command, or prompt '''
+        if len(cmdargs) > 1:
+            ''' The id is provided along with the command '''
+            if re.match("^[0-9]+$", cmdargs[1]):
+                return(int(cmdargs[1]))
+            if cmdargs[0].lower() == "character":
+                return(str(cmdargs[1]))
+        else:
+            ''' Prompt for the ID '''
+            if cmdargs[0].lower() == "character":
+                ''' prompt for string, since Character Ids are strings '''
+                prompt = "Enter " + cmdargs[0] + " id: "
+                idStr = self.promptForInput(prompt)
+                return(idStr)
+            else:
+                ''' prompt for number '''
+                prompt = "Enter " + cmdargs[0] + " number"
+                nextnum = getNextUnusedFileNumber(cmdargs[0])
+                if nextnum != 0:
+                    prompt += " (next unused = " + str(nextnum) + ")"
+                prompt += ": "
+                num = self.promptForNumberInput(prompt)
+                return(int(num))
+        return(0)
+
+    def getItemObj(self, itemStr, id1, id2=''):
+        ''' given return an existing object, or None if it doesn't exist '''
+        if itemStr == 'room' or itemStr == 'shop':
+            itemObj = RoomFactory(itemStr, id1)
+        elif itemStr.lower() == 'character':
+            itemObj = Character(None, id2)
+            itemObj.setName(id1)
+        elif itemStr.lower() == 'creature':
+            itemObj = Creature(id1)
+        elif itemStr.lower() in getObjectFactoryTypes():
+            itemObj = ObjectFactory(itemStr, id1)
+        else:
+            print("Can not determine object type.")
+            return(None)
+
+        if not itemObj:
+            msg = "Object doesn't exist.  Aborting..."
+            print(msg + '\n')
+            logging.warning(msg)
+            return(None)
+        if not itemObj.load():
+            if itemObj.getId() == 0:
+                msg = "Couldn't load object and ID is 0.  Aborting..."
+                print(msg + '\n')
+                logging.warning(msg)
+                return(None)
+            else:
+                print("WARN:", itemStr, id1, "doesn't exist - Creating")
+                itemObj._isNew = True
+        return(itemObj)
 
     def getAttributeType(self, attValue):
         attType = str(type(attValue))
@@ -250,110 +368,60 @@ class Editor(IoLib, AttributeHelper):
                 self.changeValue(obj, attName, attType, attValue)
         return(True)
 
-    def processCommand(self, inputStr):
-        ''' Process the editor commands '''
+    def showList(self, targetStr, listNums=''):
+        ''' Display a list of objects.  Show wizardAttributes '''
+        ROW_FORMAT = "{0:3}:"
 
-        cmdargs = inputStr.split(' ')
-        cmd = cmdargs[0]
+        fields_to_ignore = ['_article', '_pluraldesc', '_longdesc', '_desc']
 
-        if cmd == "exit" or cmd == "quit" or cmd == "q":
-            self.stop()
-            return(False)
-        if cmd == "help":
-            print("room [num] - edit room")
-            print("shop [num] - edit shop")
-            print("<object> [num] - edit <object>")
-            # print("account - edit account")
-            print("character - edit character")
-            print("creature - edit creature")
-            print("quit - quit editor")
-        elif cmd == "account":
-            print("Not implemented")
-        elif cmd == "list":
-            if len(cmdargs) > 1:
-                targetObj = cmdargs[1]
-            # in progress
+        headerList = ['id']
+        fullList = []
+
+        startNum = 0
+        endNum = 0
+        if listNums == 'all':
+            startNum = 1
+            endNum = getNextUnusedFileNumber(targetStr)
         else:
-            if not self.initAndEdit(cmdargs):
-                print("Command failed")
+            if '-' in listNums:
+                nums = listNums.split("-")
+                if len(nums) == 2:
+                    if isIntStr(nums[0]):
+                        startNum = int(nums[0])
+                    if isIntStr(nums[1]):
+                        endNum = int(nums[1]) + 1
 
-        return(True)
+        if not startNum or not endNum:
+            print("Invalid Range")
 
-    def initAndEdit(self, cmdargs):
-        ''' load the object and kick off the editor '''
+        for itemNum in range(startNum, endNum):
+            obj = self.getItemObj(targetStr, itemNum)
+            if obj is None:
+                continue
+            dataList = [str(itemNum)]
+            dataCount = 1
+            for att in obj.wizardAttributes:
+                data = getattr(obj, att)
+                if att in fields_to_ignore:
+                    continue
+                if len(fullList) == 0:
+                    # build format on the fly
+                    if isinstance(data, int) or isinstance(data, bool):
+                        ROW_FORMAT += " {" + str(dataCount) + ":7.7}"
+                    else:
+                        ROW_FORMAT += " {" + str(dataCount) + ":15.15}"
+                    dataCount += 1
+                    # store att names for use as a header
+                    headerList.append(str(att))
+                dataList.append(str(data))
+            fullList.append(dataList)
 
-        itemObj = self.getItemObj(cmdargs)
+        ROW_FORMAT += "\n"
 
-        changeFlag = False
-        if not itemObj:
-            msg = "Object doesn't exist.  Aborting..."
-            print(msg + '\n')
-            logging.warning(msg)
-            return(False)
-        if not itemObj.load():
-            if itemObj.getId() == 0:
-                msg = "Couldn't load object and ID is 0.  Aborting..."
-                print(msg + '\n')
-                logging.warning(msg)
-                return(False)
-            print("WARN:", " ".join(cmdargs), "doesn't exist - Creating")
-            self.wizard(cmdargs[0], itemObj)
-            changeFlag = True
-
-        if self.editRaw(cmdargs[0], itemObj, changeFlag):
-            return(True)
-        return(False)
-
-    def findId(self, cmdargs):
-        ''' Return object id. Get it from previous command, or prompt '''
-        if len(cmdargs) > 1:
-            ''' The id is provided along with the command '''
-            if re.match("^[0-9]+$", cmdargs[1]):
-                return(int(cmdargs[1]))
-            if cmdargs[0].lower() == "character":
-                return(str(cmdargs[1]))
-        else:
-            ''' Prompt for the ID '''
-            if cmdargs[0].lower() == "character":
-                ''' prompt for string, since Character Ids are strings '''
-                prompt = "Enter " + cmdargs[0] + " id: "
-                idStr = self.promptForInput(prompt)
-                return(idStr)
-            else:
-                ''' prompt for number '''
-                prompt = "Enter " + cmdargs[0] + " number"
-                nextnum = getNextUnusedFileNumber(cmdargs[0])
-                if nextnum != 0:
-                    prompt += " (next unused = " + str(nextnum) + ")"
-                prompt += ": "
-                num = self.promptForNumberInput(prompt)
-                return(int(num))
-        return(0)
-
-    def getItemObj(self, cmdargs):
-        ''' Returns the item object to be edited '''
-        itemId = self.findId(cmdargs)
-        if isinstance(itemId, int):
-            if itemId <= 0:
-                print("Invalid input")
-                return(None)
-
-        if cmdargs[0] == 'room' or cmdargs[0] == 'shop':
-            itemObj = RoomFactory(cmdargs[0], itemId)
-        elif cmdargs[0].lower() == 'character':
-            prompt = ("Enter the Account email address for character " +
-                      str(itemId) + ": ")
-            acctName = self.promptForInput(prompt)
-            itemObj = Character(None, acctName)
-            itemObj.setName(itemId)
-        elif cmdargs[0].lower() == 'creature':
-            itemObj = Creature(itemId)
-        elif cmdargs[0] in getObjectFactoryTypes():
-            itemObj = ObjectFactory(cmdargs[0], itemId)
-        else:
-            print("Can not determine object type.")
-            return(None)
-        return(itemObj)
+        if len(fullList) != 0:
+            print(ROW_FORMAT.format(*headerList))
+            for dataList in fullList:
+                print(ROW_FORMAT.format(*dataList))
 
     def isRunning(self):
         if self._running:
