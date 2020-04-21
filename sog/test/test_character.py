@@ -49,8 +49,8 @@ class TestCharacter(unittest.TestCase):
         self.assertEqual(obj1 == obj2, True, msg)
         charObj.unEquip(obj2)
         obj3 = charObj.getEquippedWeapon()
-        msg = "Item is not unequipped"
-        self.assertEqual(obj3 is None, True, msg)
+        msg = "Item is not unequipped - obj3=" + obj3.getName()
+        self.assertEqual(obj3.getName() == 'fist', True, msg)
 
     def testArmorEffectiveness(self):
         ''' Test armor AC effectiveness '''
