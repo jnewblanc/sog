@@ -87,10 +87,15 @@ class Editor(IoLib, AttributeHelper):
 
         itemObj = self.getItemObj(cmdargs[0], itemId, secondId)
 
+        if itemObj is None:
+            return(False)
+
         changeFlag = False
 
         if hasattr(itemObj, '_isNew'):
             delattr(itemObj, '_isNew')
+            print("WARN:", str(cmdargs[0]), str(itemId),
+                  "doesn't exist - Creating")
             self.wizard(cmdargs[0], itemObj)
             changeFlag = True
 
@@ -151,7 +156,6 @@ class Editor(IoLib, AttributeHelper):
                 logging.warning(msg)
                 return(None)
             else:
-                print("WARN:", itemStr, id1, "doesn't exist - Creating")
                 itemObj._isNew = True
         return(itemObj)
 
@@ -176,22 +180,28 @@ class Editor(IoLib, AttributeHelper):
             prompt += '  * Press [enter] to leave unchanged\n'
             prompt += '  * Enter \'done\' to stop editing this list\n'
             prompt += "List command for " + name + ": "
-            cmdargs = input(prompt).split(' ')
+            cmdargs = input(prompt).split(' ', 1)
             if cmdargs[0] == '':
                 pass
-            elif cmdargs[0] == 'done' or cmdargs[0] == 'stop':
+            elif (cmdargs[0] == 'done' or cmdargs[0][0] == 's'
+                  or cmdargs[0][0] == 'q'):
                 stop = True
             elif cmdargs[0] == 'clear':
                 if len(attObj) > 0:
                     setattr(obj, name, [])
                     changed = True
-            elif len(cmdargs) > 1 and cmdargs[0] == "a":
+            elif len(cmdargs) > 1 and cmdargs[0][0] == "a":
                 attObj.append(cmdargs[1])
                 setattr(obj, name, attObj)
                 changed = True
-            elif len(cmdargs) > 1 and (cmdargs[0] == "r" or cmdargs[0] == "d"):
-                if cmdargs[1] in attObj:
-                    attObj.remove(cmdargs[1])
+            elif len(cmdargs) > 1 and (cmdargs[0][0] == "r" or
+                                       cmdargs[0][0] == "d"):
+                rVal = cmdargs[1]
+                if len(attObj) > 0 and isinstance(attObj[0], int):
+                    if isIntStr(rVal):
+                        rVal = int(rVal)  # handle lists of ints
+                if rVal in attObj:
+                    attObj.remove(rVal)
                     setattr(obj, name, attObj)
                 changed = True
             else:
@@ -261,6 +271,9 @@ class Editor(IoLib, AttributeHelper):
                         newval = int(newval * percent)
                     print("defaults: " + oneAtt + " = " + str(newval))
                     setattr(obj, oneAtt, newval)
+            elif attName == '_maxhp':
+                print("Setting defaults for _hp to be equal to _maxhp")
+                setattr(obj, '_hp', attValue)
             elif attName == '_parleyAction':
                 print("Setting defaults for _parleyTxt")
                 try:
@@ -305,7 +318,9 @@ class Editor(IoLib, AttributeHelper):
 
             varDict = {}
             for num, attName in enumerate(instanceAttributes):
-                if attName in ["svrObj", "gameObj", "acctObj"]:
+                if attName in (["svrObj", "gameObj", "acctObj", "_datafile"] +
+                               obj.obsoleteAttributes +
+                               obj.attributesThatShouldntBeSaved):
                     pass  # don't want these
                 else:
                     attValue = getattr(obj, attName)
@@ -346,8 +361,10 @@ class Editor(IoLib, AttributeHelper):
                         break
                 else:
                     break
-
-            if re.match('^d [0-9]+$', inStr):
+            if inStr == "wizard":
+                self.wizard(objName, obj)
+                changedSinceLastSave = True
+            elif re.match('^d [0-9]+$', inStr):
                 # delete attribute
                 cmd, inNum = inStr.split(" ")
                 inNum = int(inNum)
@@ -406,6 +423,8 @@ class Editor(IoLib, AttributeHelper):
         for itemNum in range(startNum, endNum):
             obj = self.getItemObj(targetStr, itemNum)
             if obj is None:
+                continue
+            if hasattr(obj, '_isNew'):
                 continue
             dataList = [str(itemNum)]
             dataCount = 1

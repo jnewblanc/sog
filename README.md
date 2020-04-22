@@ -31,6 +31,7 @@ python client.py
   - All account/character info only exists locally (ignored via .gitignore)
 * logs are in sog/.logs
 * town map is at: https://docs.google.com/drawings/d/1SDAjL62DRsWta3vgfGLerKsn49e5wzywlQregGmKTbk/edit
+* Game balance spreadsheets: https://docs.google.com/spreadsheets/d/1A9xDUhb6tH_dD-rPEm43a6ojthbCDpA9_RNiBZouvTg/edit#gid=214718106
 * To become an admin, create an account and then create an empty isAdmin.txt file in the directory: sog\sog\.data\Account\<your_email>
   - This allows you to create DM characters and/or turn dm mode on in-game by running the dm_on command.  dm mode allows you to see additional debug info.
 

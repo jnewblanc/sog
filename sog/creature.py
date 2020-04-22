@@ -45,7 +45,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
                           '_parleySellItems']
 
     attributesThatShouldntBeSaved = ['_creationDate', '_currentlyAttacking',
-                                     '_enterRoomTime', '_instanceDebug']
+                                     '_enterRoomTime', '_instanceDebug',
+                                     '_invWeight', '_invValue',
+                                     '_attackPlayer']
 
     _levelDefaultsDict = {
         1: {

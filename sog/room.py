@@ -49,7 +49,9 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     attributesThatShouldntBeSaved = ["_creatureList", '_instanceDebug',
                                      '_characterList', '_objectList',
-                                     '_inventory', '_creatureCache']
+                                     '_inventory', '_timeOfLastAttack',
+                                     '_creatureCache', '_timeOfLastEncounter',
+                                     '_invWeight', '_maxweight', '_invValue']
 
     wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w"]
 
