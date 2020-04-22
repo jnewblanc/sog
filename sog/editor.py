@@ -53,9 +53,16 @@ class Editor(IoLib, AttributeHelper):
         elif cmd == "list":
             if len(cmdargs) < 3:
                 print("Usage: list <type> <number-range | all>\n")
-                print("  For example: list creature all")
+                print("  For example: list creature 1-5")
+                if len(cmdargs) == 2:
+                    nextnum = getNextUnusedFileNumber(cmdargs[1])
+                    if nextnum:
+                        print("\nLast used number for " + str(cmdargs[1]) +
+                              " is " + str(nextnum - 1))
                 return(False)
             targetStr = cmdargs[1]
+            if targetStr.lower() != 'coins':
+                targetStr = targetStr.rstrip('s')
             listNums = str.rstrip(cmdargs[2], '\n')
             self.showList(targetStr, listNums)
         else:
@@ -373,15 +380,15 @@ class Editor(IoLib, AttributeHelper):
         ROW_FORMAT = "{0:3}:"
 
         fields_to_ignore = ['_article', '_pluraldesc', '_longdesc', '_desc']
+        long_fields = ['_singledesc', '_shortDesc']
 
         headerList = ['id']
         fullList = []
 
         startNum = 0
-        endNum = 0
+        endNum = getNextUnusedFileNumber(targetStr)
         if listNums == 'all':
             startNum = 1
-            endNum = getNextUnusedFileNumber(targetStr)
         else:
             if '-' in listNums:
                 nums = listNums.split("-")
@@ -389,10 +396,12 @@ class Editor(IoLib, AttributeHelper):
                     if isIntStr(nums[0]):
                         startNum = int(nums[0])
                     if isIntStr(nums[1]):
-                        endNum = int(nums[1]) + 1
+                        if (int(nums[1]) + 1) < endNum:
+                            endNum = int(nums[1]) + 1
 
-        if not startNum or not endNum:
+        if startNum <= 0:
             print("Invalid Range")
+            return(False)
 
         for itemNum in range(startNum, endNum):
             obj = self.getItemObj(targetStr, itemNum)
@@ -401,15 +410,17 @@ class Editor(IoLib, AttributeHelper):
             dataList = [str(itemNum)]
             dataCount = 1
             for att in obj.wizardAttributes:
-                data = getattr(obj, att)
                 if att in fields_to_ignore:
                     continue
+                data = getattr(obj, att)
                 if len(fullList) == 0:
                     # build format on the fly
                     if isinstance(data, int) or isinstance(data, bool):
                         ROW_FORMAT += " {" + str(dataCount) + ":7.7}"
+                    elif att in long_fields:
+                        ROW_FORMAT += " {" + str(dataCount) + ":20.20}"
                     else:
-                        ROW_FORMAT += " {" + str(dataCount) + ":15.15}"
+                        ROW_FORMAT += " {" + str(dataCount) + ":10.10}"
                     dataCount += 1
                     # store att names for use as a header
                     headerList.append(str(att))

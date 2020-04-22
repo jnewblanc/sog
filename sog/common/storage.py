@@ -258,5 +258,6 @@ def getNextUnusedFileNumber(type):
             if filenumber != '':
                 numberlist.append(int(filenumber))
     if len(numberlist) > 0:
-        return((numberlist[-1] + 1))
+        sortedlist = sorted(numberlist)
+        return((sortedlist[-1] + 1))
     return 0
