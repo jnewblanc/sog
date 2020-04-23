@@ -306,6 +306,33 @@ class _Game(cmd.Cmd, Combat, Ipc):
             self.charMsg(charObj, abortTxt)
             return(False)
 
+    def use_scroll(self, charObj, itemObj, targetObj):
+        ''' using a scroll will cast a spell, but then it disintegrates '''
+        spellObj = Spell(charObj.getClass(), itemObj.getSpell())
+        self.charMsg(charObj, "The scroll disintegrates\n")
+
+        if not targetObj:           # if second target is not defined
+            targetObj = charObj     # current character is the target
+
+        self.castSpell(charObj, spellObj, targetObj)
+        charObj.removeFromInventory(itemObj)     # remove item
+
+    def use_magicitem(self, charObj, itemObj, targetObj):
+        ''' using a magic casts a spell and depletes one charge of the item '''
+        if itemObj.getCharges() <= 0:
+            self.charMsg(charObj, "This item has no charges left\n")
+            return(False)
+        if itemObj.getCharges() == 1:
+            self.charMsg(charObj, itemObj.getName() + "fizzles\n")
+
+        spellObj = Spell(charObj.getClass(), itemObj.getSpell())
+
+        if not targetObj:           # if second target is not defined
+            targetObj = charObj     # current character is the target
+
+        self.castSpell(charObj, spellObj, targetObj)
+        itemObj.decrementChargeCounter()
+
     def castSpell(self, charObj, spellObj, target):
         ''' perform the spell
             * assume that all other checks are complete
@@ -558,9 +585,11 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_accept(self, line):
+        ''' transaction - accept an offer '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_appeal(self, line):
+        ''' ask DMs for help '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_attack(self, line):
@@ -587,6 +616,7 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_balance(self, line):
+        ''' info - view bank balance when in a bank '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -602,6 +632,7 @@ class GameCmd(cmd.Cmd):
                      " shillings.\n")
 
     def do_block(self, line):
+        ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
             return(False)
@@ -611,10 +642,11 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_break(self, line):
+        ''' alias - smash '''
         return(self.do_smash(line))
 
     def do_bribe(self, line):
-        ''' bribe a creature to vanish '''
+        ''' transaction - bribe a creature to vanish '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -631,13 +663,15 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(line + " not implemented yet\n")
 
     def do_brief(self, line):
+        ''' set the prompt and room description to least verbosity '''
         self.charObj.setPromptSize("brief")
 
     def do_broadcast(self, line):
+        ''' communication '''
         pass
 
     def do_buy(self, line):
-        ''' buy something from a vendor '''
+        ''' transaction - buy something from a vendor '''
         cmdargs = line.split(' ')
         charObj = self.charObj
         roomObj = charObj.getRoom()
@@ -703,7 +737,7 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("You haven't learned that spell.\n")
             return(False)
 
-        allTargets = roomObj.getInventory() + roomObj.getCharacterList()
+        allTargets = roomObj.getCharsAndInventory()
         targetList = self.getObjFromCmd(allTargets, targetline)
 
         if targetList[0]:
@@ -719,7 +753,7 @@ class GameCmd(cmd.Cmd):
         self.castSpell(charObj, spellObj, target)
 
     def do_catalog(self, line):
-        ''' get the catalog of items from a vendor '''
+        ''' info - get the catalog of items from a vendor '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -756,14 +790,17 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_climb(self, line):
+        ''' alias - go '''
         if line == '':
             self.selfMsg("Climb what?\n")
         self.move(line)
 
     def do_clock(self, line):
+        ''' info - time '''
         self.selfMsg(dateStr('now') + "\n")
 
     def do_close(self, line):
+        ''' close a door or container '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -785,6 +822,7 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_d(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_debug(self, line):
@@ -813,7 +851,7 @@ class GameCmd(cmd.Cmd):
                     str(charObj.getId()) + " ===\n")
             buf += charObj.debug() + '\n'
         else:
-            itemList = self.getObjFromCmd(roomObj.getInventory() +
+            itemList = self.getObjFromCmd(roomObj.getCharsAndInventory() +
                                           charObj.getInventory(), line)
             if itemList[0]:
                 buf += ('=== Debug Info for Object ' +
@@ -823,7 +861,7 @@ class GameCmd(cmd.Cmd):
         return(None)
 
     def do_deposit(self, line):
-        ''' make a deposit in the bank '''
+        ''' transaction - make a deposit in the bank '''
         cmdargs = line.split(' ')
         charObj = self.charObj
         roomObj = charObj.getRoom()
@@ -867,7 +905,7 @@ class GameCmd(cmd.Cmd):
             return(False)
 
     def do_destroy(self, line):
-        ''' destroy an object or creature '''
+        ''' dm - destroy an object or creature '''
         if not self.charObj.isDm():
             return(False)
 
@@ -905,15 +943,20 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("ok\n")
 
     def do_down(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_draw(self, line):
+        ''' alias - use '''
         return(self.do_use(line))
 
     def do_drink(self, line):
+        ''' alias - use '''
         return(self.do_use(line))
 
     def do_drop(self, line):
+        ''' drop an item '''
+
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -932,23 +975,28 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("Didn't work\n")
 
     def do_e(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_east(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_echo(self, line):
         self.selfMsg(line + " not implemented yet\n")
 
     def do_enter(self, line):
+        ''' alias - go '''
         if line == '':
             self.selfMsg("Enter what?\n")
         self.move(line)
 
     def do_equip(self, line):
+        ''' alias - use '''
         return(self.do_use(line))
 
     def do_examine(self, line):
+        ''' alias - look '''
         return(self.do_look(line))
 
     def do_exit(self, line):
@@ -959,6 +1007,7 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(self.charObj.expInfo())
 
     def do_experience(self, line):
+        ''' info - show character's exp info '''
         self.selfMsg(self.charObj.expInfo())
 
     def do_feint(self, line):
@@ -972,12 +1021,15 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_file(self, line):
+        ''' info - show characters attached to account '''
         self.selfMsg(self.acctObj.showCharacterList())
 
     def do_follow(self, line):
+        ''' follow another player - follower is moved when they move '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_full(self, line):
+        ''' set the prompt and room descriptions to maximum verbosity '''
         self.charObj.setPromptSize("full")
 
     def do_get(self, line):
@@ -1031,21 +1083,29 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(charObj.getRoom().display(charObj))
 
     def do_h(self, line):
+        ''' alias - health '''
         charObj = self.charObj
         self.selfMsg(charObj.healthInfo())
 
     def do_hea(self, line):
+        ''' alias - health '''
         charObj = self.charObj
         self.selfMsg(charObj.healthInfo())
 
     def do_health(self, line):
+        ''' info - show character's health '''
         charObj = self.charObj
         self.selfMsg(charObj.healthInfo())
 
     def do_help(self, line):
+        ''' info - enter the help system '''
         enterHelp(self.svrObj)
 
     def do_hide(self, line):
+        ''' attempt to hide player or item
+            * hidden players aren't attacked by creatures and don't show
+              up in room listings unless they are searched for.
+            * hidden items don't show up in room listings. '''
         # cmdargs = line.split(' ')
         charObj = self.charObj
 
@@ -1077,21 +1137,28 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_hold(self, line):
+        ''' alias - use '''
         return(self.do_use(line))
 
     def do_identify(self, line):
+        ''' info - Show detailed information about a item or character
+            * this is considered a limited use spell '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_info(self, line):
+        ''' alias - information '''
         self.selfMsg(self.charObj.getInfo())
 
     def do_information(self, line):
+        ''' info - show all information about a character to that character '''
         self.selfMsg(self.charObj.getInfo())
 
     def do_inv(self, line):
+        ''' alias - inventory '''
         self.selfMsg(self.charObj.inventoryInfo())
 
     def do_inventory(self, line):
+        ''' info - show items that character is carrying '''
         self.selfMsg(self.charObj.inventoryInfo())
 
     def do_kill(self, line):
@@ -1105,10 +1172,12 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_laugh(self, line):
+        ''' communication - reaction '''
         self.roomMsg(self.charObj.getName(), " falls down laughing\n")
         self.charObj.setHidden(False)
 
     def do_list(self, line):
+        ''' alias - file '''
         return(self.do_catalog())
 
     def do_lock(self, line):
@@ -1138,8 +1207,13 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_look(self, line):
+        ''' examine a creature, object, or player
+            * includes items in both the room and in the character inventory
+        '''
         roomObj = self.charObj.getRoom()
-        itemList = self.getObjFromCmd(roomObj.getInventory(), line)
+
+        allItems = roomObj.getCharsAndInventory() + self.charObj.getInventory()
+        itemList = self.getObjFromCmd(allItems, line)
 
         if line == '':  # display the room
             self.selfMsg(roomObj.display(self.charObj) + "\n")
@@ -1154,6 +1228,7 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_lose(self, line):
+        ''' attempt to ditch someone that is following you '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_lunge(self, line):
@@ -1167,18 +1242,23 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_n(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_north(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_now(self, line):
+        ''' alias - clock '''
         return(self.do_clock())
 
     def do_o(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_offer(self, line):
+        ''' transaction - offer player money/items [in return for $/items] '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_open(self, line):
@@ -1210,12 +1290,15 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_out(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_panic(self, line):
+        ''' alias - run '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_parley(self, line):
+        ''' communication - talk to a npc '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -1250,13 +1333,15 @@ class GameCmd(cmd.Cmd):
         charObj.setHidden(False)
 
     def do_parry(self, line):
+        ''' combat '''
         pass
 
     def do_pawn(self, line):
+        ''' alias - sell '''
         return(self.do_sell(list))
 
     def do_picklock(self, line):
-        ''' Process commands that are related to object manipulation '''
+        ''' attempt to pick the lock on a door or container and open it '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -1291,11 +1376,12 @@ class GameCmd(cmd.Cmd):
         self.charObj.setPromptSize('')
 
     def do_purse(self, line):
-        ''' display money '''
+        ''' info - display money '''
         charObj = self.charObj
         self.selfMsg(charObj.financialInfo())
 
     def do_put(self, line):
+        ''' place an item in a container '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -1320,7 +1406,7 @@ class GameCmd(cmd.Cmd):
         return(self.do_exit(line))
 
     def do_read(self, line):
-        ''' read a scroll to get the chant '''
+        ''' magic - read a scroll to get the chant '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -1345,7 +1431,7 @@ class GameCmd(cmd.Cmd):
         return(self.do_unequip(line))
 
     def do_repair(self, line):
-        ''' repair an item in a repair shop '''
+        ''' transaction - repair character's item in a repair shop '''
         cmdargs = line.split(' ')
         charObj = self.charObj
         roomObj = charObj.getRoom()
@@ -1389,6 +1475,7 @@ class GameCmd(cmd.Cmd):
             return(False)
 
     def do_return(self, line):
+        ''' alias - unequip '''
         return(self.do_unequip())
 
     def do_roominfo(self, line):
@@ -1398,27 +1485,32 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(self.charObj.getRoom().getInfo())
 
     def do_run(self, line):
+        ''' drop weapon and escape room in random direction '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_s(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_save(self, line):
+        ''' save character '''
         if self.svrObj.charObj.save():
             self.selfMsg("Saved\n")
         else:
             self.selfMsg("Could not save\n")
 
     def do_say(self, line):
+        ''' communication within room '''
         msg = self.svrObj.promptForInput()
         self.roomMsg(self.charObj.roomObj, msg)
         self.charObj.setHidden(False)
 
     def do_search(self, line):
+        ''' attempt to find items, players, or creatures that are hidden '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_sell(self, line):
-        ''' Sell an item to a pawnshop '''
+        ''' transaction - Sell an item to a pawnshop '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -1447,19 +1539,22 @@ class GameCmd(cmd.Cmd):
                                      roomObj.getAbortedTxt())
 
     def do_send(self, line):
+        ''' communication - direct message to another player '''
         msg = self.svrObj.promptForInput()
         self.gameObj.gameMsg(msg)
         return(False)
 
     def do_shout(self, line):
+        ''' communication - talk to players in room and adjoining rooms '''
         msg = self.svrObj.promptForInput()
         self.yellMsg(self.charObj.roomObj, msg)
 
     def do_skills(self, line):
+        ''' info - show character's skills '''
         self.selfMsg(self.charObj.SkillsInfo())
 
     def do_slay(self, line):
-        ''' combat '''
+        ''' dm - combat - do max damage to creature, effectively killing it '''
         target = self.getCombatTarget(line)
         if not target:
             return(False)
@@ -1474,6 +1569,7 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_smash(self, line):
+        ''' attempt to open a door/chest with brute force '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -1511,15 +1607,19 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_south(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_stats(self, line):
+        ''' info - show character's stats '''
         self.selfMsg(self.charObj.StatsInfo())
 
     def do_status(self, line):
+        ''' alias - health '''
         return(self.do_health())
 
     def do_steal(self, line):
+        ''' transaction - attempt to steal from another player '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_strike(self, line):
@@ -1552,28 +1652,33 @@ class GameCmd(cmd.Cmd):
         return(True)
 
     def do_take(self, line):
+        ''' alias - get '''
         return(self.do_get(line))
 
     def do_talk(self, line):
+        ''' alias - parley '''
         return(self.do_parley(line))
 
     def do_teach(self, line):
+        ''' teach another player a spell '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_toggle(self, line):
         ''' dm command to set flags '''
         if self.charObj.isDm():
-            if line == "Character":
+            if ((line.lower() == "character" or line.lower() == "char" or
+                 line.lower() == "self")):
                 self.charObj.toggleInstanceDebug()
-            elif line == "Room":
-                self.roomObj.toggleInstanceDebug()
-            elif line == "Game":
+            elif line.lower() == "room":
+                self.charObj.roomObj.toggleInstanceDebug()
+            elif line.lower() == "game":
                 self.gameObj.toggleInstanceDebug()
-            elif line == "Server":
+            elif line.lower() == "server":
                 self.svrObj.toggleInstanceDebug()
             else:
                 roomObj = self.charObj.getRoom()
-                itemList = self.getObjFromCmd(roomObj.getInventory(), line)
+                itemList = self.getObjFromCmd(roomObj.getCharsAndInventory(),
+                                              line)
                 if itemList[0]:
                     itemList[0].toggleInstanceDebug()
                 else:
@@ -1597,18 +1702,23 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_track(self, line):
+        ''' show direction last player traveled '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_train(self, line):
+        ''' increase level if exp and location allow '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_turn(self, line):
+        ''' magic - chance for clerics/paladins to destroy creatures '''
         self.selfMsg(line + " not implemented yet\n")
 
     def do_u(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_unequip(self, line):
+        ''' stop using a piece of equiptment '''
         charObj = self.charObj
 
         targetList = self.getObjFromCmd(charObj.getInventory(), line)
@@ -1662,9 +1772,11 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_up(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_use(self, line):
+        ''' equip an item or use a scroll or magic item '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
@@ -1685,45 +1797,31 @@ class GameCmd(cmd.Cmd):
             else:
                 self.selfMsg("You can't do that\n")
         elif isinstance(obj1, Scroll):
-            spellObj = Spell(charObj.getClass(), obj1.getSpell())
-            self.selfMsg("The scroll disintegrates\n")
-
-            if not obj2:           # if second target is not defined
-                obj2 = charObj     # current character is the target
-
-            self.castSpell(charObj, spellObj, obj2)
-            charObj.removeFromInventory(obj1)     # remove item
+            self.gameObj.use_scroll(charObj, obj1, obj2)
         elif obj1.isMagicItem():
-            if obj1.getCharges() <= 0:
-                self.selfMsg("This item has no charges left\n")
-                return(False)
-            if obj1.getCharges() == 1:
-                self.selfMsg(obj1.getName() + "fizzles\n")
+            self.gameObj.use_magicitem(charObj, obj1, obj2)
 
-            spellObj = Spell(charObj.getClass(), obj1.getSpell())
-
-            if not obj2:           # if second target is not defined
-                obj2 = charObj     # current character is the target
-
-            self.castSpell(charObj, spellObj, obj2)
-            obj1.decrementChargeCounter()
-
-            if roomObj:  # tmp - remove later if not needed
-                pass
+        if roomObj:  # tmp - remove later if room object is not needed here
+            pass     # but there may be spells/items that affect the room.
 
     def do_w(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_wear(self, line):
+        ''' alias - use '''
         return(self.do_use(line))
 
     def do_west(self, line):
+        ''' navigation '''
         self.move(self._lastinput[0])  # pass first letter
 
     def do_where(self, line):
+        ''' alias - look '''
         return(self.do_look(line))
 
     def do_whisper(self, line):
+        ''' communication - char to char, with chance of being overheard '''
         cmdargs = line.split(' ')
         if not cmdargs[0]:
             self.selfMsg("usage: whisper <playerName>\n")
@@ -1745,6 +1843,7 @@ class GameCmd(cmd.Cmd):
         return(recieved)
 
     def do_who(self, line):
+        ''' info - show who is playing the game '''
         charTxt = ''
         charObj = self.charObj
         for onechar in charObj.getRoom().getCharacterList():
@@ -1758,9 +1857,11 @@ class GameCmd(cmd.Cmd):
         return(None)
 
     def do_wield(self, line):
+        ''' alias - use '''
         return(self.do_use(line))
 
     def do_withdraw(self, line):
+        ''' transaction - take money out of the bank '''
         cmdargs = line.split(' ')
         charObj = self.charObj
         roomObj = charObj.getRoom()
@@ -1802,6 +1903,7 @@ class GameCmd(cmd.Cmd):
             return(False)
 
     def do_yell(self, line):
+        ''' communication - all in room and adjoining rooms '''
         msg = self.svrObj.promptForInput()
         self.yellMsg(self.charObj.roomObj, msg)
 

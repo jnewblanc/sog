@@ -202,7 +202,7 @@ class Character(Storage, AttributeHelper, Inventory):
         # if piety gets too low, neutral creatures will attack on sight and
         # shop keepers will not sell to you.
 
-        self._poisoned = False # slowly lose hp
+        self._poisoned = False  # slowly lose hp
 
         self._plagued = False  # hp will not regen & skill bonuses are ignored
 
@@ -399,15 +399,22 @@ class Character(Storage, AttributeHelper, Inventory):
             return(True)
         return(False)
 
-    def getDesc(self):
+    def getDesc(self, showAlignment=True):
         ''' Returns a string that describes the in-game appearance '''
-        buf = (self.getName() + ' is a level ' + str(self.getLevel()) + " " +
-               self._gender + " " + self.getClassName())
-        if self._alignment == 'lawful':
-            buf += " who tends to follow the rules"
-        elif self._alignment == 'chaotic':
-            buf += " who lives life on the edge"
+        buf = (self.getName() + ' is a ' + self.condition() + ', level ' +
+               str(self.getLevel()) + " " + self._gender + " " +
+               self.getClassName())
+        if showAlignment:
+            if self._alignment == 'lawful':
+                buf += " who tends to follow the rules"
+            elif self._alignment == 'chaotic':
+                buf += " who lives life on the edge"
         buf += ".\n"
+        return(buf)
+
+    def examine(self):
+        ''' This is what other's see if they look at you '''
+        buf = self.getDesc(showAlignment=False)
         return(buf)
 
     def getInfo(self, dm=0):
@@ -1357,7 +1364,12 @@ class Character(Storage, AttributeHelper, Inventory):
         condition = self.condition()
         self.save()
         if condition == 'dead':
-            self.processDeath()
+            if self.isDm:
+                self.svrObj.spoolOut("You would be dead if you weren't a dm." +
+                                     "Resetting hp to maxhp.\n")
+                self._hitpoints = self._maxhitpoints
+            else:
+                self.processDeath()
         return(condition)
 
     def processDeath(self):

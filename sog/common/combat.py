@@ -278,7 +278,7 @@ class Combat():
                 remainingExp -= exp
         return(True)
 
-    def attackCreature(self, charObj, target, attackCmd='attack'):
+    def attackCreature(self, charObj, target, attackCmd='attack'):  # noqa: C901, E501
         logPrefix = "Game attackCreature: "
         roomObj = charObj.getRoom()
 

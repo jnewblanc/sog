@@ -103,6 +103,14 @@ class Inventory():
             buf += "  Nothing\n"
         return(buf)
 
+    def getDmMarkers(self, obj):
+        buf = '(' + str(obj.getId()) + ')'
+        if obj.isInvisible():
+            buf += "[INV]"
+        if obj.isHidden():
+            buf += "[HID]"
+        return(buf)
+
     def describeInvAsList(self, showDm, showHidden, showInvisible):
         ''' show inventory items as compact list
             typically used by room object, as player sees it '''
@@ -113,27 +121,21 @@ class Inventory():
         itemList = []
         for oneitem in self.getInventory():
             itemStr = ''
-            dmInfo = '(' + str(oneitem.getId()) + ')'
-            if oneitem.isInvisible():
-                dmInfo += "[INV]"
-            if oneitem.isHidden():
-                dmInfo += "[HID]"
             if (((oneitem.isInvisible() and not showInvisible)
-                 or (oneitem.isHidden() and not showHidden))):
+                 or (oneitem.isHidden() and not showHidden) and
+                 not showDm)):
                 pass
             else:
                 itemStr += oneitem.getSingular()
-#                itemStr += oneitem.describe()
                 itemList.append(itemStr)
+                dmInfo = self.getDmMarkers(oneitem)
                 try:
                     if re.match(dmInfo, dmDict[itemStr]):
                         dmDict[itemStr] += dmInfo
                 except KeyError:
                     dmDict[itemStr] = dmInfo
 
-#        logging.debug("itemDict: " + str())
-
-        # instanciate a inflect engine
+        # instanciate inflect to help with grammar and punctuation
         inf = inflect.engine()
 
         # create a list of unique items

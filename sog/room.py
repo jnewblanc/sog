@@ -370,6 +370,10 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
                 dpList.append(oneobj)
         return(dpList)
 
+    def getCharsAndInventory(self):
+        ''' returns mixed list of items, creatures, and chars in room '''
+        return(self.getInventory() + self.getCharacterList())
+
     def getCharacterList(self):
         ''' return list of characters in room '''
         return self._characterList
@@ -508,21 +512,20 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
         # Room has no encounter time.  Will never be ready
         if not self._encounterTime:
-            if self._instanceDebug:
-                logging.debug(debugPrefix + "Room has no encounter time")
+            dLog(debugPrefix + "Room has no encounter time",
+                 self._instanceDebug)
             return(False)
 
         # Room has no encounter list.  Will never be ready
         if not self._encounterList:
-            if self._instanceDebug:
-                logging.debug(debugPrefix + "Room has no creatureList")
+            dLog(debugPrefix + "Room has no creatureList", self._instanceDebug)
             return(False)
 
         # % chance that room will have no encounter this time
         if random.randint(1, 3) == 3:
             self.setLastEncounter()
-            if self._instanceDebug:
-                logging.debug(debugPrefix + "Encounter randomly discarded")
+            dLog(debugPrefix + "Encounter randomly discarded",
+                 self._instanceDebug)
             return(False)
 
         # Check if the appropriate amount of time has pased
@@ -530,13 +533,11 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             secsSinceLastEncounter = secsSinceDate(self._timeOfLastEncounter)
             timeLeft = self._encounterTime - secsSinceLastEncounter
             if timeLeft > 0:
-                if self._instanceDebug:
-                    logging.debug(debugPrefix + "Encounter discarded due " +
-                                  "to time - " + str(timeLeft) + " secs left")
+                dLog(debugPrefix + "Encounter discarded due to time - " +
+                     str(timeLeft) + " secs left", self._instanceDebug)
                 return(False)
 
-        if self._instanceDebug:
-            logging.debug(debugPrefix + "Room is ready for encounter")
+        dLog(debugPrefix + "Room is ready for encounter", self._instanceDebug)
         return(True)
 
     def setLastEncounter(self):
