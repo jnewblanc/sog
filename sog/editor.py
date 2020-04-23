@@ -51,24 +51,50 @@ class Editor(IoLib, AttributeHelper):
         elif cmd == "account":
             print("Not implemented")
         elif cmd == "list":
-            if len(cmdargs) < 3:
-                print("Usage: list <type> <number-range | all>\n")
-                print("  For example: list creature 1-5")
-                if len(cmdargs) == 2:
-                    nextnum = getNextUnusedFileNumber(cmdargs[1])
-                    if nextnum:
-                        print("\nLast used number for " + str(cmdargs[1]) +
-                              " is " + str(nextnum - 1))
-                return(False)
-            targetStr = cmdargs[1]
-            if targetStr.lower() != 'coins':
-                targetStr = targetStr.rstrip('s')
-            listNums = str.rstrip(cmdargs[2], '\n')
-            self.showList(targetStr, listNums)
+            targetStr, startNum, endNum = self.parseListArgs(cmdargs)
+            self.showList(targetStr, startNum, endNum)
         else:
             if not self.initAndEdit(cmdargs):
                 print("Command failed")
         return(True)
+
+    def parseListArgs(self, cmdargs):   # noqa: C901
+        ''' parses the arguments for the list command '''
+        if len(cmdargs) < 3:
+            print("Usage: list <type> <number-range | all>\n")
+            print("  For example: list creature 1-5")
+            if len(cmdargs) == 2:
+                nextnum = getNextUnusedFileNumber(cmdargs[1])
+                if nextnum:
+                    print("\nLast used number for " + str(cmdargs[1]) +
+                          " is " + str(nextnum - 1))
+            return(False)
+        targetStr = cmdargs[1]
+        if targetStr.lower() != 'coins':
+            targetStr = targetStr.rstrip('s')
+        listNums = str.rstrip(cmdargs[2], '\n')
+
+        startNum = 0
+        endNum = 0
+        if listNums == 'all':
+            startNum = 1
+        elif '-' in listNums:
+            nums = listNums.split("-")
+            if len(nums) == 2:
+                if isIntStr(nums[0]):
+                    startNum = int(nums[0])
+                if isIntStr(nums[1]):
+                    endNum = int(nums[1]) + 1
+
+        if startNum <= 0:
+            print("Invalid Range")
+            return(False)
+
+        lastUnused = getNextUnusedFileNumber(targetStr)
+        if endNum <= 0 or endNum > lastUnused:
+            endNum = lastUnused
+
+        return(targetStr, startNum, endNum)
 
     def initAndEdit(self, cmdargs):
         ''' load the object and kick off the editor '''
@@ -164,7 +190,7 @@ class Editor(IoLib, AttributeHelper):
         attType = re.sub(r"^<class '(.*)'>.*", r'\1', attType)
         return(attType)
 
-    def changeListValue(self, obj, name, type, value):
+    def changeListValue(self, obj, name, type, value):          # noqa: C901
         changed = False
         stop = False
         while not stop:
@@ -253,7 +279,7 @@ class Editor(IoLib, AttributeHelper):
                   "types is not supported yet.")
         return(changed)
 
-    def setDefaults(self, obj, attName):
+    def setDefaults(self, obj, attName):                        # C901
         ''' Some wizard field values may trigger us to set the starting values
             of other fields '''
         attValue = getattr(obj, attName)
@@ -309,7 +335,7 @@ class Editor(IoLib, AttributeHelper):
     def editRaw(self, objName, obj, changedSinceLastSave=False):   # noqa C901
         ROW_FORMAT = "({0:3}) {1:25s}({2:4s}): {3}\n"
         logging.info("Editing " + objName.capitalize())
-        self.fixAttributes()
+        obj.fixAttributes()
         while True:
             buf = ('===== Editing ' + objName.capitalize() + " " +
                    str(obj.getId()) + ' =====\n')
@@ -392,7 +418,19 @@ class Editor(IoLib, AttributeHelper):
                 self.changeValue(obj, attName, attType, attValue)
         return(True)
 
-    def showList(self, targetStr, listNums=''):
+    def fixList(self, targetStr, startNum=0, endNum=0):
+        ''' Fixes a set of stored objects without confirmation
+            * Uses the object's fixAttributes method '''
+        for itemNum in range(startNum, endNum):
+            obj = self.getItemObj(targetStr, itemNum)
+            if obj is None:
+                continue
+            if hasattr(obj, '_isNew'):
+                continue
+            obj.fixAttributes()
+            obj.save()
+
+    def showList(self, targetStr, startNum=0, endNum=0):
         ''' Display a list of objects.  Show wizardAttributes '''
         ROW_FORMAT = "{0:3}:"
 
@@ -401,24 +439,6 @@ class Editor(IoLib, AttributeHelper):
 
         headerList = ['id']
         fullList = []
-
-        startNum = 0
-        endNum = getNextUnusedFileNumber(targetStr)
-        if listNums == 'all':
-            startNum = 1
-        else:
-            if '-' in listNums:
-                nums = listNums.split("-")
-                if len(nums) == 2:
-                    if isIntStr(nums[0]):
-                        startNum = int(nums[0])
-                    if isIntStr(nums[1]):
-                        if (int(nums[1]) + 1) < endNum:
-                            endNum = int(nums[1]) + 1
-
-        if startNum <= 0:
-            print("Invalid Range")
-            return(False)
 
         for itemNum in range(startNum, endNum):
             obj = self.getItemObj(targetStr, itemNum)
