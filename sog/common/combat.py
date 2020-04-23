@@ -176,7 +176,11 @@ class Combat():
         ''' determine the amount of damage dealt by an attack '''
         logPrefix = "attackDamage: "
 
-        weaponDamage = charObj.getEquippedWeaponDamage()
+        weaponDamage = charObj.getFistDamage()
+
+        if not charObj.isAttackingWithFist():
+            # weapon damage is always added to the fist damage
+            weaponDamage += charObj.getEquippedWeaponDamage()
 
         damagePercent = int(self.calcDmgPct(charObj, opponentObj,
                                             attackCmd=attackCmd) / 100)
@@ -184,12 +188,6 @@ class Combat():
         dLog(logPrefix + "weapon damage(" + str(weaponDamage) +
              ") * damagePercent(" + str(damagePercent) + ") = " + str(damage),
              self._instanceDebug)
-
-        # First level characters get a bonus to make getting started a little
-        # less painful
-        if charObj.getLevel() == 1:
-            damage += 1
-            dLog(logPrefix + "+1 damage, 1st level bonus", self._instanceDebug)
 
         # check for crit or double damage
         if self.checkForCrit():
@@ -239,7 +237,10 @@ class Combat():
                     if creatureObj.initiateAttack(charObj):
                         self.charMsg(charObj, creatureObj.describe() +
                                      " attacks you!\n")
-                        # notify other players in the room
+                        self.othersInRoomMsg(charObj, roomObj,
+                                             creatureObj.describe() +
+                                             " attacks " + charObj.getName() +
+                                             "\n")
                         creatureObj.attack(charObj)
                         break
         return(None)
@@ -281,6 +282,8 @@ class Combat():
         logPrefix = "Game attackCreature: "
         roomObj = charObj.getRoom()
 
+        self._instanceDebug = True
+
         if not target:
             return(False)
 
@@ -294,6 +297,11 @@ class Combat():
         dLog(logPrefix + charObj.getName() + " attacks " + target.getName() +
              " with " + attackCmd, self._instanceDebug)
 
+        # creature begins to attack player
+        if target.attacksBack():
+            target.setCurrentlyAttacking(charObj)
+
+        # player is becomes locked on to creature
         if charObj.getCurrentlyAttacking() != target:
             charObj.setCurrentlyAttacking(target)
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
@@ -343,3 +351,10 @@ class Combat():
             roomObj.removeFromInventory(target)
         else:
             target.takeDamage(damage)
+
+    def unAttack(self, roomObj, charObj):
+        ''' When a player leaves the room, creatures that are still in
+            in the room need to unattack that player '''
+        for creatureObj in roomObj.getCreatureList():
+            if creatureObj.getCurrentlyAttacking() == charObj:
+                creatureObj.setCurrentlyAttacking = None

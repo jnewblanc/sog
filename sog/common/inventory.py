@@ -75,15 +75,27 @@ class Inventory():
             self._setInventoryValue()
         return(True)
 
-    def describeInventory(self):
-        ''' Display inventory '''
+    def describeInventory(self, showIndex=False, markerAfter=0, markerTxt=''):
+        ''' Display inventory
+            * showIndex - show the enumerated number in front of each item
+            * markerAfter - add a separator after this many items
+            * markerTxt - txt for the marker '''
         buf = "Inventory:\n"
-        ROW_FORMAT = "  ({0:2}) {1:<60}\n"
+
+        ROW_FORMAT = "  "
+        if showIndex:
+            ROW_FORMAT += "({0:2}) "
+        ROW_FORMAT += "{1:<60}\n"
+
         itemlist = ''
         for num, oneObj in enumerate(self._inventory):
             dmInfo = '(' + str(oneObj.getId()) + ')'
             itemlist += (ROW_FORMAT.format(num, oneObj.describe() +
                          self.dmTxt(dmInfo)))
+            if markerAfter and num == (markerAfter - 1):
+                if markerTxt == '':
+                    markerTxt = 'items below will be truncated on exit'
+                itemlist += "--- " + markerTxt + " ---"
 
         if itemlist:
             buf += itemlist
@@ -122,7 +134,7 @@ class Inventory():
 #        logging.debug("itemDict: " + str())
 
         # instanciate a inflect engine
-        p = inflect.engine()
+        inf = inflect.engine()
 
         # create a list of unique items
         uniqueItemNames = set(itemList)
@@ -132,18 +144,17 @@ class Inventory():
         for name in uniqueItemNames:
             itemStr = ''
             itemCnt = itemList.count(name)
-#            itemStr = p.num(itemCnt, '') + " " + p.plural_noun(name, itemCnt)
             if itemCnt == 1:
-                # we just want the article, but p.a returns the noun
-                words = p.a(name).split(' ', 1)
+                # we just want the article, but inf.a returns the noun
+                words = inf.a(name).split(' ', 1)
                 itemStr += words[0]
             else:
-                itemStr += p.number_to_words(p.num(itemCnt))
-            itemStr += ' ' + p.plural_noun(name, itemCnt) + dmDict[name]
+                itemStr += inf.number_to_words(inf.num(itemCnt))
+            itemStr += ' ' + inf.plural_noun(name, itemCnt) + dmDict[name]
             countedList.append(itemStr)
 
         # join our list with commas and 'and'
-        sightList = p.join(countedList)
+        sightList = inf.join(countedList)
 
         # intelligently wrap the resulting string
         if sightList != '':

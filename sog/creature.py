@@ -10,6 +10,7 @@ from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
 from common.general import getNeverDate, getRandomItemFromList, secsSinceDate
+from common.general import dLog
 from common.inventory import Inventory
 # from common.paths import DATADIR
 from object import ObjectFactory
@@ -42,12 +43,33 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
                           '_parleyPositive', '_parleyNegative',
                           '_parleyCustom', '_parleyTeleport' '_parleySell',
                           '_spellCaster', '_objDropList', '_numOfItemsDropped',
-                          '_parleySellItems']
+                          '_parleySellItems', '_attackSpeed',
+                          '_TimeToFirstAttack']
 
     attributesThatShouldntBeSaved = ['_creationDate', '_currentlyAttacking',
                                      '_enterRoomTime', '_instanceDebug',
                                      '_invWeight', '_invValue',
-                                     '_attackPlayer']
+                                     '_attackPlayer', '_lastAttackDate',
+                                     '_secondsUntilNextAttack']
+
+    intAttributes = ['_weight', '_value', '_level', '_exp', '_ac', '_damage',
+                     '_tohit', '_frequency', '_timeToFirstAttack',
+                     '_attackRate', '_attackIfPietyLessThan',
+                     '_attackIfPietyMoreThan']
+
+    boolAttributes = ['_regenerate', '_hostile', '_defend', '_follow',
+                      '_blockFromLeaving', '_guardTreasure', '_sendToJail',
+                      '_noKill', '_kidnap', '_hidden', '_invisible', '_drain',
+                      '_poison', '_undead', '_rust', '_steal', '_carry',
+                      '_antiMagic', '_magicImmunity', '_fleeIfAttacked',
+                      '_attackLastAttacker', '_permanent', '_unique', '_watch']
+
+    strAttributes = ['_name', '_article', '_pluraldesc', '_longdesc',
+                     '_alignment', '_parleyAction']
+
+    listAttributes = ['_assistCreature', '_defendCreature', '_offensiveSpells',
+                      '_itemCatalog', '_numOfItemsCarried', '_parleyTxt',
+                      '_parleyTeleportRooms']
 
     _levelDefaultsDict = {
         1: {
@@ -177,8 +199,8 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         "_numOfItemsCarried": "Possible number of objects carried",
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
-        "_TimeToFirstAttack": "# of seconds to wait before hostile atk",
-        "_attackSpeed": "how fast a monter attacks  100=normal"}
+        "_timeToFirstAttack": "# of seconds to wait before hostile atk",
+        "_attackRate": "how fast a monter attacks  100=normal"}
 
     def __init__(self, id=0):
         super().__init__()
@@ -199,12 +221,12 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._tohit = 0             # inital value auto-filled based on lvl
 
         self._maxhp = 100           # Starting hit points - range 0..1023
-        self._hp = self._maxhp      # Current hit points - autoset if 0
+        self._hp = 100              # Current hit points - autoset if 0
         self._regenerate = False    # Regenerates hit points during attack
 
         self._frequency = 50        # 0-100 with 100 being the most often
-        self._TimeToFirstAttack = 10   # of seconds to wait before hostile atk
-        self._attackSpeed = 100     # how fast a monter attacks  100=normal
+        self._timeToFirstAttack = 10   # of seconds to wait before hostile atk
+        self._attackRate = 100     # how fast a monter attacks  100=normal
 
         self._hostile = False        # attack player on sight
         self._defend = True          # attack back if attacked?
@@ -237,6 +259,8 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._creationDate = datetime.now()   # ag - when creatObj was created
         self._enterRoomTime = getNeverDate()  # ag - when creture entered room
         self._currentlyAttacking = None       # ag - Who creature is attacking
+        self._lastAttackDate = getNeverDate()  # ag
+        self._secondsUntilNextAttack = 0
 
         self._permanent = False      # stays in room when room is not active
         self._unique = False         # only one allowed in room at a time
@@ -252,14 +276,13 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
         logging.debug("Creature __init__" + str(self._creatureId))
 
-        if self._instanceDebug:
-            logging.debug("Creature init called for " + str(self.getId()))
+        dLog("Creature init called for " + str(self.getId()),
+             self._instanceDebug)
         return(None)
 
     def __del__(self):
-        if self._instanceDebug:
-            logging.debug("Creature destructor called for " +
-                          str(self.getId()))
+        dLog("Creature destructor called for " + str(self.getId()),
+             self._instanceDebug)
 
     def debug(self):
         return(pprint.pformat(vars(self)))
@@ -311,8 +334,11 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def takeDamage(self, num=0):
         self._hp -= num
 
+    def attacksBack(self):
+        return(self._defend)
+
     def diesFromDamage(self, num=0):
-        if num > self.getHitPoints():
+        if num >= self.getHitPoints():
             return(True)
         return(False)
 
@@ -398,35 +424,47 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         return(False)
 
     def attack(self, charObj=None):
+        logPrefix = "Creature.attack: "
         if not charObj:
             charObj = self.getCurrentlyAttacking()
 
+        dLog(logPrefix + self.getName() + " is attacking " + charObj.getName(),
+             True)
         if not charObj:
             return(False)
 
         if charObj != self.getCurrentlyAttacking():
             self.setCurrentlyAttacking(charObj)        # initiate attack
 
-        # determine if creature actually attacks
-        # self._attackSpeed
+        if not self.canAttack():
+            dLog(logPrefix + self.getName() + " can't attack " +
+                 charObj.getName(), True)
+            return(False)
+
+        self.setSecondsUntilNextAttack(random.randint(3, 5))
+        self.setLastAttack()
 
         if not self.hitsCharacter(charObj):  # determine if creature hits
             charObj.svrObj.spoolOut(self.describe() + " misses you!")
             # notify other players in the room
 
         # calculate attack damage
-        damage = 0
+        damage = 1
+
+        dLog(logPrefix + self.getName() + " hits " +
+             charObj.getName() + " for " + str(damage) + " damage", True)
 
         # notify
         if damage:
             charObj.svrObj.spoolOut(self.describe() + " hits you for " +
-                                    damage + " damage.")
+                                    str(damage) + " damage.\n")
             charObj.takeDamage(damage)
         return(None)
 
     def hitsCharacter(self, charObj):
         ''' return true if creature hits the character '''
         # todo: figure out formula
+        # fumble
         return(True)
 
     def autoPopulateInventory(self):
@@ -542,11 +580,14 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def getParleyTxt(self):
         buf = ''
 
-        if self._parleyAction.lower() == 'none':
-            buf += "The " + self._name + " " + self._parleyNone
+        msg = getRandomItemFromList(self._parleyTxt)
+        if not msg:
+            buf += "The " + self._name + " does not respond."
+        elif self._parleyAction.lower() == 'none':
+            buf += "The " + self._name + " " + msg + '.'
         else:
-            buf += ("The " + self._name + " says, " +
-                    getRandomItemFromList(self._parleyTxt))
+            buf += "The " + self._name + " says, " + msg + '.'
+
         return(buf)
 
     def notices(self, charObj):
@@ -560,12 +601,70 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             self.setEnterRoomTime()
             return(False)
 
-        if secsSinceDate(self._enterRoomTime) > self._TimeToFirstAttack:
+        if secsSinceDate(self._enterRoomTime) > self._timeToFirstAttack:
             return(True)
         else:
             return(False)
 
         return(True)
+
+    def getAttackRate(self):
+        return(self._attackRate)
+
+    def setLastAttack(self):
+        self._lastAttackDate = datetime.now()
+
+    def getLastAttack(self):
+        return(self._lastAttackDate)
+
+    def setSecondsUntilNextAttack(self, secs=10):
+        self._secondsUntilNextAttack = int(secs)
+
+    def getSecondsUntilNextAttack(self):
+        return(self._secondsUntilNextAttack)
+
+    def canAttack(self):
+        ''' returns true if the creature is ready for an attack '''
+        debugPrefix = "Creature readyForAttack (" + str(self.getId()) + "): "
+
+        # Creature has no attack speed.  Will never be ready
+        if not self.getAttackRate():
+            dLog(debugPrefix + "Creature has no attack rate",
+                 self._instanceDebug)
+            return(False)
+
+        # % chance that creature does not attack
+        if random.randint(1, 10) == 1:
+            self.setLastAttack()
+            dLog(debugPrefix + "Creature randomly chose not to attack",
+                 self._instanceDebug)
+            return(False)
+
+        # Check if the appropriate amount of time has pased
+        timeLeft = ((self.getSecondsUntilNextAttack() *
+                    (self.getAttackRate() / 100)) -
+                    secsSinceDate(self.getLastAttack()))
+        if timeLeft >= 0:
+            dLog(debugPrefix + "Attack discarded due to time - " +
+                 str(timeLeft) + " secs left", self._instanceDebug)
+            return(False)
+
+        dLog(debugPrefix + "Creature is ready for attack", self._instanceDebug)
+        return(True)
+
+    def checkCooldown(self, secs, msgStr=''):
+        if self._lastAttackDate == getNeverDate():
+            return(True)
+
+        secsSinceLastAttack = secsSinceDate(self._lastAttackDate)
+        secsRemaining = secs - secsSinceLastAttack
+
+        if secsRemaining <= 0:
+            return(True)
+
+        logging.debug("Creature.checkCooldown: Creature is not ready for " +
+                      "attack " + str(secsRemaining) + " seconds remain")
+        return(False)
 
     def fixAttributes(self):
         ''' Sometimes we change attributes, and need to fix them in rooms
@@ -574,15 +673,11 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             also use this for copying values from one attribute to another '''
 
         try:
-            self._objDropList = self.itemCatalog
+            self._attackRate = self._attackSpeed
         except (AttributeError, TypeError):
             pass
         try:
-            self._numOfItemsDropped = self._numOfItemsCarried
-        except (AttributeError, TypeError):
-            pass
-        try:
-            self._parleyTeleportRooms = []
+            self._timeToFirstAttack = self._TimeToFirstAttack
         except (AttributeError, TypeError):
             pass
 

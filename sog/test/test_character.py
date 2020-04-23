@@ -40,6 +40,8 @@ class TestCharacter(unittest.TestCase):
         ''' Create a character and an object.  Test equip/unequip of obj '''
         charObj = character.Character()
         charObj.setName(self.testCharName)
+        charObj.strength = 10
+        charObj._level = 1
         obj1 = object.Weapon(self.testObjNumber)
         obj1.setName("testGranade")
         charObj.equip(obj1)

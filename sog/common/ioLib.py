@@ -1,6 +1,6 @@
 ''' i/o spool class '''
 
-import importlib
+# import importlib
 import logging
 import queue
 import re
@@ -48,7 +48,8 @@ class IoLib():
         print(dataToSend, end='')        # show data
         try:
             clientdata = input('')           # accept input
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, TypeError, AttributeError,
+                KeyError, RecursionError, NameError):
             sys.exit(1)
 
         self.setInputStr(clientdata)     # store input

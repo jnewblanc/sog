@@ -1,6 +1,7 @@
 ''' Character class '''
 
 from datetime import datetime
+import inflect
 import logging
 import os
 import pprint
@@ -22,7 +23,8 @@ class Character(Storage, AttributeHelper, Inventory):
 
     attributesThatShouldntBeSaved = \
         ['svrObj', '_instanceDebug', '_currentlyAttacking', '_vulnerable',
-         '_secondsUntilNextAttack']
+         '_secondsUntilNextAttack', '_lastInputDate', '_lastAttackDate',
+         '_lastRegenDate']
 
     # int attributes
     intAttributes = ['_expToNextLevel', '_level', '_maxhitpoints',
@@ -199,8 +201,10 @@ class Character(Storage, AttributeHelper, Inventory):
 
         # if piety gets too low, neutral creatures will attack on sight and
         # shop keepers will not sell to you.
-        self._poisoned = False
-        self._plagued = False
+
+        self._poisoned = False # slowly lose hp
+
+        self._plagued = False  # hp will not regen & skill bonuses are ignored
 
         # hidden stats
         self._evil = False
@@ -217,9 +221,8 @@ class Character(Storage, AttributeHelper, Inventory):
 
         self._creationDate = datetime.now()
         self._lastLogoutDate = getNeverDate()
-        self._lastInput = getNeverDate()
-        self._lastAttack = getNeverDate()
-        self._lastHeal = getNeverDate()
+        self._lastPoisonDate = getNeverDate()
+
         self._playtester = False
 
         self._ac = 0             # Each point is 5% damage reduction
@@ -364,9 +367,9 @@ class Character(Storage, AttributeHelper, Inventory):
 
         self._attackTargets = []
 
-        self._lastInput = getNeverDate()
-        self._lastAttack = getNeverDate()
-        self._lastHeal = getNeverDate()
+        self._lastInputDate = getNeverDate()
+        self._lastAttackDate = getNeverDate()
+        self._lastRegenDate = getNeverDate()
         self._currentlyAttacking = None
         self._secondsUntilNextAttack = 0
         self._vulnerable = False
@@ -418,8 +421,11 @@ class Character(Storage, AttributeHelper, Inventory):
         buf += self.statsInfo()
         buf += self.skillsInfo()
         buf += self.guildInfo()
-        buf += self.describeInventory()
-        buf += self.dmInfo()
+        buf += self.inventoryInfo()
+        return(buf)
+
+    def inventoryInfo(self):
+        buf = self.describeInventory(markerAfter=12)
         return(buf)
 
     def financialInfo(self):
@@ -545,6 +551,13 @@ class Character(Storage, AttributeHelper, Inventory):
         if self.isDm():
             buf += "  Your armor class is " + str(self._ac)
         buf += '\n'
+
+        if self.isPoisoned():
+            buf += 'You are slowly dying from poison.\n'
+
+        if self.isPlagued():
+            buf += 'You are infected with the plague.\n'
+
         return(buf)
 
     def expInfo(self):
@@ -577,38 +590,36 @@ class Character(Storage, AttributeHelper, Inventory):
         buf += (prefix + " carrying " +
                 str(self.getInventoryWeight()) + "/" +
                 str(self.getInventoryMaxWeight()) + " lbs of items.\n")
-        buf += prefix + ' wearing '
-        if self.getEquippedArmor() is None:
-            buf += 'no armor, '
-        else:
-            buf += self.getEquippedArmor().describe() + ', '
 
-        buf += 'holding '
-        if self.getEquippedWeapon() is None:
-            buf += 'no weapon, '
-        else:
-            buf += self.getEquippedWeapon().describe() + ', '
+        equippedList = []
 
-        buf += 'and holding '
-        if self.getEquippedShield() is None:
-            buf += 'no shield.\n'
-        else:
-            buf += self.getEquippedShield().describe() + '.\n'
+        if self.getEquippedArmor():
+            equippedList.append('wearing ' +
+                                self.getEquippedArmor().describe())
 
-        buf += prefix + ' are sporting '
-        if self.getEquippedRing() is None:
-            buf += 'nothing'
-        else:
-            buf += (" " + self.getEquippedRing().getArticle() + " " +
-                    self.getEquippedRing().describe())
-        buf += ' on your finger and '
+        if self.getEquippedWeapon():
+            if not self.isAttackingWithFist():
+                equippedList.append('weilding ' +
+                                    self.getEquippedWeapon().describe())
 
-        if self.getEquippedNecklace() is None:
-            buf += 'nothing'
-        else:
-            buf += (" " + self.getEquippedNecklace().getArticle() + " " +
-                    self.getEquippedNecklace().describe())
-        buf += ' around your neck\n'
+        if self.getEquippedShield():
+            equippedList.append('holding ' +
+                                self.getEquippedShield().describe())
+
+        if self.getEquippedRing():
+            equippedList.append('sporting ' +
+                                self.getEquippedRing().describe() +
+                                ' on your finger')
+
+        if self.getEquippedNecklace():
+            equippedList.append('presenting ' +
+                                self.getEquippedNecklace().describe() +
+                                ' around your neck')
+
+        if len(equippedList) > 0:
+            inf = inflect.engine()            # instanciate a inflect engine
+            buf += prefix + " " + inf.join(equippedList) + ".\n"
+
         return(buf)
 
     def selectCharacter(self):
@@ -720,18 +731,6 @@ class Character(Storage, AttributeHelper, Inventory):
             buf = 'You are hidden.\n'
         return(buf)
 
-    def getPoisonInfo(self):
-        buf = ''
-        if self.getPoisoned() != '':
-            buf = 'You are slowly dying from poison.\n'
-        return(buf)
-
-    def getPlagueInfo(self):
-        buf = ''
-        if self.getPlagued() != '':
-            buf = 'You are infected with the plague.\n'
-        return(buf)
-
     def dmInfo(self):
         buf = ''
         if self.isDm():
@@ -741,7 +740,7 @@ class Character(Storage, AttributeHelper, Inventory):
             buf += (ROW_FORMAT.format('Prompt', self.getPromptSize()) +
                     ROW_FORMAT.format('Hidden', str(self.isHidden())) +
                     ROW_FORMAT.format('2xStatLvls', dblstatList) +
-                    ROW_FORMAT.format('DodgeBounus',
+                    ROW_FORMAT.format('DodgeBonus',
                                       str(self.getDodgeBonus())) +
                     ROW_FORMAT.format('BankBalance', str(self._bankBalance)) +
                     ROW_FORMAT.format('TaxesPaid', str(self._taxesPaid)) +
@@ -922,6 +921,9 @@ class Character(Storage, AttributeHelper, Inventory):
         self.setMaxWeightForCharacter()
         return(None)
 
+    def addHP(self, num=0):
+        self._hitpoints = min((self._hitpoints + num), self.getMaxHP())
+
     def setMaxHP(self, num=0):
         if num == 0:
             baseHealth = self.classDict[self.getClassKey()]['baseHealth']
@@ -1028,13 +1030,13 @@ class Character(Storage, AttributeHelper, Inventory):
         self._lastLogoutDate = datetime.now()
 
     def setInputDate(self):
-        self._lastInputDate = datetime.now()
+        self._lastInputDateDate = datetime.now()
 
     def setLastAttack(self):
-        self._lastAttack = datetime.now()
+        self._lastAttackDate = datetime.now()
 
     def getLastAttack(self):
-        return(self._lastAttack)
+        return(self._lastAttackDate)
 
     def setSecondsUntilNextAttack(self, secs=3):
         self._secondsUntilNextAttack = int(secs)
@@ -1048,8 +1050,11 @@ class Character(Storage, AttributeHelper, Inventory):
             return(True)
         return(False)
 
-    def setLastHeal(self):
-        self._lastHeal = datetime.now()
+    def setLastRegen(self):
+        self._lastRegenDate = datetime.now()
+
+    def setLastPoison(self):
+        self._lastPoisonDate = datetime.now()
 
     def getHitPoints(self):
         return(self._hitpoints)
@@ -1148,7 +1153,12 @@ class Character(Storage, AttributeHelper, Inventory):
         return(self.getEquippedWeapon().getDamageType())
 
     def setInputCommand(self, cmd):
-        self._lastInputCommand = cmd
+        self._lastInputDateCommand = cmd
+
+    def isAttackingWithFist(self):
+        if self.getEquippedWeapon().getName() == 'fist':
+            return(True)
+        return(False)
 
     def getEquippedWeapon(self):
         return(self._equippedWeapon)
@@ -1208,17 +1218,17 @@ class Character(Storage, AttributeHelper, Inventory):
         return(False)
 
     def checkCooldown(self, secs, msgStr=''):
-        if self._lastAttack == getNeverDate():
+        if self._lastAttackDate == getNeverDate():
             return(True)
 
-        secsSinceLastAttack = secsSinceDate(self._lastAttack)
+        secsSinceLastAttack = secsSinceDate(self._lastAttackDate)
         secsRemaining = secs - secsSinceLastAttack
 
         # logging.debug("cooldown: ses(" + str(secs) +
         #               ') - secsSinceLastAttack(' +
         #               str(secsSinceLastAttack) + ") = secsRemaining(" +
         #               str(secsRemaining) + ") - " +
-        #               dateStr(self._lastAttack))
+        #               dateStr(self._lastAttackDate))
 
         if secsRemaining <= 0:
             return(True)
@@ -1353,7 +1363,7 @@ class Character(Storage, AttributeHelper, Inventory):
     def processDeath(self):
         # lose one or two levels
         buf = 'You are Dead'
-        self.svrObj.broadcast(self._displayName + ' has died')   # toDo: fix
+        self.svrObj.broadcast(self._displayName + ' has died\n')   # toDo: fix
         logging.info(self._displayName + ' has died')
 
         # random chance of losing two levels
@@ -1372,6 +1382,8 @@ class Character(Storage, AttributeHelper, Inventory):
             self._level = self._level - 1
 
         self._hitpoints = self.getMaxHP()
+        self.setPoisoned(False)
+        self.setPlagued(False)
 
         # return to starting room or guild
         self._roomObj = self.svrObj.gameObj.placePlayer(0)
@@ -1390,12 +1402,22 @@ class Character(Storage, AttributeHelper, Inventory):
         self._roomObj = None
 
     def equipFist(self):
+        ''' equip fist, the default weapon - fist is a special weapon that is
+            not in any inventory '''
         obj = Weapon()
         obj.setName("fist")
         obj._article = 'a'
         obj._singledesc = "fist"
-        obj.setMaximumDamage(1)
+        obj.setMaximumDamage(self.getFistDamage())
         self.equip(obj)
+
+    def getFistDamage(self):
+        ''' calculate damage for the fist, the default weapon '''
+        damage = int((self.getStrength() / 5) + (self.getLevel() / 2))
+        # Give first level characters a bonus to make getting started easier
+        if self.getLevel() == 1:
+            damage += 1
+        return(damage)
 
     def equip(self, obj):
         # Deal with currently equipped item
@@ -1505,7 +1527,7 @@ class Character(Storage, AttributeHelper, Inventory):
         '''
         fumbles = False
 
-        if self.getEquippedWeapon().getName() == 'fist':
+        if self.isAttackingWithFist():
             return(False)
 
         fumbleRoll = random.randint(1, 100)
@@ -1519,3 +1541,56 @@ class Character(Storage, AttributeHelper, Inventory):
             self.unEquip(slotName='_equippedShield')
             self.setSecondsUntilNextAttack(30)
         return(fumbles)
+
+    def possibilyLoseHiddenWhenMoving(self):
+        ''' set hidden to false if you fail the roll.
+            * when moving, there is a chance that you will not remain hidden
+                * base chance of remaining hidden is 50% + dex
+                * rangers and theives get improved chance = dex
+                a ranger/thief with 20 dex has 99% chance of staying hidden '''
+        if not self.isHidden:
+            return(False)
+
+        oddsOfStayingHidden = 60 + self.getDexterity()
+        if self.getClassName in ['rogue', 'ranger']:
+            oddsOfStayingHidden += self.getDexterity()
+        if random.randint(1, 100) >= oddsOfStayingHidden:
+            self.setHidden(False)
+
+        return(True)
+
+    def processPoisonAndRegen(self, regenInterval=90, poisonInterval=60):
+        ''' At certain intervals, poison and hp regeneration kick in
+            * poison should be faster and/or stronger than regen '''
+        conAdj = self.getConstitution() - 12
+        regenHp = max(1, int(self.getMaxHP() / 10) + conAdj)
+        poisonHp = max(1, int(self.getLevel() - conAdj))
+
+        if not self.isPlagued():       # no regen if plagued
+            # Check the time
+            if self._lastRegenDate == getNeverDate():
+                regenSecsRemaining = 0
+            else:
+                regenSecsRemaining = (regenInterval -
+                                      secsSinceDate(self._lastRegenDate))
+            dLog("regen counter: " + str(regenSecsRemaining) +
+                 " secs - " + str(self._lastRegenDate) + " - " +
+                 str(secsSinceDate(self._lastRegenDate)), False)
+            if regenSecsRemaining <= 0:
+                self.addHP(regenHp)
+                self.setLastRegen()
+
+        if self.isPoisoned():          # take damage if poisoned
+            # Check the time
+            if self._lastPoisonDate == getNeverDate():
+                poisonSecsRemaining = 0
+            else:
+                poisonSecsRemaining = (poisonInterval -
+                                       secsSinceDate(self._lastPoisonDate))
+            dLog("poison cntr: " + str(regenSecsRemaining) + " secs", False)
+
+            if poisonSecsRemaining <= 0:
+                self.spoolOut("As the poison circulates, you take " +
+                              poisonHp + " damage.\n")
+                self.takeDamage(poisonHp)
+                self.setLastPoison()

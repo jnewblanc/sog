@@ -348,7 +348,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
         '''
         debugPrefix = 'Game creatureEncounter (' + str(roomObj.getId()) + '): '
         if not roomObj.readyForEncounter():
-            logging.debug(debugPrefix + 'Room not ready for encounter')
+            dLog(debugPrefix + 'Room not ready for encounter',
+                 self._instanceDebug)
             return(False)
 
         if len(roomObj.getInventoryByType('Creature')) >= 6:
@@ -442,11 +443,15 @@ class GameCmd(cmd.Cmd):
                 stop = True
         self.postloop()
 
+    def precmd(self, line):
+        ''' cmd method override '''
+        self.gameObj.nonPlayerActions()
+        self.charObj.processPoisonAndRegen()
+
     def postcmd(self, stop, line):
         ''' cmd method override '''
         if self.charObj:  # doesn't exist if there is a suicide
             self.charObj.save(logStr=__class__.__name__)
-        self.gameObj.nonPlayerActions()
         return(stop)
 
     def emptyline(self):
@@ -510,6 +515,7 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         moved = False
         currentRoom = charObj.getRoom()
+        oldRoom = charObj.getRoom()
         if currentRoom.isDirection(cmdargs[0]):  # if command is a direction
             # Handle the primary directions
             direction = cmdargs[0]
@@ -541,7 +547,10 @@ class GameCmd(cmd.Cmd):
             moved = True
 
         if moved:
-            charObj.setHidden(False)
+            # creatures in old room should stop attacking player
+            self.gameObj.unAttack(oldRoom, charObj)
+            # character possibly loses hidden
+            charObj.possibilyLoseHiddenWhenMoving()
             self.selfMsg(charObj.getRoom().display(charObj))
             return(True)
         else:
@@ -804,7 +813,8 @@ class GameCmd(cmd.Cmd):
                     str(charObj.getId()) + " ===\n")
             buf += charObj.debug() + '\n'
         else:
-            itemList = self.getObjFromCmd(roomObj.getInventory(), line)
+            itemList = self.getObjFromCmd(roomObj.getInventory() +
+                                          charObj.getInventory(), line)
             if itemList[0]:
                 buf += ('=== Debug Info for Object ' +
                         str(itemList[0].getId()) + " ===\n")
@@ -876,6 +886,12 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("ok\n")
             return(False)
 
+    def do_dminfo(self, line):
+        ''' dm - show char info that isn't directly avaliable to players '''
+        if not self.charObj.isDm():
+            return(False)
+        self.selfMsg(self.charObj.dmInfo())
+
     def do_dm_on(self, line):
         ''' admin - Turn DM mode on '''
         if self.acctObj.isAdmin():
@@ -887,12 +903,6 @@ class GameCmd(cmd.Cmd):
         if self.charObj.isDm():
             self.charObj.removeDm()
             self.selfMsg("ok\n")
-
-    def do_dmstats(self, line):
-        ''' dm - show char info that isn't directly avaliable to players '''
-        if not self.charObj.isDm():
-            return(False)
-        self.selfMsg(self.charObj.getDmStats())
 
     def do_down(self, line):
         self.move(self._lastinput[0])  # pass first letter
@@ -1039,11 +1049,17 @@ class GameCmd(cmd.Cmd):
         # cmdargs = line.split(' ')
         charObj = self.charObj
 
-        # todo: can't hide while being attacked
-
         if line == '':
-            charObj.attemptToHide()
-            self.selfMsg("You hide in the shadows\n")
+            if len(charObj.getRoom().getCreatureList()) > 0:
+                msg = "You are noticed as you hide in the shadows"
+                charObj.setHidden(False)
+            else:
+                charObj.attemptToHide()
+                msg = "You hide in the shadows"
+
+            if charObj.isDm:
+                msg += "(" + str(charObj.isHidden()) + ")"
+            self.selfMsg(msg + '\n')
         else:
             self.selfMsg(line + " not implemented yet\n")
 
@@ -1073,10 +1089,10 @@ class GameCmd(cmd.Cmd):
         self.selfMsg(self.charObj.getInfo())
 
     def do_inv(self, line):
-        self.selfMsg(self.charObj.describeInventory())
+        self.selfMsg(self.charObj.inventoryInfo())
 
     def do_inventory(self, line):
-        self.selfMsg(self.charObj.describeInventory())
+        self.selfMsg(self.charObj.inventoryInfo())
 
     def do_kill(self, line):
         ''' combat '''

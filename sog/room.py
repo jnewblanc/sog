@@ -11,7 +11,7 @@ import textwrap
 from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
-from common.general import getNeverDate, differentDay, secsSinceDate
+from common.general import getNeverDate, differentDay, secsSinceDate, dLog
 from common.inventory import Inventory
 from common.paths import DATADIR
 from object import ObjectFactory, Door
@@ -245,7 +245,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         buf = self.describeInvAsList(showDm=charObj.isDm(),
                                      showHidden=charObj.canSeeHidden(),
                                      showInvisible=charObj.canSeeInvisible())
-        logging.debug("displayItems:" + buf)
+        dLog("displayItems:" + buf, False)
         if buf != '':
             buf = "You see " + buf
         return(buf)
