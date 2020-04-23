@@ -109,7 +109,7 @@ def targetSearch(itemList, targetStr):
     return(targetObj)
 
 
-def dLog(self, msg, show=False):
+def dLog(msg, show=False):
     ''' Show debug log messages if flag is set '''
     if show:
         logging.debug(msg)
