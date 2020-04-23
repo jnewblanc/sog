@@ -30,7 +30,7 @@ class Object(Storage, EditWizard):
     listAttributes = ['_classesAllowed', '_alignmentsAllowed',
                       '_gendersAllowed']
     # obsolete attributes (to be removed)
-    obsoleteAttributes = ['_correspondingRoomNum', "_classAllowed", "_AC",
+    obsoleteAttributes = ['', '_correspondingRoomNum', "_classAllowed", "_AC",
                           '_alignmentAllowed', '_genderAllowed', '_isMetal',
                           '_equippable', '_equipable', '_usable',
                           'equippedSlotName', 'damageReduction',
@@ -62,7 +62,8 @@ class Object(Storage, EditWizard):
         "_toWhere": "The room that this item takes you to i.e. 35 or Shop/30",
         "_correspondingDoorId": "The id of the corresponding door i.e. Door/5",
         "_lockId": "The id of the lock used to connects a key with a lock",
-        "_worksInRoomId": "The id of the room where this item works"}
+        "_worksInRoomId": "The id of the room where this item works",
+        "_toHitBonus": "Increase the chance of hitting target.  0 = normal"}
 
     def __init__(self, objId=0):
         self.objId = objId

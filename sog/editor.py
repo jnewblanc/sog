@@ -2,6 +2,7 @@
 ''' SoG Editor
   * Offline editing of accounts, rooms, creatures, and characters
 '''
+import colorama
 import logging
 from pathlib import Path
 # import pprint
@@ -240,9 +241,10 @@ class Editor(IoLib, AttributeHelper):
         if helpStr != '':
             print(attName, "-", helpStr)
         print("  Old Value: " + str(attValue))
-        buf = ("Enter the new " + attType + " value for " + str(attName) +
-               " or [enter] " + "to leave unchanged: ")
-        newval = input(buf)
+        print("Enter the new " + attType + " value for " + colorama.Fore.CYAN +
+              str(attName) + colorama.Fore.RESET + " or [enter] to leave " +
+              "unchanged: ", end='')
+        newval = input('')
         if newval == '':
             return(attValue)   # no change
         elif newval == "''" or newval == '""':
@@ -316,8 +318,10 @@ class Editor(IoLib, AttributeHelper):
         ''' Prompt for field input '''
         wizFields = obj.getWizFields()
         if len(wizFields) > 0:
-            print('===== ' + objName.capitalize() + " Wizard -- Editing " +
-                  objName.capitalize() + " " + str(obj.getId()) + " =====")
+            print(colorama.Fore.CYAN + '===== ' + objName.capitalize() +
+                  " Wizard -- Editing " +
+                  objName.capitalize() + " " + str(obj.getId()) + " =====" +
+                  colorama.Fore.RESET)
             if objName.lower() == "door":
                 print("Doors are single objects that have a " +
                       "corresponding door in the room to which they point.  " +
@@ -332,18 +336,33 @@ class Editor(IoLib, AttributeHelper):
                     self.setDefaults(obj, attName)
         return(True)
 
+    def customSort(self, s):
+        ''' returns the key for sorting '''
+        if re.match('.*Id', s) or s == '_roomNum':
+            return('!' + s)
+        elif re.match('_name', s):
+            return("\"" + s)
+        elif s in ['_desc', '_shortDesc', '_longDesc']:
+            return("\'" + s)
+        elif re.match('^_', s):
+            return('}' + s)
+        return(s)
+
     def editRaw(self, objName, obj, changedSinceLastSave=False):   # noqa C901
         ROW_FORMAT = "({0:3}) {1:25s}({2:4s}): {3}\n"
         logging.info("Editing " + objName.capitalize())
         obj.fixAttributes()
         while True:
-            buf = ('===== Editing ' + objName.capitalize() + " " +
-                   str(obj.getId()) + ' =====\n')
+            buf = (colorama.Fore.CYAN + '===== Editing ' +
+                   objName.capitalize() + " " + str(obj.getId()) +
+                   ' =====\n' + colorama.Fore.RESET)
 
             instanceAttributes = vars(obj)
 
             varDict = {}
-            for num, attName in enumerate(instanceAttributes):
+            attributeList = sorted(instanceAttributes, key=self.customSort)
+            bufCount = 0
+            for num, attName in enumerate(attributeList):
                 if attName in (["svrObj", "gameObj", "acctObj", "_datafile"] +
                                obj.obsoleteAttributes +
                                obj.attributesThatShouldntBeSaved):
@@ -356,8 +375,14 @@ class Editor(IoLib, AttributeHelper):
                     varDict[num]['name'] = attName
                     varDict[num]['type'] = attType
                     varDict[num]['value'] = attValue
-                    buf += (ROW_FORMAT.format(num, attName,
+                    if bufCount % 5 == 0:
+                        color = colorama.Fore.YELLOW
+                    else:
+                        color = colorama.Fore.RESET
+
+                    buf += (color + ROW_FORMAT.format(num, attName,
                             attType, attValue))
+                    bufCount += 1
             print(buf)
             inStr = input("Enter [s]ave, [q]uit, or a number to edit: ")
             if ((inStr == 's' or inStr == 'sq' or
@@ -469,9 +494,14 @@ class Editor(IoLib, AttributeHelper):
         ROW_FORMAT += "\n"
 
         if len(fullList) != 0:
-            print(ROW_FORMAT.format(*headerList))
-            for dataList in fullList:
-                print(ROW_FORMAT.format(*dataList))
+            print(colorama.Fore.CYAN + ROW_FORMAT.format(*headerList) +
+                  colorama.Fore.RESET)
+            for num, dataList in enumerate(fullList):
+                if num % 3 == 0:
+                    color = colorama.Fore.YELLOW
+                else:
+                    color = colorama.Fore.RESET
+                print(color + ROW_FORMAT.format(*dataList))
 
     def isRunning(self):
         if self._running:
@@ -490,10 +520,14 @@ class Editor(IoLib, AttributeHelper):
         logging.info("Editor Started - " + sys.argv[0])
         print("Logs: " + LOGDIR + '\\editor.log')
 
+        colorama.init()
+
         while self.isRunning():
             prompt = "(Editor)"
             inputStr = input(prompt)
             self.processCommand(inputStr)
+
+        colorama.deinit()
 
     def stop(self):
         self._running = False
