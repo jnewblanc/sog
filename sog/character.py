@@ -74,7 +74,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'doubleUpStatLevels': [2, 3, 7],
             'bonusStats': ['strength', 'constitution'],
             'penaltyStats': ['intelligence', 'piety'],
-            'baseDamage': 3,
+            'baseDamage': 2,
             'baseHealth': 18,
             'baseMagic': 2
             },
@@ -86,7 +86,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'doubleUpStatLevels': [3, 7, 9],
             'bonusStats': ['dexterity', 'charisma'],
             'penaltyStats': ['strength', 'piety'],
-            'baseDamage': 2,
+            'baseDamage': 1,
             'baseHealth': 14,
             'baseMagic': 6
             },
@@ -98,7 +98,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'doubleUpStatLevels': [2, 6, 8],
             'bonusStats': ['intelligence', 'intelligence'],
             'penaltyStats': ['strength', 'strength'],
-            'baseDamage': 1,
+            'baseDamage': 0,
             'baseHealth': 6,
             'baseMagic': 14
             },
@@ -110,7 +110,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'doubleUpStatLevels': [4, 6, 8],
             'bonusStats': ['piety', 'piety'],
             'penaltyStats': ['strength', 'dexterity'],
-            'baseDamage': 1,
+            'baseDamage': 0,
             'baseHealth': 7,
             'baseMagic': 13,
             },
@@ -122,7 +122,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'doubleUpStatLevels': [2, 4, 9],
             'bonusStats': ['dexterity', 'intelligence'],
             'penaltyStats': ['charisma', 'charisma'],
-            'baseDamage': 2,
+            'baseDamage': 1,
             'baseHealth': 12,
             'baseMagic': 8,
             },
@@ -134,7 +134,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'doubleUpStatLevels': [3, 8, 9],
             'bonusStats': ['charisma', 'piety'],
             'penaltyStats': ['intelligence', 'constitution'],
-            'baseDamage': 3,
+            'baseDamage': 2,
             'baseHealth': 10,
             'baseMagic': 10
             }
@@ -1147,13 +1147,14 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def getEquippedWeaponDamage(self):
         ''' Given the equipped weapon and attack type, return the damage '''
+        damage = self.getFistDamage()
+
+        if self.isAttackingWithFist():
+            return(damage)
+
         weapon = self.getEquippedWeapon()
-
-        if not weapon:
-            return(1)
-
-        damage = random.randint(weapon.getMinimumDamage(),
-                                weapon.getMaximumDamage())
+        damage += random.randint(weapon.getMinimumDamage(),
+                                 weapon.getMaximumDamage())
         return (damage)
 
     def getEquippedWeaponDamageType(self):
@@ -1250,6 +1251,12 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def getName(self):
         return(self._name)
+
+    def describe(self):
+        return(self._name)
+
+    def getType(self):
+        return(self.__class__.__name__)
 
     def setName(self, name):
         self._name = str(name)
@@ -1352,18 +1359,25 @@ class Character(Storage, AttributeHelper, Inventory):
             return(True)
         return(False)
 
-    def takeDamage(self, damage=0, nokill=False):
-        ''' Take damage and check for death '''
-        # reduce damage based on AC
+    def acDamageReduction(self, damage):
+        ''' reduce damage based on AC '''
         acReduction = int(damage * (.05 * self.getAc()))
         damage -= acReduction
+        return(max(0, damage))
 
+    def damageIsLethal(self, num=0):
+        if num >= self.getHitPoints():
+            return(True)
+        return(False)
+
+    def takeDamage(self, damage=0, nokill=False):
+        ''' Take damage and check for death '''
         self._hitpoints = self.getHitPoints() - damage
         if nokill:
             self._hitpoints = 1
         condition = self.condition()
         self.save()
-        if condition == 'dead':
+        if self.getHitPoints() <= 0:
             if self.isDm:
                 self.svrObj.spoolOut("You would be dead if you weren't a dm." +
                                      "Resetting hp to maxhp.\n")
@@ -1426,10 +1440,9 @@ class Character(Storage, AttributeHelper, Inventory):
     def getFistDamage(self):
         ''' calculate damage for the fist, the default weapon '''
         damage = int((self.getStrength() / 5) + (self.getLevel() / 2))
-        # Give first level characters a bonus to make getting started easier
-        if self.getLevel() == 1:
-            damage += 1
-        return(damage)
+        damage += self.classDict[self.getClassKey()]['baseDamage']
+        damage -= random.randint(0, 3)
+        return(max(0, damage))
 
     def equip(self, obj):
         # Deal with currently equipped item

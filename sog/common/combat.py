@@ -3,6 +3,8 @@
 # import logging
 import random
 
+from character import Character
+from creature import Creature
 from common.general import dLog
 
 
@@ -101,37 +103,53 @@ class Combat():
         }
     }
 
-    def attackHit(self, charObj, monstObj):
+    _secsBetweenAttacks = 3
+
+    def attackHit(self, attackerObj, defenderObj):
         ''' Determine if an attack hits '''
         hitRoll = random.randint(1, 20)
-        baseToHit = charObj.level - monstObj.level + 10
+        baseToHit = attackerObj.getLevel() - defenderObj.getLevel() + 10
         factor = 0
         if (hitRoll > baseToHit + factor):
             return(True)
         return(False)
 
-    def calcDmgPct(self, charObj, opponentObj, attackCmd='attack'):
-        logPrefix = "calcDmgPct: "
+    def calcDmgPct(self, attackerObj, opponentObj, attackCmd='attack'):
+        ''' Calculate damage percentage '''
+        logPrefix = "combat.calcDmgPct: "
         damagePercent = 100
 
-        # if char is chaotic and monster is lawful, then bonus
-        if ((charObj.getAlignment() == 'chaotic' and
-             opponentObj.getAlignment() == 'good')):
-            damagePercent += 10
-            dLog(logPrefix + "10% alignment bonus", self._instanceDebug)
-        elif ((charObj.getAlignment() == 'lawful' and
-               opponentObj.getAlignment() == 'evil')):
-            damagePercent += 10
-            dLog(logPrefix + "10% alignment bonus", self._instanceDebug)
+        if isinstance(attackerObj, Character):
+            # if char is chaotic and monster is lawful, then bonus
+            if ((attackerObj.getAlignment() == 'chaotic' and
+                 opponentObj.getAlignment() == 'good')):
+                damagePercent += 10
+                dLog(logPrefix + "10% alignment bonus", self._instanceDebug)
+            elif ((attackerObj.getAlignment() == 'lawful' and
+                   opponentObj.getAlignment() == 'evil')):
+                damagePercent += 10
+                dLog(logPrefix + "10% alignment bonus", self._instanceDebug)
 
-        # significantly less damage dealt to unseen creatures
+            # skill bonus
+            skillPercent = attackerObj.getEquippedSkillPercentage()
+            damagePercent += skillPercent
+            dLog(logPrefix + str(skillPercent) + "% skill bonus",
+                 self._instanceDebug)
+
+            # strength bonus/penalty
+            strengthPercent = int((attackerObj.getStrength() - 12) / 3) * 10
+            damagePercent += strengthPercent
+            dLog(logPrefix + str(strengthPercent) + "% strength adj",
+                 self._instanceDebug)
+
+        # significantly less damage dealt to unseen opponents
         if opponentObj.isHidden() or opponentObj.isInvisible():
             damagePercent -= 40
             dLog(logPrefix + "-40% hidden target penalty", self._instanceDebug)
 
         # backstab bonus/penalty - risk = reward
         if attackCmd == 'backstab':
-            if charObj.isHidden():
+            if attackerObj.isHidden():
                 cmdPercent = self.attackList[attackCmd]['damagepctBonus']
             else:
                 cmdPercent = -(self.attackList[attackCmd]['damagepctBonus'])
@@ -144,18 +162,6 @@ class Combat():
 
         damagePercent += cmdPercent
         dLog(logPrefix + str(cmdPercent) + "% attack cmd bonus",
-             self._instanceDebug)
-
-        # skill bonus
-        skillPercent = charObj.getEquippedSkillPercentage()
-        damagePercent += skillPercent
-        dLog(logPrefix + str(skillPercent) + "% skill bonus",
-             self._instanceDebug)
-
-        # strength bonus/penalty
-        strengthPercent = int((charObj.getStrength() - 12) / 3) * 10
-        damagePercent += strengthPercent
-        dLog(logPrefix + str(strengthPercent) + "% strength adj",
              self._instanceDebug)
 
         dLog(logPrefix + str(damagePercent) + "% total damage percent",
@@ -172,32 +178,45 @@ class Combat():
             return(True)
         return(False)
 
-    def attackDamage(self, charObj, opponentObj, attackCmd='attack'):
-        ''' determine the amount of damage dealt by an attack '''
-        logPrefix = "attackDamage: "
+    def applyCritOrDD(self, damage, notify=[]):
+        logPrefix = "applyCritOrDD: "
+        buf = ''
 
-        weaponDamage = charObj.getFistDamage()
-
-        if not charObj.isAttackingWithFist():
-            # weapon damage is always added to the fist damage
-            weaponDamage += charObj.getEquippedWeaponDamage()
-
-        damagePercent = int(self.calcDmgPct(charObj, opponentObj,
-                                            attackCmd=attackCmd) / 100)
-        damage = weaponDamage * damagePercent
-        dLog(logPrefix + "weapon damage(" + str(weaponDamage) +
-             ") * damagePercent(" + str(damagePercent) + ") = " + str(damage),
-             self._instanceDebug)
-
-        # check for crit or double damage
         if self.checkForCrit():
-            charObj.svrObj.spoolOut("Double Damage\n")
+            buf = "Critical Damage!\n"
             damage = max(1, damage) * 3   # critical hit
             dLog(logPrefix + "critical damage (*3)", self._instanceDebug)
         elif self.checkForDD():
-            charObj.svrObj.spoolOut("Citical Hit\n")
+            buf = "Double Damage!\n"
             damage = max(1, damage) * 2   # double damage
             dLog(logPrefix + "double damage (*2)", self._instanceDebug)
+
+        if buf != '':
+            for recipient in notify:
+                if recipient.getType() == 'Character':
+                    self.charMsg(recipient, buf)
+        return(damage)
+
+    def attackDamage(self, attackerObj, opponentObj, attackCmd='attack'):
+        ''' determine the amount of damage dealt by a creature or characters
+            attack '''
+        logPrefix = "combat.AttackDamage: "
+
+        weaponDamage = attackerObj.getEquippedWeaponDamage()
+
+        damagePercent = int(self.calcDmgPct(attackerObj, opponentObj,
+                                            attackCmd=attackCmd) / 100)
+
+        damage = weaponDamage * damagePercent
+
+        dLog(logPrefix + "weapon damage(" + str(weaponDamage) +
+             ") * damagePercent(" + str(damagePercent) + ") = preAcDamage(" +
+             str(damage) + ')', self._instanceDebug)
+
+        damage = opponentObj.acDamageReduction(damage)
+
+        # check for crit or double damage
+        damage = self.applyCritOrDD(damage, [attackerObj, opponentObj])
 
         dLog(logPrefix + "total damage(" + str(damage) + ")",
              self._instanceDebug)
@@ -221,29 +240,6 @@ class Combat():
                                    "until you can assess the situation")
         self.gameObj.joinRoom(roomNum, charObj)
         return(True)
-
-    def creatureAttack(self, roomObj):
-        ''' Creature attack on a player '''
-        for creatureObj in roomObj.getCreatureList():
-            if creatureObj.isAttacking():
-                creatureObj.attack(creatureObj.getCurrentlyAttacking())
-            else:
-                if not creatureObj.isHostile():
-                    continue
-                # creature initates attack
-                characterList = roomObj.getCharacterList()
-                random.shuffle(characterList)  # shuffles in place, return None
-                for charObj in characterList:
-                    if creatureObj.initiateAttack(charObj):
-                        self.charMsg(charObj, creatureObj.describe() +
-                                     " attacks you!\n")
-                        self.othersInRoomMsg(charObj, roomObj,
-                                             creatureObj.describe() +
-                                             " attacks " + charObj.getName() +
-                                             "\n")
-                        creatureObj.attack(charObj)
-                        break
-        return(None)
 
     def allocateExp(self, killerObj, roomObj, target):
         ''' Assign exp to the attackers.
@@ -291,7 +287,7 @@ class Combat():
             return(False)
 
         charObj.setHidden(False)
-        charObj.setSecondsUntilNextAttack(3)
+        charObj.setSecondsUntilNextAttack(self._secsBetweenAttacks)
         charObj.setLastAttack()
 
         dLog(logPrefix + charObj.getName() + " attacks " + target.getName() +
@@ -315,6 +311,7 @@ class Combat():
 
         # calculate attack damage
         damage = self.attackDamage(charObj, target, attackCmd)
+
         dLog(logPrefix + "target takes damage", self._instanceDebug)
         if charObj.getEquippedWeapon().getName() == 'fist':
             # It's important that we clearly identify weaponless attacks
@@ -324,7 +321,7 @@ class Combat():
             self.charMsg(charObj, "You hit " + target.describe() +
                          " for " + str(damage) + " damage.\n")
 
-        if target.diesFromDamage(damage):
+        if target.damageIsLethal(damage):
             dLog(logPrefix + "target dies", self._instanceDebug)
 
             self.charMsg(charObj, "You killed " + target.describe() + "\n")
@@ -351,6 +348,85 @@ class Combat():
             roomObj.removeFromInventory(target)
         else:
             target.takeDamage(damage)
+
+    def creaturesAttack(self, roomObj):
+        ''' Creatures turn to engage and attack players '''
+        for creatureObj in roomObj.getCreatureList():
+            if creatureObj.isAttacking():
+                self.creatureAttacksPlayer(creatureObj)
+            else:
+                if not creatureObj.isHostile():
+                    continue
+                # creature initates attack
+                characterList = roomObj.getCharacterList()
+                random.shuffle(characterList)  # shuffles in place, return None
+                for charObj in characterList:
+                    if creatureObj.initiateAttack(charObj):
+                        self.charMsg(charObj, creatureObj.describe() +
+                                     " attacks you!\n")
+                        self.othersInRoomMsg(charObj, roomObj,
+                                             creatureObj.describe() +
+                                             " attacks " + charObj.getName() +
+                                             "\n")
+                        self.creatureAttacksPlayer(creatureObj, charObj)
+                        break
+        return(None)
+
+    def creatureAttacksPlayer(self, creatureObj, charObj=None):
+        ''' single creature attacks a player '''
+        logPrefix = "combat.creatureAttacksPlayer: "
+        if not charObj:
+            charObj = creatureObj.getCurrentlyAttacking()
+
+        dLog(logPrefix + creatureObj.describe() + " is attacking " +
+             charObj.getName(), self._instanceDebug)
+
+        if not charObj:
+            return(False)
+
+        # toDa: right now, creatures are sticky, but they should adhere to
+        # attackLast
+        if charObj != creatureObj.getCurrentlyAttacking():
+            creatureObj.setCurrentlyAttacking(charObj)       # initiate attack
+
+        if not creatureObj.canAttack():
+            dLog(logPrefix + creatureObj.getName() + " can't attack " +
+                 charObj.getName(), self._instanceDebug)
+            return(False)
+
+        secs = random.randint(self._secsBetweenAttacks,
+                              self._secsBetweenAttacks + 1)
+        creatureObj.setSecondsUntilNextAttack(secs)
+        creatureObj.setLastAttack()
+
+        if not creatureObj.hitsCharacter(charObj):  # if creature doesn't hit
+            self.charMsg(charObj, creatureObj.describe() + " misses you!")
+            # notify other players in the room
+
+        # calculate attack damage
+        damage = self.attackDamage(creatureObj, charObj)
+
+        dLog(logPrefix + creatureObj.getName() + " hits " + charObj.getName() +
+             " for " + str(damage) + " damage", self._instanceDebug)
+
+        if damage:
+            if charObj.damageIsLethal(damage):
+                dLog(logPrefix + "player takes lethal damage",
+                     self._instanceDebug)
+                if creatureObj.kidnaps():
+                    self.kidnap()
+                else:
+                    if not charObj.isDm():
+                        # Transfer players inventory to room
+                        for item in charObj.getInventory():
+                            if charObj.getRoom().addToInventory(item):
+                                charObj.removeFromInventory(item)
+
+            # notify
+            self.charMsg(charObj, creatureObj.describe() + " hits you for " +
+                         str(damage) + " damage.\n")
+            charObj.takeDamage(damage)
+        return(None)
 
     def unAttack(self, roomObj, charObj):
         ''' When a player leaves the room, creatures that are still in

@@ -364,7 +364,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 self.removeFromActiveRooms(roomObj)
                 continue
             self.creatureEncounter(roomObj)
-            self.creatureAttack(roomObj)
+            self.creaturesAttack(roomObj)
         return(None)
 
     def creatureEncounter(self, roomObj):
@@ -1670,7 +1670,7 @@ class GameCmd(cmd.Cmd):
                  line.lower() == "self")):
                 self.charObj.toggleInstanceDebug()
             elif line.lower() == "room":
-                self.charObj.roomObj.toggleInstanceDebug()
+                self.charObj.getRoom().toggleInstanceDebug()
             elif line.lower() == "game":
                 self.gameObj.toggleInstanceDebug()
             elif line.lower() == "server":

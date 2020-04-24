@@ -319,6 +319,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def getLevel(self):
         return(self._level)
 
+    def kidnaps(self):
+        return(self._kidnap)
+
     def getExp(self):
         return(self._exp)
 
@@ -337,7 +340,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def attacksBack(self):
         return(self._defend)
 
-    def diesFromDamage(self, num=0):
+    def damageIsLethal(self, num=0):
         if num >= self.getHitPoints():
             return(True)
         return(False)
@@ -350,6 +353,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
     def getName(self):
         return(self._name)
+
+    def getAc(self):
+        return(self._ac)
 
     def getFrequency(self):
         return(self._frequency)
@@ -393,6 +399,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def getValue(self):
         return(self._value)
 
+    def getDamage(self):
+        return(self._damage)
+
     def isAttacking(self):
         if self._currentlyAttacking is not None:
             return(True)
@@ -423,49 +432,43 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
         return(False)
 
-    def attack(self, charObj=None):
-        logPrefix = "Creature.attack: "
-        if not charObj:
-            charObj = self.getCurrentlyAttacking()
+    def getEquippedWeaponDamage(self, percentSwing=15):
+        ''' calculate creature 'weapon' damage
+            * creatures don't have weapons equipped.  Instead, we treat their
+              damage attribute as a weapon with some random fluctuation '''
+        damage = self.getDamage()
+        damageAdj = int(damage * percentSwing / 100)
+        if random.randint(1, 2) == 1:
+            damage += damageAdj
+        else:
+            damage -= damageAdj
+        return(damage)
 
-        dLog(logPrefix + self.getName() + " is attacking " + charObj.getName(),
-             True)
-        if not charObj:
-            return(False)
-
-        if charObj != self.getCurrentlyAttacking():
-            self.setCurrentlyAttacking(charObj)        # initiate attack
-
-        if not self.canAttack():
-            dLog(logPrefix + self.getName() + " can't attack " +
-                 charObj.getName(), True)
-            return(False)
-
-        self.setSecondsUntilNextAttack(random.randint(3, 5))
-        self.setLastAttack()
-
-        if not self.hitsCharacter(charObj):  # determine if creature hits
-            charObj.svrObj.spoolOut(self.describe() + " misses you!")
-            # notify other players in the room
-
-        # calculate attack damage
-        damage = 1
-
-        dLog(logPrefix + self.getName() + " hits " +
-             charObj.getName() + " for " + str(damage) + " damage", True)
-
-        # notify
-        if damage:
-            charObj.svrObj.spoolOut(self.describe() + " hits you for " +
-                                    str(damage) + " damage.\n")
-            charObj.takeDamage(damage)
-        return(None)
+    def acDamageReduction(self, damage):
+        ''' reduce damage based on AC '''
+        acReduction = int(damage * (.05 * self.getAc()))
+        damage -= acReduction
+        return(max(0, damage))
 
     def hitsCharacter(self, charObj):
         ''' return true if creature hits the character '''
         # todo: figure out formula
         # fumble
         return(True)
+
+    def fumbles(self, basePercent=20, secsToWait=20):
+        ''' Return true if creature fumbles.
+            * creature must wait 20 seconds before attacking
+        '''
+        fumbles = False
+
+        fumbleRoll = random.randint(1, 100)
+        if fumbleRoll == 1:  # always a 1% change of fumbling
+            fumbles = True
+        elif fumbleRoll < basePercent - (self.getLevel() * 2):
+            fumbles = True
+            self.setSecondsUntilNextAttack(secsToWait)
+        return(fumbles)
 
     def autoPopulateInventory(self):
         ''' create creature inventory
@@ -490,7 +493,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             if "/" not in itemId:
                 continue
 
-            logging.debug("api: obj = " + itemId)
+            dLog("creature.autoPopulateInventory: obj = " + itemId)
             oType, oNum = itemId.split('/')
             obj1 = ObjectFactory(oType, oNum)
             obj1.load()
@@ -498,6 +501,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         return(True)
 
     def postLoad(self):
+        ''' hook that runs after creature is loaded '''
         self.setExp()            # calculate exp and set it
         if not self.getHitPoints():
             self.setHitPoints()  # set hp to the maxHP for this creature
@@ -644,7 +648,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         timeLeft = ((self.getSecondsUntilNextAttack() *
                     (self.getAttackRate() / 100)) -
                     secsSinceDate(self.getLastAttack()))
-        if timeLeft >= 0:
+        if timeLeft > 0:
             dLog(debugPrefix + "Attack discarded due to time - " +
                  str(timeLeft) + " secs left", self._instanceDebug)
             return(False)
@@ -662,8 +666,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         if secsRemaining <= 0:
             return(True)
 
-        logging.debug("Creature.checkCooldown: Creature is not ready for " +
-                      "attack " + str(secsRemaining) + " seconds remain")
+        dLog("Creature.checkCooldown: Creature is not ready for " +
+             "attack " + str(secsRemaining) + " seconds remain",
+             self._instanceDebug)
         return(False)
 
     def fixAttributes(self):
