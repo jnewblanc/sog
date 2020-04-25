@@ -200,7 +200,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
         "_timeToFirstAttack": "# of seconds to wait before hostile atk",
-        "_attackRate": "speed of monster attacks  100%=normal - 25%=slow"}
+        "_attackRate": "speed of creature attacks.  100%=normal - 50%=slow"}
 
     def __init__(self, id=0):
         super().__init__()
@@ -635,18 +635,11 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
     def canAttack(self):
         ''' returns true if the creature is ready for an attack '''
-        debugPrefix = "Creature readyForAttack (" + str(self.getId()) + "): "
+        debugPrefix = "Creature.canAttack (" + str(self.getId()) + "): "
 
         # Creature has no attack speed.  Will never be ready
         if not self.getAttackRate():
             dLog(debugPrefix + "Creature has no attack rate",
-                 self._instanceDebug)
-            return(False)
-
-        # % chance that creature does not attack
-        if random.randint(1, 10) == 1:
-            self.setLastAttack()
-            dLog(debugPrefix + "Creature randomly chose not to attack",
                  self._instanceDebug)
             return(False)
 
@@ -659,23 +652,16 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
                  str(timeLeft) + " secs left", self._instanceDebug)
             return(False)
 
+        # % chance that creature does not attack
+        randX = random.randint(1, 10)
+        if randX == 1:
+            self.setLastAttack()
+            dLog(debugPrefix + "Creature randomly chose not to attack (" +
+                 str(randX) + ' = 1)', self._instanceDebug)
+            return(False)
+
         dLog(debugPrefix + "Creature is ready for attack", self._instanceDebug)
         return(True)
-
-    def checkCooldown(self, secs, msgStr=''):
-        if self._lastAttackDate == getNeverDate():
-            return(True)
-
-        secsSinceLastAttack = secsSinceDate(self._lastAttackDate)
-        secsRemaining = secs - secsSinceLastAttack
-
-        if secsRemaining <= 0:
-            return(True)
-
-        dLog("Creature.checkCooldown: Creature is not ready for " +
-             "attack " + str(secsRemaining) + " seconds remain",
-             self._instanceDebug)
-        return(False)
 
     def fixAttributes(self):
         ''' Sometimes we change attributes, and need to fix them in rooms

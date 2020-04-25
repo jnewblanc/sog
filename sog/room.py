@@ -12,6 +12,7 @@ from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
 from common.general import getNeverDate, differentDay, secsSinceDate, dLog
+from common.general import truncateWithInt
 from common.inventory import Inventory
 from common.paths import DATADIR
 from object import ObjectFactory, Door
@@ -533,7 +534,8 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             timeLeft = self._encounterTime - secsSinceLastEncounter
             if timeLeft > 0:
                 dLog(debugPrefix + "Encounter discarded due to time - " +
-                     str(timeLeft) + " secs left", self._instanceDebug)
+                     str(truncateWithInt(timeLeft)) +
+                     " secs left", self._instanceDebug)
                 return(False)
 
         # % chance that room will have no encounter this time

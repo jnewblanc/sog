@@ -296,7 +296,7 @@ class Combat():
         if target.attacksBack():
             target.setCurrentlyAttacking(charObj)
 
-        # player is becomes locked on to creature
+        # player becomes locked on to creature
         if charObj.getCurrentlyAttacking() != target:
             charObj.setCurrentlyAttacking(target)
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
@@ -310,6 +310,9 @@ class Combat():
 
         # calculate attack damage
         damage = self.attackDamage(charObj, target, attackCmd)
+
+        # reduce charges of weapon
+        charObj.decreaseChargeOfEquippedWeapon()
 
         dLog(logPrefix + "target takes damage", self._instanceDebug)
         if charObj.getEquippedWeapon().getName() == 'fist':
@@ -407,6 +410,9 @@ class Combat():
 
         dLog(logPrefix + creatureObj.getName() + " hits " + charObj.getName() +
              " for " + str(damage) + " damage", self._instanceDebug)
+
+        # reduce charges of armor/shield protection
+        charObj.decreaseChargeOfEquippedProtection()
 
         if damage:
             if charObj.damageIsLethal(damage):

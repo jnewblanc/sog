@@ -69,6 +69,11 @@ def getRandomItemFromList(list1):
     return(list1[indexNum])
 
 
+def truncateWithInt(num, decimalPlaces=3):
+    shifter = 10 ^ decimalPlaces
+    return int(num * shifter) / shifter
+
+
 def splitTargets(targetStr):
     ''' break cmdargs into parts consisting of:
         1) cmdargs are already stripped of their first arg

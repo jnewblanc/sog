@@ -95,7 +95,7 @@ class Inventory():
             if markerAfter and num == (markerAfter - 1):
                 if markerTxt == '':
                     markerTxt = 'items below will be truncated on exit'
-                itemlist += "--- " + markerTxt + " ---"
+                itemlist += "--- " + markerTxt + " ---\n"
 
         if itemlist:
             buf += itemlist

@@ -11,7 +11,6 @@ import logging
 import pprint
 import random
 import re
-import threading
 from time import sleep
 
 from common.combat import Combat
@@ -1134,12 +1133,18 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
 
         if line == '':
-            if len(charObj.getRoom().getCreatureList()) > 0:
-                msg = "You are noticed as you hide in the shadows"
-                charObj.setHidden(False)
-            else:
+            canhide = True
+            # can't hide if there are engaged creatures in the room, even if
+            # they are attacking someone else.
+            for creatObj in charObj.getRoom().getCreatureList():
+                if creatObj.isAttacking():
+                    canhide = False
+            if canhide:
                 charObj.attemptToHide()
                 msg = "You hide in the shadows"
+            else:
+                msg = "You are noticed as you hide in the shadows"
+                charObj.setHidden(False)
 
             if charObj.isDm:
                 msg += "(" + str(charObj.isHidden()) + ")"

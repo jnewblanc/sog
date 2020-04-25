@@ -178,6 +178,8 @@ class Character(Storage, AttributeHelper, Inventory):
         self._statsearnedlastlevel = 0
         self._maxitems = 12
 
+        self._classname = 'fighter'
+
         # skills are percentages, one of which can go up each level
         for onestat in self.skillDict.keys():
             setattr(self, onestat, 0)
@@ -1158,6 +1160,10 @@ class Character(Storage, AttributeHelper, Inventory):
         if self.isAttackingWithFist():
             return(damage)
 
+        if self.getEquippedWeapon().isBroken():
+            self.client.spoolOut("Your weapon is broken.\n")
+            return(0)
+
         weapon = self.getEquippedWeapon()
         damage += random.randint(weapon.getMinimumDamage(),
                                  weapon.getMaximumDamage())
@@ -1165,6 +1171,44 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def getEquippedWeaponDamageType(self):
         return(self.getEquippedWeapon().getDamageType())
+
+    def decreaseChargeOfEquippedWeapon(self):
+        ''' decrease charge counters of equipped weapon + notify '''
+        weapon = self.getEquippedWeapon()
+        if weapon.getName() != 'fist':
+            weapon.decrementChargeCounter()
+            if weapon.isBroken():
+                self.client.spoolOut("Snap!  Your " +
+                                     weapon.describe(noarticle=True) +
+                                     " breaks\n")
+            elif self.getClassName() == 'ranger' and weapon.getCharges() == 10:
+                self.client.spoolOut("Your " +
+                                     weapon.describe(noarticle=True) +
+                                     " is worse for wear and in need of " +
+                                     "repair.\n")
+
+    def getEquippedProtection(self):
+        ''' returns equipped armor and/or shield, as a list '''
+        armor = self.getEquippedArmor()
+        shield = self.getEquippedShield()
+        objList = []
+        if armor:
+            objList.append(armor)
+        if shield:
+            objList.append(shield)
+        return(objList)
+
+    def decreaseChargeOfEquippedProtection(self):
+        ''' decrease charge counters of equipped armor/shield + notify '''
+        for obj in self.getEquippedProtection():
+            obj.decrementChargeCounter()
+            if obj.isBroken():
+                self.client.spoolOut("Your " + obj.describe(noarticle=True) +
+                                     " falls apart\n")
+            elif self.getClassName() == 'ranger' and obj.getCharges() == 10:
+                self.client.spoolOut("Your " + obj.describe(noarticle=True) +
+                                     " is worse for wear and in need of " +
+                                     "repair.\n")
 
     def setInputCommand(self, cmd):
         self._lastInputDateCommand = cmd
@@ -1299,7 +1343,7 @@ class Character(Storage, AttributeHelper, Inventory):
     def canSeeHidden(self):
         if self.isDm:
             return(True)
-        if self.getClass().lower() == "rogue":
+        if self.getClassName().lower() in ["ranger", "rogue"]:
             return(True)
         if random.randint(1, 100) < int(self.getLuck() / 3):
             return(True)
@@ -1354,7 +1398,7 @@ class Character(Storage, AttributeHelper, Inventory):
             * If basePercent is increased, chance of dodging goes down.
             * chances improved by dex, class, dodge skill, and dodgeBonus '''
         randX = random.randint(1, 100)
-        classMult = 2 if self.getClass().lower() == "rogue" else 1
+        classMult = 2 if self.getClassName().lower() == "rogue" else 1
         skillMult = self._dodge + self._dodgeBonus
 
         dodgeAdv = (self.getDexterity() * (classMult + skillMult)/10)
@@ -1367,8 +1411,17 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def acDamageReduction(self, damage):
         ''' reduce damage based on AC '''
-        acReduction = int(damage * (.05 * self.getAc()))
+        ac = self.getAc()
+
+        # reduce AC if protection is broken
+        for obj in self.getEquippedProtection():
+            if obj.isBroken:
+                ac -= obj.getAc()
+
+        # reduce damage based on percentage:
+        acReduction = int(damage * (.05 * ac))
         damage -= acReduction
+
         return(max(0, damage))
 
     def damageIsLethal(self, num=0):
@@ -1583,7 +1636,7 @@ class Character(Storage, AttributeHelper, Inventory):
             return(False)
 
         oddsOfStayingHidden = 60 + self.getDexterity()
-        if self.getClassName in ['rogue', 'ranger']:
+        if self.getClassName() in ['rogue', 'ranger']:
             oddsOfStayingHidden += self.getDexterity()
         if random.randint(1, 100) >= oddsOfStayingHidden:
             self.setHidden(False)

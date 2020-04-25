@@ -99,10 +99,15 @@ class Object(Storage, EditWizard):
         if self._instanceDebug:
             logging.debug("Object destructor called for " + str(self.getId()))
 
-    def describe(self, count=1):
+    def describe(self, count=1, noarticle=False):
+        buf = ''
         if count > 1:
-            return(count + " " + self._pluraldesc)
-        return(self._article + " " + self._singledesc)
+            buf = count + " " + self._pluraldesc
+        elif noarticle:
+            buf = self._singledesc
+        else:
+            buf = self._article + " " + self._singledesc
+        return(buf)
 
     def debug(self):
         return(pprint.pformat(vars(self)))
