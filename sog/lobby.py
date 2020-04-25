@@ -19,31 +19,31 @@ class _Lobby():
         self.userList = []
         return(None)
 
-    def joinLobby(self, svrObj):
+    def joinLobby(self, client):
         ''' Handle shared lobby instance and start up the command loop '''
-        if not svrObj.acctObj:
+        if not client.acctObj:
             return(False)
 
-        if svrObj.acctObj not in self.userList:
-            self.userList.append(svrObj.acctObj)
+        if client.acctObj not in self.userList:
+            self.userList.append(client.acctObj)
 
-        lobbyCmd = LobbyCmd(svrObj)       # each user gets their own cmd shell
+        lobbyCmd = LobbyCmd(client)       # each user gets their own cmd shell
         try:
             lobbyCmd.cmdloop()            # start the lobby cmdloop
         finally:
-            if svrObj.acctObj in self.userList:
-                self.userList.remove(svrObj.acctObj)
+            if client.acctObj in self.userList:
+                self.userList.remove(client.acctObj)
 
-    def sendMsg(self, svrObj):
+    def sendMsg(self, client):
         prompt = "You may send a message to one the the folowing users."
         prompt += self.showLogins()
         prompt += "Who do you want to send a message to? "
-        inNum = svrObj.promptForNumberInput(prompt, len(self.userList))
+        inNum = client.promptForNumberInput(prompt, len(self.userList))
         userObj = self.userList[inNum]
         prompt = "What is the message? "
-        msgBuf = svrObj.promptForInput(prompt, '')
-        if userObj.svrObj.spoolOut(msgBuf + '\n'):
-            svrObj.spoolOut('Sent\n')
+        msgBuf = client.promptForInput(prompt, '')
+        if userObj.client.spoolOut(msgBuf + '\n'):
+            client.spoolOut('Sent\n')
 
     def showLogins(self):
         ''' show an enumerated list of users '''
@@ -57,10 +57,10 @@ class _Lobby():
 
 
 class LobbyCmd(cmd.Cmd):
-    def __init__(self, svrObj=None):
-        self.svrObj = svrObj
-        self.lobbyObj = svrObj.lobbyObj
-        self.acctObj = svrObj.acctObj
+    def __init__(self, client=None):
+        self.client = client
+        self.lobbyObj = client.lobbyObj
+        self.acctObj = client.acctObj
         self._lastinput = ''
 
     def getCmdPrompt(self):
@@ -81,8 +81,8 @@ class LobbyCmd(cmd.Cmd):
         line = ""
         self.preloop()
         while not stop:
-            if self.svrObj.promptForCommand(self.getCmdPrompt()):  # send/rcv
-                line = self.svrObj.getInputStr()
+            if self.client.promptForCommand(self.getCmdPrompt()):  # send/rcv
+                line = self.client.getInputStr()
                 self._lastinput = line
                 dLog("LOBBY cmd = " + line, self.lobbyObj.debug())
                 self.precmd(line)
@@ -95,12 +95,12 @@ class LobbyCmd(cmd.Cmd):
     def default(self, line):
         ''' cmd method override '''
         logging.warn('*** Invalid lobby command: %s\n' % line)
-        self.svrObj.spoolOut("Invalid Command\n")
+        self.client.spoolOut("Invalid Command\n")
 
     def do_addcharacterondisk(self, line):
         ''' admin - add missing character (on disk) to account '''
         if not self.acctObj.isAdmin():
-            self.svrObj.spoolOut('This command is for admins only.\n')
+            self.client.spoolOut('This command is for admins only.\n')
             return(False)
 
         charNamesFromDisk = self.acctObj.getCharactersOnDisk()
@@ -108,7 +108,7 @@ class LobbyCmd(cmd.Cmd):
             prompt = "Characters on Disk:\n  "
             prompt += "\n  ".join(charNamesFromDisk)
             prompt += "\nEnter character name or press [enter] to exit: "
-            inStr = self.svrObj.promptForInput(prompt)
+            inStr = self.client.promptForInput(prompt)
             buf = ''
             if inStr in charNamesFromDisk:
                 self.acctObj.addCharacterToAccount(inStr)
@@ -116,16 +116,16 @@ class LobbyCmd(cmd.Cmd):
                 self.acctObj.save(logStr=__class__.__name__)
             else:
                 buf += "Could not add " + inStr + " to characterList"
-            self.svrObj.spoolOut(buf)
+            self.client.spoolOut(buf)
         return(False)
 
     def do_addcharactertoaccount(self, line):
         ''' admin - add missing character to account '''
         if not self.acctObj.isAdmin():
-            self.svrObj.spoolOut('This command is for admins only.\n')
+            self.client.spoolOut('This command is for admins only.\n')
             return(False)
 
-        name = self.svrObj.promptForInput("Char Name: ")
+        name = self.client.promptForInput("Char Name: ")
         self.acctObj.addCharacterToAccount(name)
         self.acctObj.save(logStr=__class__.__name__)
         return(False)
@@ -137,34 +137,34 @@ class LobbyCmd(cmd.Cmd):
     def do_broadcast(self, line):
         ''' admin - send a message to all users '''
         if not self.acctObj.isAdmin():
-            self.svrObj.spoolOut('This command is for admins only.\n')
+            self.client.spoolOut('This command is for admins only.\n')
             return(False)
 
         prompt = "What is the message? "
-        msgBuf = self.svrObj.promptForInput(prompt, '')
-        if self.svrObj.broadcast(msgBuf):
-            self.svrObj.spoolOut('Sent\n')
+        msgBuf = self.client.promptForInput(prompt, '')
+        if self.client.broadcast(msgBuf):
+            self.client.spoolOut('Sent\n')
 
     def do_cmdline(self, line):
         ''' admin - test - placeholder '''
         buf = ''
-        cmdargs = self.svrObj.getInputStr().split(' ')
+        cmdargs = self.client.getInputStr().split(' ')
         cmd = cmdargs[0]
-        self.svrObj.spoolOut(buf + cmd)
+        self.client.spoolOut(buf + cmd)
 
     def do_deletecharacterfromaccount(self, line):
         ''' admin - deletes character from account '''
         if not self.acctObj.isAdmin():
-            self.svrObj.spoolOut('This command is for admins only.\n')
+            self.client.spoolOut('This command is for admins only.\n')
             return(False)
 
-        name = self.svrObj.promptForInput("Char Name: ")
+        name = self.client.promptForInput("Char Name: ")
         self.acctObj.removeCharacterFromAccount(name)
         return(False)
 
     def do_exit(self, line):
         ''' exit the lobby and logoff '''
-        self.svrObj.spoolOut('Leaving Lobby...\n')
+        self.client.spoolOut('Leaving Lobby...\n')
         return(True)
 
     def do_quit(self, line):
@@ -183,27 +183,27 @@ class LobbyCmd(cmd.Cmd):
                'msg - send a private message to one player\n' +
                'broadcast - send a message to all players\n' +
                'quit  - log out of lobby\n')
-        self.svrObj.spoolOut(buf)
+        self.client.spoolOut(buf)
 
     def do_info(self, line):
         ''' display account info '''
-        self.svrObj.spoolOut(self.acctObj.getInfo())
+        self.client.spoolOut(self.acctObj.getInfo())
 
     def do_msg(self, line):
         ''' send a message to another user '''
-        self.lobbyObj.sendMsg(self.svrObj)
+        self.lobbyObj.sendMsg(self.client)
 
     def do_game(self, line):
         ''' play the game '''
-        self.svrObj.charObj = Character(self.svrObj,
+        self.client.charObj = Character(self.client,
                                         self.acctObj.getId())
-        if self.svrObj.charObj.login():
-            self.svrObj.gameObj.joinGame(self.svrObj)
+        if self.client.charObj.login():
+            self.client.gameObj.joinGame(self.client)
         else:
-            self.svrObj.charObj = None
+            self.client.charObj = None
             msg = "Could not login to game"
             logging.warning(msg)
-            self.svrObj.spoolOut('Error: ' + msg + '\n')
+            self.client.spoolOut('Error: ' + msg + '\n')
             self.acctObj.save(logStr=__class__.__name__)
         return(False)
 
@@ -225,7 +225,7 @@ class LobbyCmd(cmd.Cmd):
 
     def do_who(self, line):
         ''' show users that are logged in '''
-        self.svrObj.spoolOut(self.lobbyObj.showLogins())
+        self.client.spoolOut(self.lobbyObj.showLogins())
 
 
 # instanciate the _Lobby class

@@ -363,7 +363,7 @@ class Editor(IoLib, AttributeHelper):
             attributeList = sorted(instanceAttributes, key=self.customSort)
             bufCount = 0
             for num, attName in enumerate(attributeList):
-                if attName in (["svrObj", "gameObj", "acctObj", "_datafile"] +
+                if attName in (["client", "gameObj", "acctObj", "_datafile"] +
                                obj.obsoleteAttributes +
                                obj.attributesThatShouldntBeSaved):
                     pass  # don't want these

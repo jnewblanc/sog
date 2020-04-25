@@ -113,6 +113,12 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
     def toggleInstanceDebug(self):
         self._instanceDebug = not self._instanceDebug
 
+    def getInstanceDebug(self):
+        return(self._instanceDebug)
+
+    def setInstanceDebug(self, val):
+        self._instanceDebug = bool(val)
+
     def getType(self):
         return(self.__class__.__name__)
 
@@ -296,9 +302,9 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         # todo: show other players who are attacking each other
         return(buf)
 
-    def describe(self, charObj):
-        ''' alias for display '''
-        return(self.display(charObj))
+    def describe(self):
+        ''' show the room number '''
+        return('Room ' + str(self._roomNum))
 
     def display(self, charObj):
         ''' show all player visible info about current room '''
@@ -521,13 +527,6 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             dLog(debugPrefix + "Room has no creatureList", self._instanceDebug)
             return(False)
 
-        # % chance that room will have no encounter this time
-        if random.randint(1, 3) == 3:
-            self.setLastEncounter()
-            dLog(debugPrefix + "Encounter randomly discarded",
-                 self._instanceDebug)
-            return(False)
-
         # Check if the appropriate amount of time has pased
         if self._timeOfLastEncounter != getNeverDate():
             secsSinceLastEncounter = secsSinceDate(self._timeOfLastEncounter)
@@ -536,6 +535,13 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
                 dLog(debugPrefix + "Encounter discarded due to time - " +
                      str(timeLeft) + " secs left", self._instanceDebug)
                 return(False)
+
+        # % chance that room will have no encounter this time
+        if random.randint(1, 5) == 5:
+            self.setLastEncounter()
+            dLog(debugPrefix + "Encounter randomly discarded",
+                 self._instanceDebug)
+            return(False)
 
         dLog(debugPrefix + "Room is ready for encounter", self._instanceDebug)
         return(True)

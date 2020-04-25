@@ -9,7 +9,7 @@ class Ipc():
     def gameMsg(self, msg):
         ''' shown to everyone in the game '''
         for oneChar in self.getCharacterList():
-            oneChar.svrObj.spoolOut(msg)
+            oneChar.client.spoolOut(msg)
 
     def directMsg(self, charName, msg):
         ''' show only to specified user '''
@@ -19,7 +19,7 @@ class Ipc():
 
         for oneChar in self.getCharacterList():         # get chars in game
             if re.match(charName, oneChar.getName()):   # if name matches
-                oneChar.svrObj.spoolOut(msg)            # notify
+                oneChar.client.spoolOut(msg)            # notify
                 recieved = True
         return(recieved)
 
@@ -27,7 +27,7 @@ class Ipc():
         ''' show only to yourself '''
         recieved = False
         if charObj:
-            charObj.svrObj.spoolOut(msg)
+            charObj.client.spoolOut(msg)
             recieved = True
         return(recieved)
 

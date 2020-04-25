@@ -361,8 +361,8 @@ gameCommands = {
 }
 
 
-def enterHelp(svrObj):
-    svrObj.spoolOut("Welcome to the help subsystem")
+def enterHelp(client):
+    client.spoolOut("Welcome to the help subsystem")
     contextMenu = ""
     while True:
         prompt = ("Menu:\n" +
@@ -371,7 +371,7 @@ def enterHelp(svrObj):
                   "  topics - show the top level list of topics\n" +
                   "  exit   - quit help and go back to the game\n" +
                   "What would you like help with? : ")
-        helpIn = svrObj.promptForInput(prompt)
+        helpIn = client.promptForInput(prompt)
         if helpIn == 'exit' or helpIn == 'quit':
             break
         elif helpIn == 'topics':
@@ -387,6 +387,6 @@ def enterHelp(svrObj):
                                gameCommands[helpIn][oneCommand]['shortdesc'] +
                                "\n")
         else:
-            svrObj.spoolOut("Unknown help topic " + helpIn + '\n')
+            client.spoolOut("Unknown help topic " + helpIn + '\n')
 
     return(None)

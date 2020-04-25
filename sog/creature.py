@@ -200,7 +200,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
         "_timeToFirstAttack": "# of seconds to wait before hostile atk",
-        "_attackRate": "how fast a monter attacks  100=normal"}
+        "_attackRate": "speed of monster attacks  100%=normal - 25%=slow"}
 
     def __init__(self, id=0):
         super().__init__()
@@ -289,6 +289,12 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
     def toggleInstanceDebug(self):
         self._instanceDebug = not self._instanceDebug
+
+    def getInstanceDebug(self):
+        return(self._instanceDebug)
+
+    def setInstanceDebug(self, val):
+        self._instanceDebug = bool(val)
 
     def describe(self, count=1):
         if count > 1:
@@ -645,7 +651,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             return(False)
 
         # Check if the appropriate amount of time has pased
-        timeLeft = ((self.getSecondsUntilNextAttack() *
+        timeLeft = ((self.getSecondsUntilNextAttack() /
                     (self.getAttackRate() / 100)) -
                     secsSinceDate(self.getLastAttack()))
         if timeLeft > 0:

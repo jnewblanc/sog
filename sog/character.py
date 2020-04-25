@@ -22,7 +22,7 @@ class Character(Storage, AttributeHelper, Inventory):
     _instanceDebug = False
 
     attributesThatShouldntBeSaved = \
-        ['svrObj', '_instanceDebug', '_currentlyAttacking', '_vulnerable',
+        ['client', '_instanceDebug', '_currentlyAttacking', '_vulnerable',
          '_secondsUntilNextAttack', '_lastInputDate', '_lastAttackDate',
          '_lastRegenDate']
 
@@ -152,8 +152,8 @@ class Character(Storage, AttributeHelper, Inventory):
         '_magic': 'an inner confidence that enhances spells',
         '_dodge': 'being quick on your feet helps avoid blows'}
 
-    def __init__(self, svrObj=None, acctName=''):
-        self.svrObj = svrObj
+    def __init__(self, client=None, acctName=''):
+        self.client = client
         self._acctName = acctName
 
         super().__init__()
@@ -251,6 +251,12 @@ class Character(Storage, AttributeHelper, Inventory):
     def toggleInstanceDebug(self):
         self._instanceDebug = not self._instanceDebug
 
+    def setInstanceDebug(self, val):
+        self._instanceDebug = bool(val)
+
+    def getInstanceDebug(self):
+        return(self._instanceDebug)
+
     def login(self):
         ''' Login to game with a particular character
             * Return True if character was created or loaded
@@ -271,26 +277,26 @@ class Character(Storage, AttributeHelper, Inventory):
                 if self.create(charName):
                     dLog(pStr + 'Character ' + charName + ' created for ' +
                          self._acctName, self._instanceDebug)
-                    self.svrObj.acctObj.addCharacterToAccount(charName)
-                    self.svrObj.acctObj.save()
+                    self.client.acctObj.addCharacterToAccount(charName)
+                    self.client.acctObj.save()
                 else:
                     buf = ('Character ' + charName +
                            ' could not be created for ' + self._acctName)
                     dLog(pStr + buf, self._instanceDebug)
-                    self.svrObj.spoolOut(buf + '\n')
+                    self.client.spoolOut(buf + '\n')
                     return(False)
             if not self.isValid():
                 buf = 'Character ' + charName + ' is not valid'
                 dLog(pStr + buf, self._instanceDebug)
-                self.svrObj.spoolOut(buf + '\n')
+                self.client.spoolOut(buf + '\n')
                 return(False)
         else:
             return(False)
 
         self.setLoginDate()
-        self.svrObj.charObj = self
+        self.client.charObj = self
 
-        self.svrObj.spoolOut(buf)
+        self.client.spoolOut(buf)
         return(True)
 
     def create(self, charName):
@@ -299,7 +305,7 @@ class Character(Storage, AttributeHelper, Inventory):
             * return True if character is _creature
             * return False and scrub character if character was not created
             '''
-        self.__init__(self.svrObj, self.svrObj.acctObj.getEmail())
+        self.__init__(self.client, self.client.acctObj.getEmail())
         self.setName(charName)
         self.setPromptSize('full')
         self.setLoginDate()
@@ -318,7 +324,7 @@ class Character(Storage, AttributeHelper, Inventory):
 
             self.resetTmpStats()
         else:
-            self.__init__(self.svrObj, self.svrObj.acctObj.getEmail())
+            self.__init__(self.client, self.client.acctObj.getEmail())
             return(False)
 
         self.equipFist()
@@ -326,7 +332,7 @@ class Character(Storage, AttributeHelper, Inventory):
         if self.isValid():
             self.save()
         else:
-            self.__init__(self.svrObj, self.svrObj.acctObj.getEmail())
+            self.__init__(self.client, self.client.acctObj.getEmail())
             return(False)
         return(True)
 
@@ -387,7 +393,7 @@ class Character(Storage, AttributeHelper, Inventory):
     def isValid(self):
         ''' Returns true if the class instance was created properly '''
         # ToDo: determine if a better check is required
-        if hasattr(self, 'svrObj'):
+        if hasattr(self, 'client'):
             return(True)
         if hasattr(self, '_name'):
             return(True)
@@ -634,9 +640,9 @@ class Character(Storage, AttributeHelper, Inventory):
             store resulting character name into self._name
             return True/False'''
         logPrefix = __class__.__name__ + " selectCharacter: "
-        characterList = self.svrObj.acctObj.getCharacterList()
+        characterList = self.client.acctObj.getCharacterList()
         numOfCharacters = len(characterList)
-        openCharacterSlots = (self.svrObj.acctObj.getMaxNumOfCharacters() -
+        openCharacterSlots = (self.client.acctObj.getMaxNumOfCharacters() -
                               numOfCharacters)
         self.setName('')
 
@@ -645,9 +651,9 @@ class Character(Storage, AttributeHelper, Inventory):
             if openCharacterSlots > 0:
                 prompt += "  (0) Create new character\n"
             if numOfCharacters > 0:
-                prompt += self.svrObj.acctObj.showCharacterList(indent='  ')
+                prompt += self.client.acctObj.showCharacterList(indent='  ')
             prompt += 'Enter number or press [enter] to exit: '
-            inNum = self.svrObj.promptForNumberInput(prompt, numOfCharacters)
+            inNum = self.client.promptForNumberInput(prompt, numOfCharacters)
             if inNum == -1:    # undisclosed way to exit with False Value
                 return(False)
             elif inNum == 0:   # Prompt for a new character name
@@ -663,19 +669,19 @@ class Character(Storage, AttributeHelper, Inventory):
                           " be alphabetic and the name must be between " +
                           str(minNameLength) + ' and ' + str(maxNameLength) +
                           ' characters long.')
-                charName = self.svrObj.promptForInput(prompt, r'^[A-Za-z][A-Za-z0-9_\- ]{2,}$', errmsg)  # noqa: E501
+                charName = self.client.promptForInput(prompt, r'^[A-Za-z][A-Za-z0-9_\- ]{2,}$', errmsg)  # noqa: E501
                 if charName == "":
                     dLog(logPrefix + "name is blank", self._instanceDebug)
                     return(False)
-                elif charName in self.svrObj.acctObj.getCharactersOnDisk():
+                elif charName in self.client.acctObj.getCharactersOnDisk():
                     msg = ("Invalid Character Name.  You already have a " +
                            "character named " + charName + ".\n")
-                    self.svrObj.spoolOut(msg)
+                    self.client.spoolOut(msg)
                     dLog(logPrefix + msg, self._instanceDebug)
                     continue
-                elif not self.svrObj.acctObj.characterNameIsUnique(charName):
+                elif not self.client.acctObj.characterNameIsUnique(charName):
                     msg = ("Name is already in use.  Please try again\n")
-                    self.svrObj.spoolOut(msg)
+                    self.client.spoolOut(msg)
                     dLog(logPrefix + msg, self._instanceDebug)
                     continue
                 self.setName(charName)
@@ -809,7 +815,7 @@ class Character(Storage, AttributeHelper, Inventory):
             desc = str(oneName) + ' - ' + self.classDict[oneNum]['desc']
             prompt = (prompt + ROW_FORMAT.format(oneNum, desc))
         prompt = (prompt + 'Select your character\'s class: ')
-        inNum = self.svrObj.promptForNumberInput(prompt,
+        inNum = self.client.promptForNumberInput(prompt,
                                                  (len(self.classList) - 1))
 
         if inNum == -1:
@@ -823,7 +829,7 @@ class Character(Storage, AttributeHelper, Inventory):
         for oneNum, oneName in enumerate(self.genderList):
             prompt += ROW_FORMAT.format(str(oneNum), oneName)
         prompt += 'Select your character\'s gender: '
-        inNum = self.svrObj.promptForNumberInput(prompt,
+        inNum = self.client.promptForNumberInput(prompt,
                                                  (len(self.genderList) - 1))
         if inNum == -1:
             return(False)
@@ -846,7 +852,7 @@ class Character(Storage, AttributeHelper, Inventory):
                                         'unpredictable and untrustworthy')
             aNumOptions = aNumOptions + 1
         prompt += 'Select your character\'s alignment: '
-        inNum = self.svrObj.promptForNumberInput(prompt, aNumOptions)
+        inNum = self.client.promptForNumberInput(prompt, aNumOptions)
         if inNum == -1:
             return(False)
 
@@ -860,7 +866,7 @@ class Character(Storage, AttributeHelper, Inventory):
             prompt += ROW_FORMAT.format(num, skill.lstrip('_') + ' - ' +
                                         self.skillDict[skill])
             sList[num] = skill
-        inNum = self.svrObj.promptForNumberInput(prompt, len(self.skillDict))
+        inNum = self.client.promptForNumberInput(prompt, len(self.skillDict))
         if inNum == -1:
             return(False)
 
@@ -868,10 +874,10 @@ class Character(Storage, AttributeHelper, Inventory):
         return(True)
 
     def promptForDm(self, ROW_FORMAT):
-        if self.svrObj:                          # not set when testing
-            if self.svrObj.acctObj.isAdmin():
+        if self.client:                          # not set when testing
+            if self.client.acctObj.isAdmin():
                 prompt = 'Should this Character be a Dungeon Master (admin)?'
-                if self.svrObj.promptForYN(prompt):
+                if self.client.promptForYN(prompt):
                     self.setDm()
                     return(True)
         return(False)
@@ -1246,7 +1252,7 @@ class Character(Storage, AttributeHelper, Inventory):
         if msgStr != '':
             buf += ' ' + msgStr
         buf += ".\n"
-        self.svrObj.spoolOut(buf)
+        self.client.spoolOut(buf)
         return(False)
 
     def getName(self):
@@ -1379,7 +1385,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self.save()
         if self.getHitPoints() <= 0:
             if self.isDm:
-                self.svrObj.spoolOut("You would be dead if you weren't a dm." +
+                self.client.spoolOut("You would be dead if you weren't a dm." +
                                      "Resetting hp to maxhp.\n")
                 self._hitpoints = self._maxhitpoints
             else:
@@ -1389,7 +1395,7 @@ class Character(Storage, AttributeHelper, Inventory):
     def processDeath(self):
         # lose one or two levels
         buf = 'You are Dead'
-        self.svrObj.broadcast(self._displayName + ' has died\n')   # toDo: fix
+        self.client.broadcast(self._displayName + ' has died\n')   # toDo: fix
         logging.info(self._displayName + ' has died')
 
         # random chance of losing two levels
@@ -1412,10 +1418,10 @@ class Character(Storage, AttributeHelper, Inventory):
         self.setPlagued(False)
 
         # return to starting room or guild
-        self._roomObj = self.svrObj.gameObj.placePlayer(0)
+        self._roomObj = self.client.gameObj.placePlayer(0)
 
         self.save()
-        self.svrObj.spoolOut(buf)
+        self.client.spoolOut(buf)
         return(True)
 
     def setRoom(self, roomObj):

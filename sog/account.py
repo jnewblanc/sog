@@ -16,10 +16,10 @@ from common.paths import DATADIR
 class Account(Storage, AttributeHelper):
     ''' Account class'''
 
-    attributesThatShouldntBeSaved = ['svrObj']
+    attributesThatShouldntBeSaved = ['client']
 
-    def __init__(self, svrObj=None):
-        self.svrObj = svrObj
+    def __init__(self, client=None):
+        self.client = client
 
         self.email = ''
         self.password = ''
@@ -40,13 +40,16 @@ class Account(Storage, AttributeHelper):
     def __repr__(self):
         buf = self.getInfo()
         buf += "IsAdmin: " + str(self.admin) + '\n'
-        buf += "svrObj: " + str(self.svrObj) + '\n'
+        buf += "client: " + str(self.client) + '\n'
         return(buf)
+
+    def describe(self):
+        return(self.getId())
 
     def login(self):
         ''' login and return the acctObj - acct created if needed '''
 
-        if not self.svrObj.isRunning():
+        if not self.client.isRunning():
             # Abort if client is not connected/reachable
             return(False)
 
@@ -54,47 +57,47 @@ class Account(Storage, AttributeHelper):
         email = self.getEmail()
 
         if email == '' or email == 'exit' or email == 'quit':
-            self.svrObj.spoolOut("Aborting...\n")
+            self.client.spoolOut("Aborting...\n")
             self.logout()
-            self.svrObj.terminateClientConnection()
+            self.client.terminateClientConnection()
             return(False)
 
         self.setDataFilename()
         if self.dataFileExists():
             if self.verifyAcctPassword():
                 self.load(logStr=__class__.__name__)
-                self.svrObj.spoolOut('Welcome ' + self.getDisplayName() + '\n')
+                self.client.spoolOut('Welcome ' + self.getDisplayName() + '\n')
                 self.admin = self.adminFileExists(email)
             else:
-                self.__init__(self.svrObj)  # reset with existing connection
+                self.__init__(self.client)  # reset with existing connection
         else:  # Prompt for new account
             prompt = ("Account for " + email + " doesn't exist\n" +
                       "Create new account? [y/N] : ")
             errMsg = ('Please enter y or n')
-            accountCheck = self.svrObj.promptForInput(prompt, r'^[yYnN]$',
+            accountCheck = self.client.promptForInput(prompt, r'^[yYnN]$',
                                                       errMsg)
             if accountCheck.lower() == 'y':
                 if self.create(email):
                     pass
                 else:
-                    self.svrObj.spoolOut('Account could not be created.  ' +
+                    self.client.spoolOut('Account could not be created.  ' +
                                          'Aborting...\n')
-                    self.__init__(self.svrObj)
+                    self.__init__(self.client)
                     return(False)
             else:
-                self.svrObj.spoolOut("Login Aborted...\n")
-                self.__init__(self.svrObj)
+                self.client.spoolOut("Login Aborted...\n")
+                self.__init__(self.client)
                 return(False)
 
         self.setLoginDate()
 
         if self.isValid():
-            logging.info(str(self.svrObj) + ' Account login sucessful - ' +
+            logging.info(str(self.client) + ' Account login sucessful - ' +
                          self.getEmail())
         else:
-            logging.info(str(self.svrObj) + ' Account ' + self.getEmail() +
+            logging.info(str(self.client) + ' Account ' + self.getEmail() +
                          " is invalid")
-            self.svrObj.spoolOut("Password verification failed.  This " +
+            self.client.spoolOut("Password verification failed.  This " +
                                  "transaction has been logged and will be " +
                                  "investigated.\n")
             return(False)
@@ -115,12 +118,12 @@ class Account(Storage, AttributeHelper):
                 dateStr(self.getLastLoginDate()) + "\n" +
                 "Logout Date: " +
                 dateStr(self.getLastLogoutDate()) + "\n" +
-                self.svrObj.txtLine('=') + "\n")
-        self.svrObj.spoolOut(buf)
+                self.client.txtLine('=') + "\n")
+        self.client.spoolOut(buf)
         self.save(logStr=__class__.__name__)
-        if self.svrObj:
-            logging.info(str(self.svrObj) + ' Logout ' + self.getEmail())
-        self.__init__(self.svrObj)
+        if self.client:
+            logging.info(str(self.client) + ' Logout ' + self.getEmail())
+        self.__init__(self.client)
         return(True)
 
     def setDataFilename(self, dfStr=''):
@@ -145,7 +148,7 @@ class Account(Storage, AttributeHelper):
         ''' Prompt user for email address and validate input '''
         prompt = "Enter email address or [enter] to quit: "
         regex = r'^[A-Za-z0-9_\-\.]+@[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+$'
-        self.email = self.svrObj.promptForInput(prompt, regex,
+        self.email = self.client.promptForInput(prompt, regex,
                                                 "Invalid Email address\n")
         if self.email != '':
             return(True)
@@ -158,7 +161,7 @@ class Account(Storage, AttributeHelper):
         self.setLogoutDate()
 
     def create(self, email):
-        self.svrObj.spoolOut("Creating new account\n")
+        self.client.spoolOut("Creating new account\n")
         self.setDisplayName(self.promptForDisplayName())
         if self.getDisplayName() == '':
             return(False)
@@ -173,7 +176,7 @@ class Account(Storage, AttributeHelper):
             self._lastLogoutDate = self.setLogoutDate()
             self.prompt = "full"
             self.save(logStr=__class__.__name__)
-            self.svrObj.spoolOut("Account created for " + self.email + '\n')
+            self.client.spoolOut("Account created for " + self.email + '\n')
             return(True)
         return(False)
 
@@ -241,9 +244,9 @@ class Account(Storage, AttributeHelper):
         errMsg = ('Invalid name, displayName must be at least 3 characters, ' +
                   'must start with\n an alphanumeric, and contain only ' +
                   'alphanumerics, spaces, underscores, and hyphens')
-        displayName = self.svrObj.promptForInput('Display Name: ', r'^[A-Za-z][A-Za-z0-9_-]{2}', errMsg)  # noqa: E501
+        displayName = self.client.promptForInput('Display Name: ', r'^[A-Za-z][A-Za-z0-9_-]{2}', errMsg)  # noqa: E501
         if displayName == '':
-            self.svrObj.spoolOut('Aborting...\n')
+            self.client.spoolOut('Aborting...\n')
             return('')
         else:
             return(displayName)
@@ -251,17 +254,17 @@ class Account(Storage, AttributeHelper):
     def promptForPassword(self, promptStr='Enter Password: '):
         ''' Prompts user for password, verifies it, and returns password '''
         while True:
-            self.svrObj.spoolOut(promptStr)
-            self.svrObj._sendAndReceive()
-            password = self.svrObj.getInputStr()
+            self.client.spoolOut(promptStr)
+            self.client._sendAndReceive()
+            password = self.client.getInputStr()
 
             if re.match("^[A-Za-z0-9_-]+$", password):
                 return(password)
             elif password == '':
-                self.svrObj.spoolOut('Aborting...\n')
+                self.client.spoolOut('Aborting...\n')
                 return('')
             else:
-                self.svrObj.spoolOut("Invalid password.  Try Again\n")
+                self.client.spoolOut("Invalid password.  Try Again\n")
 
     def verifyAcctPassword(self, promptStr='Enter Account Password: '):
         ''' Prompt user to verify password, returns True if successful '''
@@ -275,7 +278,7 @@ class Account(Storage, AttributeHelper):
                 if self.validatePassword(self.password, promptStr):
                     return(True)
                 else:
-                    self.svrObj.spoolOut('Password invalid for account ' +
+                    self.client.spoolOut('Password invalid for account ' +
                                          self.email + ' (attempt ' + str(x) +
                                          ' of 3).\n')
                     if x == 3:
@@ -285,9 +288,9 @@ class Account(Storage, AttributeHelper):
 
     def validatePassword(self, loadedpassword, promptStr='Verify Password: '):
         ''' Prompt user to verify password, returns True if successful '''
-        self.svrObj.spoolOut(promptStr)
-        self.svrObj._sendAndReceive()
-        password = self.svrObj.getInputStr()
+        self.client.spoolOut(promptStr)
+        self.client._sendAndReceive()
+        password = self.client.getInputStr()
 
         if password == loadedpassword:
             return(True)
@@ -298,10 +301,10 @@ class Account(Storage, AttributeHelper):
             * characters in the characterList are no longer on disk '''
         charObj = None
         changed = False
-        if self.svrObj.charObj:
-            charObj = self.svrObj.charObj
+        if self.client.charObj:
+            charObj = self.client.charObj
         else:
-            charObj = Character(self.svrObj, self.getId())  # temp for methods
+            charObj = Character(self.client, self.getId())  # temp for methods
 
         for cName in self.characterList:
             charObj.setName(cName)            # set the charName

@@ -11,6 +11,8 @@ import logging
 import pprint
 import random
 import re
+import threading
+from time import sleep
 
 from common.combat import Combat
 from common.ipc import Ipc
@@ -42,6 +44,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
 
         self._instanceDebug = _Game._instanceDebug
 
+        self._asyncStopFlag = False    # If true, the async thread will halt
         return(None)
 
     def debug(self):
@@ -50,19 +53,33 @@ class _Game(cmd.Cmd, Combat, Ipc):
     def toggleInstanceDebug(self):
         self._instanceDebug = not self._instanceDebug
 
-    def joinGame(self, svrObj):
+    def getInstanceDebug(self):
+        return(self._instanceDebug)
+
+    def _asyncTasks(self):
+        ''' Tasks that run in a separate thread with ~1 sec intervals '''
+        logging.info("Thread started - async worker")
+        while not self._asyncStopFlag:
+            self.asyncNonPlayerActions()
+            self.asyncCharacterActions()
+            sleep(1)
+
+    def haltAsyncThread(self):
+        self._asyncStopFlag = True
+
+    def joinGame(self, client):
         ''' Perform required actions related to joining the game '''
-        charObj = svrObj.charObj
+        charObj = client.charObj
         if not charObj:
             logging.warn("Game: Character not defined - returning False")
             return(False)
 
-        gameCmd = GameCmd(svrObj)      # each user gets their own cmd shell
+        gameCmd = GameCmd(client)      # each user gets their own cmd shell
 
         self.addToActivePlayerList(charObj)
 
         # in-game broadcast announcing game entry
-        msg = svrObj.txtBanner(charObj.getName() +
+        msg = client.txtBanner(charObj.getName() +
                                ' has entered the game', bChar='=')
         self.gameMsg(msg + '\n')
         logging.info("JOINED GAME " + charObj.getId())
@@ -73,13 +90,13 @@ class _Game(cmd.Cmd, Combat, Ipc):
             try:
                 gameCmd.cmdloop()           # start the game cmdloop
             finally:
-                if svrObj.charObj:
-                    self.leaveGame(svrObj)
+                if client.charObj:
+                    self.leaveGame(client)
         return(False)
 
-    def leaveGame(self, svrObj, saveChar=True):
+    def leaveGame(self, client, saveChar=True):
         ''' Handle details of leaving a game '''
-        charObj = svrObj.charObj
+        charObj = client.charObj
 
         self.leaveRoom(charObj)
 
@@ -92,14 +109,14 @@ class _Game(cmd.Cmd, Combat, Ipc):
             charObj.save(logStr=__class__.__name__)
 
         # notification and logging
-        msg = svrObj.txtBanner(charObj.getName() +
+        msg = client.txtBanner(charObj.getName() +
                                ' has left the game', bChar='=')
         self.gameMsg(msg + '\n')
         logging.info("LEFT GAME " + charObj.getId())
 
         # Discard charObj
         charObj = None
-        svrObj.charObj = None
+        client.charObj = None
         return(True)
 
     def getCharacterList(self):
@@ -141,6 +158,27 @@ class _Game(cmd.Cmd, Combat, Ipc):
         for roomObj in self.getActiveRoomList():
             if roomObj.getId() == num:
                 return(roomObj)
+        return(None)
+
+    def deActivateEmptyRoom(self, roomObj):
+        ''' deactiveates room if empty.  Returns true if deactiveated '''
+        if len(roomObj.getCharacterList()) == 0:
+            self.removeFromActiveRooms(roomObj)
+            return(True)
+        return(False)
+
+    def asyncCharacterActions(self):
+        ''' asyncronous actions that occur to players. '''
+        for charObj in self.getCharacterList():
+            charObj.processPoisonAndRegen()
+
+    def asyncNonPlayerActions(self):
+        ''' asyncronous actions that are not tied to a player. '''
+        for roomObj in self.getActiveRoomList():
+            if self.deActivateEmptyRoom(roomObj):
+                continue
+            self.creatureEncounter(roomObj)
+            self.creaturesAttack(roomObj)
         return(None)
 
     def joinRoom(self, roomStr, charObj):
@@ -270,7 +308,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         ''' buy an item '''
         roomObj = charObj.getRoom()
 
-        if charObj.svrObj.promptForYN(prompt):
+        if charObj.client.promptForYN(prompt):
             charObj.subtractCoins(price)           # tax included
             charObj.addToInventory(obj)         # add item
             if roomObj.getType() == 'Shop':
@@ -290,7 +328,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         ''' sell an item '''
         roomObj = charObj.getRoom()
 
-        if charObj.svrObj.promptForYN(prompt):
+        if charObj.client.promptForYN(prompt):
             charObj.removeFromInventory(obj)     # remove item
             charObj.addCoins(price)              # tax included
             if roomObj.getType() == 'Shop':
@@ -354,19 +392,6 @@ class _Game(cmd.Cmd, Combat, Ipc):
             pass
         return(False)
 
-    def nonPlayerActions(self):
-        ''' everything that happens that is not tied to a player.
-            At the moment, this is called by the command processor, but
-            it should probably live in it's own thread.'''
-
-        for roomObj in self.getActiveRoomList():
-            if len(roomObj.getCharacterList()) == 0:
-                self.removeFromActiveRooms(roomObj)
-                continue
-            self.creatureEncounter(roomObj)
-            self.creaturesAttack(roomObj)
-        return(None)
-
     def creatureEncounter(self, roomObj):
         ''' As an encounter, add creature to room
             Chance based on
@@ -375,8 +400,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
         '''
         debugPrefix = 'Game creatureEncounter (' + str(roomObj.getId()) + '): '
         if not roomObj.readyForEncounter():
-            dLog(debugPrefix + 'Room not ready for encounter',
-                 self._instanceDebug)
+            # dLog(debugPrefix + 'Room not ready for encounter',
+            #      self._instanceDebug)
             return(False)
 
         if len(roomObj.getInventoryByType('Creature')) >= 6:
@@ -424,12 +449,12 @@ class GameCmd(cmd.Cmd):
         * Uses cmd loop with do_<action> methods
         * if do_ methods return True, then loop exits
     '''
-    def __init__(self, svrObj=None):
-        self.svrObj = svrObj
-        if svrObj:
-            self.acctObj = svrObj.acctObj
-            self.gameObj = svrObj.gameObj
-            self.charObj = svrObj.charObj
+    def __init__(self, client=None):
+        self.client = client
+        if client:
+            self.acctObj = client.acctObj
+            self.gameObj = client.gameObj
+            self.charObj = client.charObj
         else:
             self.acctObj = None
             self.gameObj = None
@@ -459,8 +484,8 @@ class GameCmd(cmd.Cmd):
         line = ""
         self.preloop()
         while not stop:
-            if self.svrObj.promptForCommand(self.getCmdPrompt()):  # send/recv
-                line = self.svrObj.getInputStr()
+            if self.client.promptForCommand(self.getCmdPrompt()):  # send/recv
+                line = self.client.getInputStr()
                 self._lastinput = line
                 dLog("GAME cmd = " + line, self._instanceDebug)
                 self.precmd(line)
@@ -472,8 +497,7 @@ class GameCmd(cmd.Cmd):
 
     def precmd(self, line):
         ''' cmd method override '''
-        self.gameObj.nonPlayerActions()
-        self.charObj.processPoisonAndRegen()
+        pass
 
     def postcmd(self, stop, line):
         ''' cmd method override '''
@@ -488,7 +512,7 @@ class GameCmd(cmd.Cmd):
     def default(self, line):
         ''' cmd method override '''
         logging.warn('*** Invalid game command: %s\n' % line)
-        self.charObj.svrObj.spoolOut("Invalid Command\n")
+        self.charObj.client.spoolOut("Invalid Command\n")
 
     def getObjFromCmd(self, itemList, cmdline):
         ''' Returns a list of target Items, given the full cmdargs '''
@@ -894,7 +918,7 @@ class GameCmd(cmd.Cmd):
                        "Your account will increase by " +
                        str(dAmount) + " shillings.\n")
         prompt += "Continue?"
-        if self.svrObj.promptForYN(prompt):
+        if self.client.promptForYN(prompt):
             charObj.bankDeposit(amount, taxRate)
             roomObj.recordTransaction("deposit/" + str(dAmount))
             roomObj.recordTransaction("fees/" + str(bankfee))
@@ -1099,7 +1123,7 @@ class GameCmd(cmd.Cmd):
 
     def do_help(self, line):
         ''' info - enter the help system '''
-        enterHelp(self.svrObj)
+        enterHelp(self.client)
 
     def do_hide(self, line):
         ''' attempt to hide player or item
@@ -1463,7 +1487,7 @@ class GameCmd(cmd.Cmd):
         prompt = ("You are about to repair " + obj1.getArticle() + " " +
                   obj1.getName() + " for " + str(price) +
                   " shillings.  Proceed?")
-        if self.svrObj.promptForYN(prompt):
+        if self.client.promptForYN(prompt):
             obj1.repair()
             roomObj.recordTransaction(obj1)
             roomObj.recordTransaction("repair/" + str(price))
@@ -1494,14 +1518,14 @@ class GameCmd(cmd.Cmd):
 
     def do_save(self, line):
         ''' save character '''
-        if self.svrObj.charObj.save():
+        if self.client.charObj.save():
             self.selfMsg("Saved\n")
         else:
             self.selfMsg("Could not save\n")
 
     def do_say(self, line):
         ''' communication within room '''
-        msg = self.svrObj.promptForInput()
+        msg = self.client.promptForInput()
         self.roomMsg(self.charObj.roomObj, msg)
         self.charObj.setHidden(False)
 
@@ -1540,13 +1564,13 @@ class GameCmd(cmd.Cmd):
 
     def do_send(self, line):
         ''' communication - direct message to another player '''
-        msg = self.svrObj.promptForInput()
+        msg = self.client.promptForInput()
         self.gameObj.gameMsg(msg)
         return(False)
 
     def do_shout(self, line):
         ''' communication - talk to players in room and adjoining rooms '''
-        msg = self.svrObj.promptForInput()
+        msg = self.client.promptForInput()
         self.yellMsg(self.charObj.roomObj, msg)
 
     def do_skills(self, line):
@@ -1633,14 +1657,14 @@ class GameCmd(cmd.Cmd):
         return(False)
 
     def do_suicide(self, line):
-        if not self.svrObj.promptForYN("DANGER: This will permanently " +
+        if not self.client.promptForYN("DANGER: This will permanently " +
                                        "delete your character." +
                                        "  Are you sure?"):
             return(False)
         charObj = self.charObj
         charName = charObj.getName()
-        self.gameObj.leaveGame(self.svrObj, saveChar=False)
-        msg = self.svrObj.txtBanner(charName +
+        self.gameObj.leaveGame(self.client, saveChar=False)
+        msg = self.client.txtBanner(charName +
                                     ' has shuffled off this mortal coil',
                                     bChar='=')
         charObj.delete()
@@ -1668,19 +1692,19 @@ class GameCmd(cmd.Cmd):
         if self.charObj.isDm():
             if ((line.lower() == "character" or line.lower() == "char" or
                  line.lower() == "self")):
-                self.charObj.toggleInstanceDebug()
+                obj = self.charObj
             elif line.lower() == "room":
-                self.charObj.getRoom().toggleInstanceDebug()
+                obj = self.charObj.getRoom()
             elif line.lower() == "game":
-                self.gameObj.toggleInstanceDebug()
-            elif line.lower() == "server":
-                self.svrObj.toggleInstanceDebug()
+                obj = self.gameObj
+            elif line.lower() == "client":
+                obj = self.client
             else:
                 roomObj = self.charObj.getRoom()
                 itemList = self.getObjFromCmd(roomObj.getCharsAndInventory(),
                                               line)
                 if itemList[0]:
-                    itemList[0].toggleInstanceDebug()
+                    obj = itemList[0]
                 else:
                     self.selfMsg("Can't toggle " + line + '\n')
                     return(False)
@@ -1688,7 +1712,9 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("Unknown Command\n")
             return(False)
 
-        self.selfMsg("Ok\n")
+        obj.toggleInstanceDebug()
+        self.selfMsg("Toggled " + line + ": debug=" +
+                     str(obj.getInstanceDebug()) + '\n')
         return(False)
 
     def do_thrust(self, line):
@@ -1826,17 +1852,17 @@ class GameCmd(cmd.Cmd):
         if not cmdargs[0]:
             self.selfMsg("usage: whisper <playerName>\n")
             return(False)
-        msg = self.svrObj.promptForInput()
+        msg = self.client.promptForInput()
         self.gameObj.directMsg(cmdargs[0], msg)  # wrong method for this??
         recieved = False
 
         for oneChar in self.charObj.getRoom().getCharacterList():
             if re.match(cmdargs[0], oneChar.getName()):   # if name matches
-                oneChar.svrObj.spoolOut(msg)            # notify
+                oneChar.client.spoolOut(msg)            # notify
                 recieved = True
             else:
                 if oneChar.hearsWhispers():
-                    oneChar.svrObj.spoolOut("You overhear " +
+                    oneChar.client.spoolOut("You overhear " +
                                             self.charObj.getName() +
                                             ' whisper ' + msg + '\n')
                     self.charObj.setHidden(False)
@@ -1892,7 +1918,7 @@ class GameCmd(cmd.Cmd):
                        "As a result, you will receive " + str(wAmount) +
                        " shillings.\n")
         prompt += "Continue?"
-        if self.svrObj.promptForYN(prompt):
+        if self.client.promptForYN(prompt):
             charObj.bankWithdraw(amount, taxRate)
             roomObj.recordTransaction("withdrawl/" + str(wAmount))
             roomObj.recordTransaction("fees/" + str(bankfee))
@@ -1904,7 +1930,7 @@ class GameCmd(cmd.Cmd):
 
     def do_yell(self, line):
         ''' communication - all in room and adjoining rooms '''
-        msg = self.svrObj.promptForInput()
+        msg = self.client.promptForInput()
         self.yellMsg(self.charObj.roomObj, msg)
 
 

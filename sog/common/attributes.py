@@ -38,7 +38,7 @@ class AttributeHelper():
                     setattr(self, attName, newVal)
                     changed = True
                     logging.warning(logPrefix + "Changed " + attName +
-                                    " to int")
+                                    " to int for " + self.describe())
             except ValueError:
                 setattr(self, attName, 0)
                 logging.warning(logPrefix + "Set " + attName + "= 0")
@@ -49,7 +49,7 @@ class AttributeHelper():
                     setattr(self, attName, newVal)
                     changed = True
                     logging.warning(logPrefix + "Changed " + attName +
-                                    " to bool")
+                                    " to bool for " + self.describe())
             except ValueError:
                 setattr(self, attName, False)
                 logging.warning(logPrefix + "Set " + attName + "= False")
@@ -60,7 +60,7 @@ class AttributeHelper():
                     setattr(self, attName, newVal)
                     changed = True
                     logging.warning(logPrefix + "Changed " + attName +
-                                    " to str")
+                                    " to str for " + self.describe())
             except ValueError:
                 setattr(self, attName, '')
                 logging.warning(logPrefix + "Set " + attName + "= ''")
@@ -69,7 +69,8 @@ class AttributeHelper():
                 if hasattr(self, attName):
                     delattr(self, attName)
                     changed = True
-                    logging.warning(logPrefix + "Removed " + attName)
+                    logging.warning(logPrefix + "Removed '" + attName +
+                                    "' from " + self.describe())
             except AttributeError:
                 pass
         return(changed)

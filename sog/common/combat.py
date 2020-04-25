@@ -4,7 +4,6 @@
 import random
 
 from character import Character
-from creature import Creature
 from common.general import dLog
 
 

@@ -10,7 +10,7 @@
 import logging
 from pathlib import Path
 # import selectors
-from signal import signal, SIGINT
+from signal import signal, SIGINT, SIGTERM
 import socket
 import sys
 import threading
@@ -29,33 +29,38 @@ connections = []
 totalConnections = 0
 
 
-class ServerThread(threading.Thread, IoLib, AttributeHelper):
+class Terminator(Exception):
+    """ Custom exception to trigger termination of all threads & main. """
+    pass
+
+
+class ClientThread(threading.Thread, IoLib, AttributeHelper):
     def __init__(self, socket, address, id):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, daemon=True, target=self.serverMain)
         IoLib.__init__(self)
         self.socket = socket
         self.address = address
         self.id = id
         self._running = True
 
-        self.lobbyObj = lobby.Lobby()     # create single lobby instance
-        self.gameObj = game.Game()        # create single game instance
+        self.lobbyObj = lobby.Lobby()     # create/use single lobby instance
+        self.gameObj = game.Game()        # create/use the single game instance
         self.acctObj = None
         self.charObj = None
-        self.identifier = "SVR" + str(id) + str(address)
+        self.identifier = "CT" + str(id) + str(address)
         self._area = 'server'
 
         self._debugServer = False          # Turn on/off debug logging
 
         if self._debugServer:
-            logging.info(str(self) + " New connection")
+            logging.info(str(self) + " New ClientThread")
 
     def __str__(self):
         ''' Connection/Thread ID Str - often used as a prefix for logging '''
         return self.identifier
 
     # main program
-    def run(self):
+    def serverMain(self):
         ''' This is the main entry point into the app '''
         logging.info(str(self) + " Client connection established")
         try:
@@ -68,7 +73,7 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                         self.acctObj.logout()
                     self.acctObj = None
                 else:
-                    logging.debug(str(self) + ' Authentication failed')
+                    logging.warning(str(self) + ' Authentication failed')
                     self.acctObj = None
                     if not self.isRunning():
                         break                # exit loop to terminate
@@ -143,7 +148,7 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
                 if self._debugServer:
                     logging.debug("Server recieved STOP_STR from client")
                 self.terminateClientConnection()
-                exitProg()
+                raise Terminator
                 return(False)
             self.setInputStr(clientdata)
         else:
@@ -271,6 +276,21 @@ class ServerThread(threading.Thread, IoLib, AttributeHelper):
         self._debugServer = bool(debugBool)
 
 
+class AsyncThread(threading.Thread):
+    ''' a separate worker thread for handling asyncronous tasks '''
+    def __init__(self):
+        self.gameObj = game.Game()   # create/use the single game instance
+        self._debugAsync = False
+        threading.Thread.__init__(self, daemon=True, target=self._asyncMain)
+
+    def _asyncMain(self):
+        ''' Call the _asyncTasks method of the single game instance.
+            * Thread control and tasks are handled in the game instance. '''
+        if self._debugAsync:
+            logging.debug(str(self) + 'AsyncThread._asyncMain')
+        self.gameObj._asyncTasks()
+
+
 def main(email=''):
     global totalConnections
 
@@ -285,41 +305,60 @@ def main(email=''):
     logging.info("Server Start - " + sys.argv[0])
     print("Logs: " + LOGDIR + '\\system.log')
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverHandle:
+    asyncThread = AsyncThread()
+    asyncThread.start()
 
-        serverHandle.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        serverHandle.bind((HOST, PORT))
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverHandle:
 
-        while True:
-            serverHandle.listen(1)
-            serverHandle.settimeout(60)
+            serverHandle.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            serverHandle.bind((HOST, PORT))
 
-            try:
-                clientsock, clientAddress = serverHandle.accept()
-            except OSError:
-                # This seems to happen when timeout occurs, but isn't fatal
-                logging.warning("socket accept() failed - timeout?")
-                break
+            while True:
+                serverHandle.listen(1)
+                serverHandle.settimeout(60)
 
-            newthread = ServerThread(clientsock, clientAddress,
-                                     totalConnections)
-            connections.append(newthread)
-            logging.info(str(newthread) + " Thread started")
-            totalConnections += 1
-            connections[newthread.getId()].start()
+                try:
+                    clientsock, clientAddress = serverHandle.accept()
 
-    exitProg()
+                    newthread = ClientThread(clientsock, clientAddress,
+                                             totalConnections)
+                    connections.append(newthread)
+                    totalConnections += 1
+                    connections[newthread.getId()].start()
+                except OSError:
+                    # This seems to happen when timeout occurs, but isn't fatal
+                    logging.warning("socket accept() failed - timeout?")
+
+                time.sleep(1)
+
+            exitProg()
+
+    except Terminator:
+        logging.info("Terminator: Halting asyncThread")
+        gameObj = game.Game()
+        gameObj.haltAsyncThread()
+        asyncThread.join()
+
+        # Halt client threads
+        for num, client in enumerate(connections):
+            logging.info("Terminator: Halting ClientThread " + str(num))
+            client.terminateClientConnection()
+            client.join()
+
+        exitProg()
 
 
 def sig_handler(signal_received, frame):
-    print('SIGINT or CTRL-C detected. Exiting gracefully')
-
-    exitProg()
+    print('SIGINT, SIGTERM, or CTRL-C detected. Exiting gracefully')
+    raise Terminator
 
 
 def exitProg(statusCode=0):
     ''' Cleanup and Exit program '''
     logging.info("Server Exit - " + sys.argv[0])
+
+    # exit main
     try:
         sys.exit(statusCode)
     except SystemExit:
@@ -329,6 +368,7 @@ def exitProg(statusCode=0):
 # -------------
 if __name__ == '__main__':
     signal(SIGINT, sig_handler)  # run function when SIGINT is recieved
+    signal(SIGTERM, sig_handler)  # run function when SIGITERM is recieved
     print('Running. Press CTRL-C to exit.  (might wait for a connection)')
 
     main()

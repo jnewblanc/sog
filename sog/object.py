@@ -110,6 +110,12 @@ class Object(Storage, EditWizard):
     def toggleInstanceDebug(self):
         self._instanceDebug = not self._instanceDebug
 
+    def getInstanceDebug(self):
+        return(self._instanceDebug)
+
+    def setInstanceDebug(self, val):
+        self._instanceDebug = bool(val)
+
     def examine(self):
         return(self._longdesc)
 
@@ -196,24 +202,24 @@ class Object(Storage, EditWizard):
         ''' Return True if an items limitations are met '''
         if ((self._classesAllowed and
              charObj.getClass() not in self._classesAllowed)):
-            charObj.svrObj.spoolOut(charObj.getClass().capitalize() +
+            charObj.client.spoolOut(charObj.getClass().capitalize() +
                                     "s are not permitted.\n")
             return(False)
         if ((self._alignmentsAllowed and
              charObj.getAlignment() not in self._alignmentsAllowed)):
-            charObj.svrObj.spoolOut("Folks regarded to be " +
+            charObj.client.spoolOut("Folks regarded to be " +
                                     charObj.getAlignment() +
                                     " are not allowed.\n")
             return(False)
         if ((self._gendersAllowed and
              charObj.getGender() not in self._gendersAllowed)):
-            charObj.svrObj.spoolOut("You have the wrong parts.\n")
+            charObj.client.spoolOut("You have the wrong parts.\n")
             return(False)
         if not charObj.getLevel() >= self._minLevelAllowed:
-            charObj.svrObj.spoolOut("You are not experienced enough.\n")
+            charObj.client.spoolOut("You are not experienced enough.\n")
             return(False)
         if not charObj.getLevel() <= self._maxLevelAllowed:
-            charObj.svrObj.spoolOut("You are over experienced.\n")
+            charObj.client.spoolOut("You are over experienced.\n")
             return(False)
         return(True)
 
@@ -517,14 +523,14 @@ class Closable(Object):
         charHp = charObj.getHitPoints()
         if self.smashSucceds(charObj):
             damage = self.smashDamage(charObj, self.getWeight(), True)
-            charObj.svrObj.spoolOut(self.smashTxt(damage, True, charHp))
+            charObj.client.spoolOut(self.smashTxt(damage, True, charHp))
             charObj.takeDamage(damage)
             self._closed = 'False'
             self.save()
             return(True)
         else:
             damage = self.smashDamage(charObj, self.getWeight(), False)
-            charObj.svrObj.spoolOut(self.smashTxt(damage, False, charHp))
+            charObj.client.spoolOut(self.smashTxt(damage, False, charHp))
             charObj.takeDamage(damage)
         return(False)
 
@@ -556,7 +562,7 @@ class Closable(Object):
 
                 trapTxt = self.trapTxt(damage, poison=self._poison,
                                        currenthealth=charObj.getHitPoints())
-                charObj.svrObj.spoolOut(trapTxt)
+                charObj.client.spoolOut(trapTxt)
                 charObj.takeDamage(damage)
 
             if self._poison:
@@ -578,7 +584,7 @@ class Closable(Object):
                 damage = self.trapDamage(charObj, self.getTrapLevel())
                 trapTxt = self.trapTxt(damage, poison=self._poison,
                                        currenthealth=charObj.getHitPoints())
-                charObj.svrObj.spoolOut(trapTxt)
+                charObj.client.spoolOut(trapTxt)
                 charObj.takeDamage(damage)
         return(True)
 
@@ -846,7 +852,7 @@ class Door(Portal, Closable):
 
     def canBeEntered(self, charObj):
         if self.isClosed():
-            charObj.svrObj.spoolOut(self.name + " is closed")
+            charObj.client.spoolOut(self.name + " is closed")
             return(False)
         if self.limitationsAreSatisfied(charObj):
             return(True)
