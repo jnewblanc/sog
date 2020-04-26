@@ -39,8 +39,22 @@ class IoLib():
         return(data)
 
     def outputSpoolContains(self, str1):
-        ''' returns True if given string is in the output spool '''
-        if str1 in self._outputSpool:
+        ''' returns True if given string is in the output spool
+            * since the queue doesn't have a way to peek at it, we end up
+              emptying and replacing the queue.
+              * This is inefficient, but since the use case is rare and the
+                queue is always small, we don't care.  Maybe someday we'll
+                switch to a better queuing mechanism '''
+        found = False
+        newQueue = queue.Queue()
+        while not self._outputSpool.empty():
+            data = self._outputSpool.get()
+            if re.match(str1, data):
+                found = True
+            newQueue.put(data)
+        self._outputSpool = newQueue
+
+        if found:
             return(True)
         return(False)
 

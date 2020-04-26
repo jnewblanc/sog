@@ -554,6 +554,37 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
     def setLastAttack(self):
         self._timeOfLastAttack = datetime.now()
 
+    def getBlockingCreatures(self, charObj):
+        ''' Returns a blocking creature in the room, if any
+            * blocking is an attacking creature with blocking attribute set '''
+        creatureList = []
+        for creatureObj in self.getInventoryByType('Creature'):
+            if creatureObj.getAttacking() == charObj:  # if attacking player
+                if creatureObj.blocksFromLeaving():
+                    if random.randint(0, 1):          # 50% chance per creature
+                        creatureList.append(creatureObj)
+        return(creatureList)
+
+    def getGuardingCreature(self):
+        ''' Returns a guarding creature in the room, if any
+            * guarding is any creature with guarding attribute set '''
+        for creatureObj in self.getInventoryByType('Creature'):
+            if creatureObj.guardsTreasure():
+                return(creatureObj)
+        return(None)
+
+    def canBeJoined(self, charObj, blockPercent=50):
+        ''' returns true if a given room can be joined '''
+        blockingCreatureObjs = self.getBlockingCreatures(charObj)
+        blockPercent = 50
+        for blockingCreatureObj in blockingCreatureObjs:
+            if random.randint(0, 100) <= blockPercent:
+                charObj.client.spoolOut(blockingCreatureObj.describe() +
+                                        " blocks your way.\n")
+            return(False)
+        return(True)
+    # End of Room class
+
 
 class Shop(Room):
     def __init__(self, roomNum=1):
@@ -670,35 +701,7 @@ class Shop(Room):
             * non-room price changes occur elsewhere '''
         price *= (self._priceBonus / 100)
         return(int(price))
-
-    def getBlockingCreature(self, charObj):
-        ''' Returns a blocking creature in the room, if any
-            * blocking is an attacking creature with blocking attribute set '''
-        for creatureObj in self.getInventoryByType('Creature'):
-            if creatureObj.getAttacking() == charObj:  # if attacking player
-                if creatureObj.blocksFromLeaving():
-                    if random.randint(0, 1):          # 50% chance per creature
-                        return(creatureObj)
-        return(None)
-
-    def getGuardingCreature(self):
-        ''' Returns a guarding creature in the room, if any
-            * guarding is any creature with guarding attribute set '''
-        for creatureObj in self.getInventoryByType('Creature'):
-            if creatureObj.guardsTreasure():
-                return(creatureObj)
-        return(None)
-
-    def canBeJoined(self, charObj, blockPercent=50):
-        ''' returns true if a given room can be joined '''
-        blockingCreatureObjs = self.getBlockingCreatures()
-        blockPercent = 50
-        for blockingCreatureObj in blockingCreatureObjs:
-            if random.randint(0, 100) <= blockPercent:
-                charObj.client.spoolOut(blockingCreatureObj.describe() +
-                                        " blocks your way.\n")
-            return(False)
-        return(True)
+    # End of Shop class
 
 
 def RoomFactory(objType="room", id=0):
@@ -715,3 +718,4 @@ def RoomFactory(objType="room", id=0):
                       "instanciated " + objType + " object")
 
     return(obj)
+    # End of RoomFactory

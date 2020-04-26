@@ -129,8 +129,8 @@ class Combat():
         # dex bonus/penalty = +/- %3 per dex above/below 12
         if isinstance(attackerObj, Character):
             dexAdj = (attackerObj.getDexterity() - 12) * 3
-            hitPercentage += levelAdj
-            dLog(logPrefix + str(levelAdj) + "% level adj",
+            hitPercentage += dexAdj
+            dLog(logPrefix + str(dexAdj) + "% level adj",
                  self._instanceDebug)
 
         # attack command bonus/penalty
@@ -421,8 +421,7 @@ class Combat():
                     self.roomMsg(roomObj, target.describe() + " flees.\n")
                     # destroy creature
                     roomObj.removeFromInventory(target)
-        else:
-            self.charMsg(charObj, "You don't get a strike in\n")
+        # end attackCreature
 
     def creaturesAttack(self, roomObj):
         ''' Creatures turn to engage and attack players '''
@@ -446,6 +445,7 @@ class Combat():
                         self.creatureAttacksPlayer(creatureObj, charObj)
                         break
         return(None)
+        # end creaturesAttack
 
     def creatureAttacksPlayer(self, creatureObj, charObj=None):
         ''' single creature attacks a player '''
@@ -512,6 +512,7 @@ class Combat():
                          str(damage) + " damage.\n")
             charObj.takeDamage(damage)
         return(None)
+        # end creatureAttacksPlayer
 
     def unAttack(self, roomObj, charObj):
         ''' When a player leaves the room, creatures that are still in
