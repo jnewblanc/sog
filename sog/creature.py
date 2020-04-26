@@ -44,7 +44,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
                           '_parleyCustom', '_parleyTeleport' '_parleySell',
                           '_spellCaster', '_objDropList', '_numOfItemsDropped',
                           '_parleySellItems', '_attackSpeed',
-                          '_TimeToFirstAttack']
+                          '_TimeToFirstAttack', '_damage']
 
     attributesThatShouldntBeSaved = ['_creationDate', '_currentlyAttacking',
                                      '_enterRoomTime', '_instanceDebug',
@@ -52,10 +52,10 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
                                      '_attackPlayer', '_lastAttackDate',
                                      '_secondsUntilNextAttack']
 
-    intAttributes = ['_weight', '_value', '_level', '_exp', '_ac', '_damage',
-                     '_tohit', '_frequency', '_timeToFirstAttack',
-                     '_attackRate', '_attackIfPietyLessThan',
-                     '_attackIfPietyMoreThan']
+    intAttributes = ['_weight', '_value', '_level', '_exp', '_ac',
+                     '_damagePct', '_tohit', '_dodge', '_frequency',
+                     '_timeToFirstAttack', '_attackRate',
+                     '_attackIfPietyLessThan', '_attackIfPietyMoreThan']
 
     boolAttributes = ['_regenerate', '_hostile', '_defend', '_follow',
                       '_blockFromLeaving', '_guardTreasure', '_sendToJail',
@@ -76,93 +76,110 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             '_exp': 10,
             '_ac': 0,
             '_maxhp': 30,
-            '_damage': 5,
-            '_tohit': 0
+            '_tohit': 0,
+            '_dodge': 0
         },
         2: {
             '_exp': 20,
             '_ac': 0,
             '_maxhp': 50,
-            '_damage': 5,
-            '_tohit': 0
+            '_tohit': 0,
+            '_dodge': 0
         },
         3: {
             '_exp': 30,
             '_ac': 1,
             '_maxhp': 70,
-            '_damage': 5,
-            '_tohit': 1
+            '_tohit': 10,
+            '_dodge': 0
         },
         4: {
             '_exp': 40,
             '_ac': 1,
             '_maxhp': 100,
-            '_damage': 5,
-            '_tohit': 1
+            '_tohit': 10,
+            '_dodge': 0
         },
         5: {
             '_exp': 50,
             '_ac': 2,
             '_maxhp': 150,
-            '_damage': 5,
-            '_tohit': 1
+            '_tohit': 10,
+            '_dodge': 0
         },
         6: {
             '_exp': 90,
             '_ac': 2,
             '_maxhp': 200,
-            '_damage': 5,
-            '_tohit': 1
+            '_tohit': 10,
+            '_dodge': 0
         },
         7: {
             '_exp': 200,
             '_ac': 3,
             '_maxhp': 500,
-            '_damage': 5,
-            '_tohit': 1
+            '_tohit': 10,
+            '_dodge': 0
         },
         8: {
             '_exp': 300,
             '_ac': 3,
             '_maxhp': 700,
-            '_damage': 5,
-            '_tohit': 2
+            '_tohit': 20,
+            '_dodge': 0
         },
         9: {
             '_exp': 1000,
             '_ac': 4,
             '_maxhp': 1000,
-            '_damage': 5,
-            '_tohit': 2
+            '_tohit': 20,
+            '_dodge': 10
         },
         10: {
             '_exp': 3000,
             '_ac': 5,
             '_maxhp': 3000,
-            '_damage': 5,
-            '_tohit': 3
+            '_tohit': 30,
+            '_dodge': 10
+
         },
         11: {
             '_exp': 4000,
             '_ac': 6,
             '_maxhp': 4000,
-            '_damage': 5,
-            '_tohit': 4
+            '_tohit': 40,
+            '_dodge': 20
         },
         12: {
             '_exp': 5000,
             '_ac': 7,
             '_maxhp': 5000,
-            '_damage': 5,
-            '_tohit': 5
+            '_tohit': 50,
+            '_dodge': 20
         },
         99: {
             '_exp': 8000,
             '_ac': 8,
             '_maxhp': 10000,
-            '_damage': 5,
-            '_tohit': 6
+            '_tohit': 60,
+            '_dodge': 30
         }
+    }
+
+    _baseStatDict = {
+        1: {'_damage': 3},
+        2: {'_damage': 6},
+        3: {'_damage': 9},
+        4: {'_damage': 12},
+        5: {'_damage': 15},
+        6: {'_damage': 20},
+        7: {'_damage': 25},
+        8: {'_damage': 35},
+        9: {'_damage': 50},
+        10: {'_damage': 75},
+        11: {'_damage': 100},
+        12: {'_damage': 150},
+        99: {'_damage': 200}
     }
 
     _parleyDefaultsDict = {
@@ -189,8 +206,8 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         "_level": "the level of the creature",
         "_maxhp": "the health of the creature",
         "_regenerate": "if True, monster regenerates hitpoints",
-        "_damage": "additional damage that a creature inflicts on hit",
-        "_tohit": "additional chance to hit target",
+        "_damagePct": "multiplier for default damage - 100% = normal, +/-10%",
+        "_tohit": "additional chance to hit/miss target - 10% increments",
         "_hostile": "whether the creature attacks on sight or not",
         "_parleyAction": ("What the creature does when it's talked to.\n" +
                           "  Active values: Sell, Teleport, Attack\n" +
@@ -217,8 +234,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._level = 1             # range 1..64
         self._exp = 0               # auto-generated after load
         self._ac = 0                # inital value auto-filled based on lvl
-        self._damage = 0            # inital value auto-filled based on lvl
         self._tohit = 0             # inital value auto-filled based on lvl
+        self._damagePct = 100       # inital value
+        self._dodge = 0             # inital value auto-filled based on lvl
 
         self._maxhp = 100           # Starting hit points - range 0..1023
         self._hp = 100              # Current hit points - autoset if 0
@@ -328,6 +346,15 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def kidnaps(self):
         return(self._kidnap)
 
+    def sendsToJail(self):
+        return(self._sendToJail)
+
+    def blocksFromLeaving(self):
+        return(self._blockFromLeaving)
+
+    def guardsTreasure(self):
+        return(self._guardTreasure)
+
     def getExp(self):
         return(self._exp)
 
@@ -342,6 +369,23 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
     def takeDamage(self, num=0):
         self._hp -= num
+
+    def flees(self, percentChanceOfFleeing=20):
+        ''' Returns true if creature flees
+            * creature must have _fleeIfAttacked attribute set
+            * creature must be at 10% health or less
+            * after that, 20% (by default) chance of flee '''
+        if not self.fleesIfAttacked():
+            return(False)
+
+        if self.getHitPoints() <= (self.getMaxHitPoints() * .10):
+            if random.randint(1, 100) <= percentChanceOfFleeing:
+                return(True)
+        return(False)
+
+    def getEquippedWeaponToHit(self):
+        ''' creatures don't have weapons, so we just use their _tohit att '''
+        return(self._tohit)
 
     def attacksBack(self):
         return(self._defend)
@@ -406,7 +450,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         return(self._value)
 
     def getDamage(self):
-        return(self._damage)
+        damage = int(self._baseStatDict[self.getLevel()]['_damage'] *
+                     self._damagePct / 100)
+        return(damage)
 
     def isAttacking(self):
         if self._currentlyAttacking is not None:
@@ -455,6 +501,10 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         acReduction = int(damage * (.05 * self.getAc()))
         damage -= acReduction
         return(max(0, damage))
+
+    def getCumulativeDodge(self):
+        ''' return percentage to avoid a hit '''
+        return(self._dodge)
 
     def hitsCharacter(self, charObj):
         ''' return true if creature hits the character '''
@@ -565,16 +615,6 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         ''' returns the int percentage of health remaining '''
         percent = self.getHitPoints() * 100 / self.getMaxHitPoints()
         return(int(percent))
-
-    def flees(self, percentChanceOfFleeing=20):
-        if not self.fleesIfAttacked():
-            return(False)
-
-        if (self.getHitPointPercent() < 40):
-            if random.randint(1, 100) <= percentChanceOfFleeing:
-                return(True)
-
-        return(False)
 
     def getParleyAction(self):
         return(self._parleyAction)

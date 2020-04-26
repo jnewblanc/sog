@@ -297,8 +297,9 @@ class Editor(IoLib, AttributeHelper):
                         else:
                             percent = 1 - random.randint(0, 9) / 100
                         newval = int(newval * percent)
-                    print("defaults: " + oneAtt + " = " + str(newval))
-                    setattr(obj, oneAtt, newval)
+                    if oneAtt not in obj.obsoleteAttributes():
+                        print("defaults: " + oneAtt + " = " + str(newval))
+                        setattr(obj, oneAtt, newval)
             elif attName == '_maxhp':
                 print("Setting defaults for _hp to be equal to _maxhp")
                 setattr(obj, '_hp', attValue)

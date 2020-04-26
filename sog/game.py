@@ -180,15 +180,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
             self.creaturesAttack(roomObj)
         return(None)
 
-    def joinRoom(self, roomStr, charObj):
-        ''' insert player into a room
-            * create or join room instance
-            * add character to room instance
-            * add room to character instance
-            * add room to active rooms list
-            * close spring loaded doors if room is empty
-            # roomStr can be a room number or can be in the form Shop/35
-        '''
+    def getRoomObjFromRoomNum(self, roomStr):
+        ''' returns a roomObj, given a roomStr '''
         roomObj = None
         roomType = 'room'
 
@@ -210,13 +203,32 @@ class _Game(cmd.Cmd, Combat, Ipc):
         # See if room is already active
         for oneroom in self.getActiveRoomList():
             if oneroom.getRoomNum() == roomNum:  # if the room alread exists
-                logging.debug(charObj.getName() + " joined existing room " +
-                              str(roomNum))
-                roomObj = oneroom             # use existing roomObj
+                roomObj = oneroom                # use existing roomObj
 
         if not roomObj:
             roomObj = RoomFactory(roomType, roomNum)  # instanciate room object
             roomObj.load(logStr=__class__.__name__)  # load room from disk
+
+        return(roomObj)
+
+    def joinRoom(self, roomThing, charObj):
+        ''' insert player into a room
+            * can accept room number or roomObj
+            * create or join room instance
+            * add character to room instance
+            * add room to character instance
+            * add room to active rooms list
+            * close spring loaded doors if room is empty
+            # roomStr can be a room number or can be in the form Shop/35
+        '''
+
+        if isinstance(roomThing, int):
+            roomObj = self.getRoomObjFromRoomNum(roomThing)
+        else:
+            roomObj = roomThing
+
+        if not roomObj:
+            return(False)
 
         if charObj.getRoom():
             if charObj.getRoom() == roomObj:    # if already in desired room
@@ -224,10 +236,9 @@ class _Game(cmd.Cmd, Combat, Ipc):
             else:
                 self.leaveRoom(charObj)         # leave the previous room
 
-        charObj.setRoom(roomObj)                # Add room to character
-        roomObj.addCharacter(charObj)           # Add character to room
-        self.addToActiveRooms(roomObj)    # Add room to active room list
-
+                charObj.setRoom(roomObj)        # Add room to character
+                roomObj.addCharacter(charObj)   # Add character to room
+                self.addToActiveRooms(roomObj)  # Add room to active room list
         return(True)
 
     def leaveRoom(self, charObj):
@@ -405,7 +416,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
 
         if len(roomObj.getInventoryByType('Creature')) >= 6:
             self.roomMsg(roomObj, 'Others arrive, but wander off because ' +
-                         'of the crowd.\n')
+                         'of the crowd.\n', allowDupMsgs=False)
             return(False)
 
         # Create a creature cache, so that we don't have to load the
@@ -572,12 +583,11 @@ class GameCmd(cmd.Cmd):
             dLog("GAME move dir = " + direction, self._instanceDebug)
             exitDict = currentRoom.getExits()
             if direction in exitDict.keys():
-                roomnum = exitDict[direction]
-                if roomnum:
-                    if roomnum != 0:
-                        self.gameObj.joinRoom(roomnum, charObj)
-                        currentRoom = charObj.getRoom()
-                        moved = True
+                roomObj = self.gameObj.getRoomObjFromNum(exitDict[direction])
+                if roomObj.canBeJoined(charObj):
+                    self.gameObj.joinRoom(roomObj, charObj)
+                    currentRoom = charObj.getRoom()
+                    moved = True
         else:
             # handle doors and Portals
             itemList = self.getObjFromCmd(currentRoom.getInventory(), line)
@@ -590,13 +600,15 @@ class GameCmd(cmd.Cmd):
                 return(False)
 
             roomnum = itemList[0].getToWhere()
-            dLog("GAME move obj = " + str(roomnum),
-                 self._instanceDebug)
-            self.gameObj.joinRoom(roomnum, charObj)
-            currentRoom = charObj.getRoom()
-            moved = True
+            roomObj = self.gameObj.getRoomObjFromNum(exitDict[direction])
+            if roomObj.canBeJoined(charObj):
+                self.gameObj.joinRoom(roomnum, charObj)
+                currentRoom = charObj.getRoom()
+                moved = True
 
         if moved:
+            dLog("GAME move obj = " + str(roomObj.describe()),
+                 self._instanceDebug)
             # creatures in old room should stop attacking player
             self.gameObj.unAttack(oldRoom, charObj)
             # character possibly loses hidden
@@ -1077,12 +1089,19 @@ class GameCmd(cmd.Cmd):
             self.selfMsg(obj1.describe() + " can not be carried.\n")
             return(False)
 
-        if charObj.canCarryAdditionalWeight(obj1.getWeight()):
-            roomObj.removeObject(obj1)
-            charObj.addToInventory(obj1)
-            self.selfMsg("Ok\n")
-        else:
+        if not charObj.canCarryAdditionalWeight(obj1.getWeight()):
             self.selfMsg("You are not strong enough.\n")
+            return(False)
+
+        guardingCreatureObj = roomObj.getGuardingCreature()
+        if guardingCreatureObj:
+            self.selfMsg(guardingCreatureObj.describe() +
+                         " blocks you from taking that.\n")
+            return(False)
+
+        roomObj.removeObject(obj1)
+        charObj.addToInventory(obj1)
+        self.selfMsg("Ok\n")
 
     def do_go(self, line):
         ''' go through a door or portal '''

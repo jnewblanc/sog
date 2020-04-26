@@ -38,6 +38,12 @@ class IoLib():
             data += self._outputSpool.get()
         return(data)
 
+    def outputSpoolContains(self, str1):
+        ''' returns True if given string is in the output spool '''
+        if str1 in self._outputSpool:
+            return(True)
+        return(False)
+
     def _sendAndReceive(self):
         ''' Send data as output and recieve input
             This is the simple "terminal" case for send/receive, but it

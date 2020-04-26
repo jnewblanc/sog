@@ -61,7 +61,9 @@ class TestCharacter(unittest.TestCase):
         charObj._hitpoints = 100
         obj1 = object.Armor(self.testObjNumber)
         obj1._ac = 4
+        obj1._singledesc = "french fry"
         obj1._dodgeBonus = 10
+        obj1._charges = 100
         obj1.setName("testArmor")
         charObj.equip(obj1)
         obj2 = charObj.getEquippedArmor()
@@ -69,10 +71,10 @@ class TestCharacter(unittest.TestCase):
                "equipped object " + obj2.getName())
         self.assertEqual(obj1 == obj2, True, msg)
         damage = 10
-        percent = obj1.getAc() * .05 * charObj.getLevel()
+        percent = .05 * obj1.getAc()
         reduction = int(damage - (damage * percent))
         expectedResult = charObj.getHitPoints() - reduction
-        charObj.takeDamage(damage)
+        charObj.takeDamage(charObj.acDamageReduction(damage))
         msg = ("takeDamage did not properly reduce hit points - " +
                "ac(" + str(obj1.getAc()) + ") * .05 * level(" +
                str(charObj.getLevel()) + ") = " + str(percent) + "% of " +
@@ -81,7 +83,6 @@ class TestCharacter(unittest.TestCase):
                str(expectedResult) + " but is set to " +
                str(charObj.getHitPoints()))
         # algoritm has changed.  Need to adjust this list later.
-        # self.assertEqual(charObj.getHitPoints() == expectedResult, True, msg)
         self.assertEqual(charObj.getHitPoints() != 100, True, msg)
 
 

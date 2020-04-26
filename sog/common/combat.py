@@ -102,16 +102,66 @@ class Combat():
         }
     }
 
-    _secsBetweenAttacks = 3
+    _secsBetweenAttacks = 5
+    _jailRoomNum = 280
+    _kidnapRoomNum = 184
 
-    def attackHit(self, attackerObj, defenderObj):
+    def attackHit(self, attackerObj, defenderObj, attackCmd='attack'):
         ''' Determine if an attack hits '''
-        hitRoll = random.randint(1, 20)
-        baseToHit = attackerObj.getLevel() - defenderObj.getLevel() + 10
-        factor = 0
-        if (hitRoll > baseToHit + factor):
+        logPrefix = "combat.attackHit: "
+
+        # right off the bat, with no calcs, there's a 25% chance of a hit,
+        # which means that 25% is the lowest hit chance
+        hitRoll = random.randint(1, 4)
+        if random.randint(1, 4) == 1:
+            dLog(logPrefix + "25% hit chance triggered",
+                 self._instanceDebug)
+            return(True)
+
+        hitPercentage = 50  # base percent
+
+        # level bonus/penalty = %5 per level
+        levelAdj = (attackerObj.getLevel() - defenderObj.getLevel()) * 5
+        hitPercentage += levelAdj
+        dLog(logPrefix + str(levelAdj) + "% level adj",
+             self._instanceDebug)
+
+        # dex bonus/penalty = +/- %3 per dex above/below 12
+        if isinstance(attackerObj, Character):
+            dexAdj = (attackerObj.getDexterity() - 12) * 3
+            hitPercentage += levelAdj
+            dLog(logPrefix + str(levelAdj) + "% level adj",
+                 self._instanceDebug)
+
+        # attack command bonus/penalty
+        attackCmdAdj = self.attackList[attackCmd]['tohit']
+        hitPercentage += attackCmdAdj
+        dLog(logPrefix + str(attackCmdAdj) + "% cmd adj",
+             self._instanceDebug)
+
+        # weapon bonus/penalty + skill
+        offenseAdj = attackerObj.getEquippedWeaponToHit()
+        hitPercentage += offenseAdj
+        dLog(logPrefix + str(attackCmdAdj) + "% weapon/skill adj",
+             self._instanceDebug)
+
+        # armor bonus/penalty
+        defenceAdj = defenderObj.getCumulativeDodge()
+        hitPercentage -= defenceAdj
+        dLog(logPrefix + str(attackCmdAdj) + "% defence adj",
+             self._instanceDebug)
+
+        dLog(logPrefix + str(hitPercentage) + "% total hit percent",
+             self._instanceDebug)
+
+        hitRoll = random.randint(1, 100)
+        if (hitRoll >= hitPercentage):
             return(True)
         return(False)
+
+    def misses(self, attacker, target, attackCmd='attack'):
+        ''' Determine if an attack misses '''
+        return(not (self.attackHit(attacker, target, attackCmd)))
 
     def calcDmgPct(self, attackerObj, opponentObj, attackCmd='attack'):
         ''' Calculate damage percentage '''
@@ -227,16 +277,26 @@ class Combat():
     def stopOtherAtk(self):
         return(True)
 
-    def kidnap(self, charObj, roomNum=184):
+    def whiskAwayInsteadOfDeath(self, charObj, roomNum=184):
         ''' Instead of death:
         * Player is teleported to room
-        * ??? monster will placed in the room connected to the door in room 7.
+        * death and death inducing ailments are prevented
+        * Future??? monster will placed in the room connected to
+          the door (i.e. room 7).
         '''
-        self.charMsg(self.charObj, "Everything goes black...  As you start " +
-                                   "to come around, you find yourself in\n" +
-                                   "an awkward, and dangerous predicament.  " +
-                                   "You opt to remain perfectly still\n" +
-                                   "until you can assess the situation")
+        msg = ''
+
+        if roomNum == self._kidnapRoomNum:
+            msg = ("Everything goes black...  As you start to come around, " +
+                   "you find yourself in\nan awkward, and dangerous " +
+                   "predicament.  You opt to remain perfectly still\n" +
+                   "until you can assess the situation")
+
+        if roomNum == self._jailRoomNum:
+            msg = ("You are hauled off to jail.\n")
+
+        self.charMsg(self.charObj, msg)
+        charObj.setNearDeathExperience()
         self.gameObj.joinRoom(roomNum, charObj)
         return(True)
 
@@ -302,54 +362,67 @@ class Combat():
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
                                  " attacks " + target.describe() + "\n")
 
-        if charObj.fumbles():
+        if self.misses(charObj, target, attackCmd):
+            self.charMsg(charObj, "You miss.\n")
+            damage = 0
+        elif charObj.fumbles():
             self.charMsg(charObj, "Fumble!  You trip and drop your gear" +
                          " to catch yourself.\n")
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
                                  " stumbles.\n")
-
-        # calculate attack damage
-        damage = self.attackDamage(charObj, target, attackCmd)
-
-        # reduce charges of weapon
-        charObj.decreaseChargeOfEquippedWeapon()
-
-        dLog(logPrefix + "target takes damage", self._instanceDebug)
-        if charObj.getEquippedWeapon().getName() == 'fist':
-            # It's important that we clearly identify weaponless attacks
-            self.charMsg(charObj, "Pow!  You punch " + target.describe() +
-                         " for " + str(damage) + " damage.\n")
+            damage = 0
         else:
-            self.charMsg(charObj, "You hit " + target.describe() +
-                         " for " + str(damage) + " damage.\n")
+            # reduce weapon charge counter
+            charObj.decreaseChargeOfEquippedWeapon()
+            # calculate attack damage
+            damage = self.attackDamage(charObj, target, attackCmd)
 
-        if target.damageIsLethal(damage):
-            dLog(logPrefix + "target dies", self._instanceDebug)
+        if damage:
+            dLog(logPrefix + "target takes damage", self._instanceDebug)
+            if charObj.getEquippedWeapon().getName() == 'fist':
+                # It's important that we clearly identify weaponless attacks
+                self.charMsg(charObj, "Pow!  You punch " + target.describe() +
+                             " for " + str(damage) + " damage.\n")
+            else:
+                self.charMsg(charObj, "You hit " + target.describe() +
+                             " for " + str(damage) + " damage.\n")
 
-            self.charMsg(charObj, "You killed " + target.describe() + "\n")
-            self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
-                                 " kills " + target.describe() + "\n")
-            truncsize = roomObj.getInventoryTruncSize()
-            for item in target.getInventory():
-                if roomObj.addToInventory(item, maxSize=truncsize):
-                    self.roomMsg(roomObj, item.describe() +
-                                 " falls to the floor\n")
-                else:
-                    self.roomMsg(roomObj, item.describe() +
-                                 "falls to the floor and rolls away")
+            if target.damageIsLethal(damage):
+                dLog(logPrefix + "target dies", self._instanceDebug)
 
-            # dole out experience
-            self.allocateExp(charObj, roomObj, target)
+                self.charMsg(charObj, "You killed " + target.describe() + "\n")
+                self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
+                                     " kills " + target.describe() + "\n")
+                truncsize = roomObj.getInventoryTruncSize()
+                for item in target.getInventory():
+                    if roomObj.addToInventory(item, maxSize=truncsize):
+                        self.roomMsg(roomObj, item.describe() +
+                                     " falls to the floor\n")
+                    else:
+                        self.roomMsg(roomObj, item.describe() +
+                                     "falls to the floor and rolls away")
 
-            # determine if skill is increased
-            if charObj.getLevel() >= target.getLevel():
-                damageType = charObj.getEquippedWeaponDamageType()
-                charObj.rollToBumpSkillForLevel(damageType)
+                # dole out experience
+                self.allocateExp(charObj, roomObj, target)
 
-            # destroy creature
-            roomObj.removeFromInventory(target)
+                # determine if skill is increased
+                if charObj.getLevel() >= target.getLevel():
+                    damageType = charObj.getEquippedWeaponDamageType()
+                    charObj.rollToBumpSkillForLevel(damageType)
+
+                # update player kill stats
+                charObj.updateKillCount(target)
+
+                # destroy creature
+                roomObj.removeFromInventory(target)
+            else:
+                target.takeDamage(damage)
+                if target.flees(target):
+                    self.roomMsg(roomObj, target.describe() + " flees.\n")
+                    # destroy creature
+                    roomObj.removeFromInventory(target)
         else:
-            target.takeDamage(damage)
+            self.charMsg(charObj, "You don't get a strike in\n")
 
     def creaturesAttack(self, roomObj):
         ''' Creatures turn to engage and attack players '''
@@ -401,25 +474,32 @@ class Combat():
         creatureObj.setSecondsUntilNextAttack(secs)
         creatureObj.setLastAttack()
 
-        if not creatureObj.hitsCharacter(charObj):  # if creature doesn't hit
-            self.charMsg(charObj, creatureObj.describe() + " misses you!")
+        if self.misses(creatureObj, charObj):  # if creature doesn't hit
+            self.charMsg(charObj, creatureObj.describe() + " misses you!\n")
             # notify other players in the room
-
-        # calculate attack damage
-        damage = self.attackDamage(creatureObj, charObj)
-
-        dLog(logPrefix + creatureObj.getName() + " hits " + charObj.getName() +
-             " for " + str(damage) + " damage", self._instanceDebug)
+            damage = 0
+        elif creatureObj.fumbles():
+            self.charMsg(charObj, creatureObj.describe() + " fumbles!\n")
+            damage = 0
+        else:
+            # calculate attack damage
+            damage = self.attackDamage(creatureObj, charObj)
 
         # reduce charges of armor/shield protection
         charObj.decreaseChargeOfEquippedProtection()
 
         if damage:
+            dLog(logPrefix + creatureObj.getName() + " hits " +
+                 charObj.getName() + " for " + str(damage) + " damage",
+                 self._instanceDebug)
             if charObj.damageIsLethal(damage):
                 dLog(logPrefix + "player takes lethal damage",
                      self._instanceDebug)
                 if creatureObj.kidnaps():
-                    self.kidnap()
+                    self.whiskAwayInsteadOfDeath()
+                if creatureObj.sendsToJail():
+                    self.whiskAwayInsteadOfDeath(charObj,
+                                                 roomNum=self._kidnapRoomNum)
                 else:
                     if not charObj.isDm():
                         # Transfer players inventory to room

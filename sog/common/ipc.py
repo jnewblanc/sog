@@ -23,22 +23,24 @@ class Ipc():
                 recieved = True
         return(recieved)
 
-    def charMsg(self, charObj, msg):
+    def charMsg(self, charObj, msg, allowDupMsgs=True):
         ''' show only to yourself '''
-        recieved = False
         if charObj:
+            if not allowDupMsgs and charObj.client.outputSpoolContains(msg):
+                # skip duplicate messages
+                return(False)
             charObj.client.spoolOut(msg)
-            recieved = True
-        return(recieved)
+            return(True)
+        return(False)
 
-    def roomMsg(self, roomObj, msg):
+    def roomMsg(self, roomObj, msg, allowDupMsgs=True):
         ''' shown to everyone in the room '''
         recieved = False
         if not roomObj:
             return(False)
 
         for oneChar in roomObj.getCharacterList():
-            status = self.charMsg(oneChar, msg)
+            status = self.charMsg(oneChar, msg, allowDupMsgs)
             if status:
                 recieved = True    # sent to at least one recipient
         return(recieved)

@@ -960,6 +960,12 @@ class Character(Storage, AttributeHelper, Inventory):
     def setExpForLevel(self):
         self._expToNextLevel = (2 ** (9 + self._level))
 
+    def setNearDeathExperience(self):
+        ''' set stats so that character can recover from a near death exp '''
+        self.setHitPoints(1)
+        self.setPoisoned(False)
+        self.setPlagued(False)
+
     def levelUpStats(self):
         '''Level up a character's stats'''
         newpoints = 1
@@ -1210,6 +1216,24 @@ class Character(Storage, AttributeHelper, Inventory):
                                      " is worse for wear and in need of " +
                                      "repair.\n")
 
+    def getEquippedWeaponToHit(self):
+        ''' return tohit percentage of armor + shield '''
+        weapon = self.getEquippedWeapon()
+        if weapon.getName() != 'fist':
+            return(0)
+        return(weapon.getToHitBonus())
+
+    def getCumulativeDodge(self):
+        ''' return dodge percentage of armor + shield '''
+        # Start off with dodge skill
+        dodgePct = self._dodge
+
+        # Add on dodge from armor/shields
+        for obj in self.getEquippedProtection():
+            if not obj.isBroken():
+                dodgePct += obj.getDodgeBonus()
+        return(dodgePct)
+
     def setInputCommand(self, cmd):
         self._lastInputDateCommand = cmd
 
@@ -1307,6 +1331,9 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def getType(self):
         return(self.__class__.__name__)
+
+    def isPermanent(self):
+        return(False)
 
     def setName(self, name):
         self._name = str(name)
@@ -1415,7 +1442,7 @@ class Character(Storage, AttributeHelper, Inventory):
 
         # reduce AC if protection is broken
         for obj in self.getEquippedProtection():
-            if obj.isBroken:
+            if obj.isBroken():
                 ac -= obj.getAc()
 
         # reduce damage based on percentage:
@@ -1435,11 +1462,13 @@ class Character(Storage, AttributeHelper, Inventory):
         if nokill:
             self._hitpoints = 1
         condition = self.condition()
+        dLog(self.getName() + " takes " + str(damage) + " damage",
+             self._instanceDebug)
         self.save()
         if self.getHitPoints() <= 0:
             if self.isDm:
                 self.client.spoolOut("You would be dead if you weren't a dm." +
-                                     "Resetting hp to maxhp.\n")
+                                     "  Resetting hp to maxhp.\n")
                 self._hitpoints = self._maxhitpoints
             else:
                 self.processDeath()
@@ -1678,3 +1707,20 @@ class Character(Storage, AttributeHelper, Inventory):
                               poisonHp + " damage.\n")
                 self.takeDamage(poisonHp)
                 self.setLastPoison()
+
+    def updateKillCount(self, opponent):
+        opponentLevel = opponent.getLevel()
+        killerLevel = self.getLevel()
+
+        if opponentLevel < killerLevel:
+            self._weenykills += 1
+        elif opponentLevel == killerLevel:
+            self._matchedkills += 1
+        elif opponentLevel > killerLevel:
+            self._valiantkills += 1
+
+        if opponent.getType() == 'Character':
+            self._playerkills += 1
+
+        if opponent.isPermanent():
+            self._epickills += 1
