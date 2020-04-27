@@ -9,6 +9,7 @@ from pathlib import Path
 import random
 import re
 import sys
+import textwrap
 
 # from account import Account
 from character import Character
@@ -33,6 +34,9 @@ class Editor(IoLib, AttributeHelper):
         super().__init__()
         self._instanceDebug = True
 
+        self._customCmdDict = {0: [], 1: [], 2: [], 3: [], 4: [],
+                               5: [], 6: [], 7: [], 8: [], 9: []}
+
     def processCommand(self, inputStr):
         ''' Process the editor commands '''
 
@@ -49,12 +53,16 @@ class Editor(IoLib, AttributeHelper):
             # print("account - edit account")
             print("character - edit character")
             print("creature - edit creature")
+            print("custom - set up custom functions to assist in editing")
             print("quit - quit editor")
         elif cmd == "account":
             print("Not implemented")
         elif cmd == "list":
             targetStr, startNum, endNum = self.parseListArgs(cmdargs)
-            self.showList(targetStr, startNum, endNum)
+            if targetStr != '':
+                self.showList(targetStr, startNum, endNum)
+        elif cmd == 'custom':
+            self.editCustomFunctions(cmdargs)
         else:
             if not self.initAndEdit(cmdargs):
                 print("Command failed")
@@ -70,7 +78,7 @@ class Editor(IoLib, AttributeHelper):
                 if nextnum:
                     print("\nLast used number for " + str(cmdargs[1]) +
                           " is " + str(nextnum - 1))
-            return(False)
+            return('', 0, 0)
         targetStr = cmdargs[1]
         if targetStr.lower() != 'coins':
             targetStr = targetStr.rstrip('s')
@@ -90,7 +98,7 @@ class Editor(IoLib, AttributeHelper):
 
         if startNum <= 0:
             print("Invalid Range")
-            return(False)
+            return('', 0, 0)
 
         lastUnused = getNextUnusedFileNumber(targetStr)
         if endNum <= 0 or endNum > lastUnused:
@@ -192,6 +200,84 @@ class Editor(IoLib, AttributeHelper):
         attType = re.sub(r"^<class '(.*)'>.*", r'\1', attType)
         return(attType)
 
+    def showCustomFunctions(self):
+        C_ROW_FORMAT = "  ({0:3}) {1:70}\n"
+        shown = False
+        for custKey in self._customCmdDict.keys():
+            if len(self._customCmdDict[custKey]) > 0:
+                print(C_ROW_FORMAT.format(str(custKey),
+                                          str(self._customCmdDict[custKey])))
+                shown = True
+        if not shown:
+            print("  No custom functions defined")
+
+    def editCustomFunctions(self, cmdargs):
+        ccBanner = (colorama.Fore.CYAN + '===== Custom functions =====' +
+                    colorama.Fore.RESET)
+        ccMsg = ("Define one or more custom reusable functions that" +
+                 "you can later\napply to multiple objects.\n")
+        ccExMsg = ("Each custom function needs to be a list of tuples\n" +
+                   "For example:\n" +
+                   '  [("_weight", 20), ("_value", 30)]\n' +
+                   "  [('_itemCatalog', ['Weapon/1','Armor/1']), " +
+                   "(_numOfItemsCarried, [0,1,2])]\n")
+        ccAppMsg = ("Use the the following to apply your custom " +
+                    "function:\n" + colorama.Fore.YELLOW +
+                    "  'custom apply <#>'" + colorama.Fore.RESET)
+        ccListMsg = ("Use the following to view all of the saved custom " +
+                     "functions:\n" + colorama.Fore.YELLOW +
+                     "  'custom list'" + colorama.Fore.RESET)
+        ccDefMsg = ("Use the following to add or replace a custom function:\n" +
+                    colorama.Fore.YELLOW + "  'custom define <#>'" +
+                    colorama.Fore.RESET)
+        if len(cmdargs) == 3 and isIntStr(cmdargs[2]):
+            print('\n'.join([ccBanner, ccMsg, ccExMsg]))
+            num = cmdargs[2]
+            customData = input("Enter custom function #" + str(num) + ": ")
+            if self.validateCustomData(customData):
+                self._customCmdDict[num] = self.importCustomData(customData)
+                print("Saved as custom function #" + str(num) + ".")
+                print(ccAppMsg)
+        elif len(cmdargs) == 2 and cmdargs[1] == 'list':
+            print(ccBanner)
+            self.showCustomFunctions()
+            print(ccAppMsg)
+        else:
+            print('\n'.join([ccBanner, ccListMsg, ccDefMsg, ccAppMsg]))
+
+        return (None)
+
+    def importCustomData(self, inStr):
+        ''' returns the evaled result of the input string '''
+        inList = eval(inStr)
+
+        if not isinstance(inList, list):
+            print("Error: custom data is not a list")
+            return([])
+
+        return(inList)
+
+    def validateCustomData(self, data):
+        if not data:
+            return(False)
+
+        # I hate to use eval, but this is the editor running locally.
+        dataList = self.importCustomData(data)
+
+        if len(dataList) < 1:
+            print("Error: custom data list is empty")
+            return(False)
+
+        try:
+            # process tuples to make sure that they can be unpacked
+            for onekey, oneval in dataList:
+                pass
+        except ValueError:
+            print("Error: custom data tuple is not valid")
+            return(False)
+
+        return(True)
+
     def changeListValue(self, obj, name, type, value):          # noqa: C901
         changed = False
         stop = False
@@ -219,7 +305,13 @@ class Editor(IoLib, AttributeHelper):
                     setattr(obj, name, [])
                     changed = True
             elif len(cmdargs) > 1 and cmdargs[0][0] == "a":
-                attObj.append(cmdargs[1])
+                rVal = cmdargs[1]
+                if cmdargs[0] == "ai":
+                    rVal = int(rVal)
+                if len(attObj) > 0 and isinstance(attObj[0], int):
+                    if isIntStr(rVal):
+                        rVal = int(rVal)  # handle lists of ints
+                attObj.append(rVal)
                 setattr(obj, name, attObj)
                 changed = True
             elif len(cmdargs) > 1 and (cmdargs[0][0] == "r" or
@@ -298,9 +390,8 @@ class Editor(IoLib, AttributeHelper):
                         else:
                             percent = 1 - random.randint(0, 9) / 100
                         newval = int(newval * percent)
-                    if oneAtt not in obj.obsoleteAttributes():
-                        print("defaults: " + oneAtt + " = " + str(newval))
-                        setattr(obj, oneAtt, newval)
+                    print("defaults: " + oneAtt + " = " + str(newval))
+                    setattr(obj, oneAtt, newval)
             elif attName == '_maxhp':
                 print("Setting defaults for _hp to be equal to _maxhp")
                 setattr(obj, '_hp', attValue)
@@ -387,7 +478,9 @@ class Editor(IoLib, AttributeHelper):
                             attType, attValue))
                     bufCount += 1
             print(buf)
-            inStr = input("Enter [s]ave, [q]uit, or a number to edit: ")
+            print('Commands: [s]ave, [q]uit, [wiz]ard, [cust]om')
+            inStr = input("Enter command or attribute to edit: ")
+            cmdargs = inStr.split(' ')
             if ((inStr == 's' or inStr == 'sq' or
                  inStr == 'wq' or inStr == "save")):
                 # save edited item
@@ -415,7 +508,7 @@ class Editor(IoLib, AttributeHelper):
                         break
                 else:
                     break
-            if inStr == "wizard":
+            if inStr == "wizard" or inStr == "wiz":
                 self.wizard(objName, obj)
                 changedSinceLastSave = True
             elif re.match('^d [0-9]+$', inStr):
@@ -444,6 +537,13 @@ class Editor(IoLib, AttributeHelper):
                 attName = inStr
                 attType = self.getAttributeType(attValue)
                 self.changeValue(obj, attName, attType, attValue)
+            elif re.match('^custom apply', inStr):
+                if len(cmdargs) == 3 and isIntStr(cmdargs[2]):
+                    num = cmdargs[2]
+                    for item, val in self._customCmdDict[num]:
+                        setattr(obj, item, val)
+            elif re.match('^cust', inStr):
+                self.editCustomFunctions(cmdargs)
         return(True)
 
     def fixList(self, targetStr, startNum=0, endNum=0):

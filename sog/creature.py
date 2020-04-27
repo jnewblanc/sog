@@ -681,9 +681,9 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             return(False)
 
         # Check if the appropriate amount of time has pased
-        timeLeft = ((self.getSecondsUntilNextAttack() /
-                    (self.getAttackRate() / 100)) -
-                    secsSinceDate(self.getLastAttack()))
+        timeLeft = int((self.getSecondsUntilNextAttack() /
+                       (self.getAttackRate() / 100)) -
+                       secsSinceDate(self.getLastAttack()))
         if timeLeft > 0:
             dLog(debugPrefix + "Attack discarded due to time - " +
                  str(timeLeft) + " secs left", self._instanceDebug)

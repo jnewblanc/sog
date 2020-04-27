@@ -79,6 +79,7 @@ class Object(Storage, EditWizard):
         self._magic = False
         self._permanent = False
         self._cursed = False
+        self._enchanted = False    # typially, enchanting is done by players
 
         self._weight = 1
         self._value = 1
@@ -183,7 +184,10 @@ class Object(Storage, EditWizard):
         return(self._cursed)
 
     def getValue(self):
-        return(max(0, self._value))
+        value = self._value
+        if self.isCursed():
+            value = 6
+        return(max(0, value))
 
     def getWeight(self):
         return(max(0, self._weight))
