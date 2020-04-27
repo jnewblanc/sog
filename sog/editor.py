@@ -9,7 +9,6 @@ from pathlib import Path
 import random
 import re
 import sys
-import textwrap
 
 # from account import Account
 from character import Character
@@ -227,9 +226,9 @@ class Editor(IoLib, AttributeHelper):
         ccListMsg = ("Use the following to view all of the saved custom " +
                      "functions:\n" + colorama.Fore.YELLOW +
                      "  'custom list'" + colorama.Fore.RESET)
-        ccDefMsg = ("Use the following to add or replace a custom function:\n" +
-                    colorama.Fore.YELLOW + "  'custom define <#>'" +
-                    colorama.Fore.RESET)
+        ccDefMsg = ("Use the following to add or replace a custom " +
+                    "function:\n" + colorama.Fore.YELLOW +
+                    "  'custom define <#>'" + colorama.Fore.RESET)
         if len(cmdargs) == 3 and isIntStr(cmdargs[2]):
             print('\n'.join([ccBanner, ccMsg, ccExMsg]))
             num = cmdargs[2]

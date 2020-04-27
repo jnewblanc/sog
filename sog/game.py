@@ -1177,7 +1177,7 @@ class GameCmd(cmd.Cmd):
                 msg = "You are noticed as you hide in the shadows"
                 charObj.setHidden(False)
 
-            if charObj.isDm:
+            if charObj.isDm():
                 msg += "(" + str(charObj.isHidden()) + ")"
             self.selfMsg(msg + '\n')
         else:
@@ -1567,7 +1567,18 @@ class GameCmd(cmd.Cmd):
 
     def do_search(self, line):
         ''' attempt to find items, players, or creatures that are hidden '''
-        self.selfMsg(line + " not implemented yet\n")
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        foundSomething = False
+        for obj in roomObj.getInventory():
+            if obj.isHidden():
+                if charObj.searchSucceeds(obj):
+                    self.selfMsg("You find " + obj.describe() + "\n")
+                    foundSomething = True
+
+        if not foundSomething:
+            self.selfMsg("Your search turns up nothing\n")
 
     def do_sell(self, line):
         ''' transaction - Sell an item to a pawnshop '''

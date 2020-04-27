@@ -1369,13 +1369,19 @@ class Character(Storage, AttributeHelper, Inventory):
     def getAttacking(self):
         return(self._attackTargets)
 
+    def canSeeInTheDark(self):
+        ''' ToDo: a light spell should allow players to see in the dark '''
+        if self.isDm():
+            return(True)
+        return(False)
+
     def canSeeInvisible(self):
-        if self.isDm:
+        if self.isDm():
             return(True)
         return(False)
 
     def canSeeHidden(self):
-        if self.isDm:
+        if self.isDm():
             return(True)
         if self.getClassName().lower() in ["ranger", "rogue"]:
             return(True)
@@ -1473,7 +1479,7 @@ class Character(Storage, AttributeHelper, Inventory):
              self._instanceDebug)
         self.save()
         if self.getHitPoints() <= 0:
-            if self.isDm:
+            if self.isDm():
                 self.client.spoolOut("You would be dead if you weren't a dm." +
                                      "  Resetting hp to maxhp.\n")
                 self._hitpoints = self._maxhitpoints
@@ -1521,6 +1527,36 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def removeRoom(self):
         self._roomObj = None
+
+    def searchSucceeds(self, obj, basePercent=30):
+        ''' Returns True if search succeeds
+            * chance of success based on dex, level, and luck '''
+        logPrefix = __class__.__name__ + " searchSucceeds: "
+
+        if self.canSeeHidden():
+            dLog(logPrefix + "Pass - Character can see hidden",
+                 self._instanceDebug)
+            return(True)
+
+        percentChance = (basePercent + self.getDexterity() + self.getLevel() +
+                         self.getLuck())
+
+        if obj.getType() == 'Creature' or obj.getType() == 'Character':
+            # +/- 10% per level difference
+            percentChance += (self.getLevel() - obj.getLevel()) * 10
+
+        if random.randint(1, 20) == 1:  # Always a 5 percent chance of success
+            dLog(logPrefix + "Pass - Always 5% Chance", self._instanceDebug)
+            return(True)
+
+        randX = random.randint(1, 100)
+        if randX <= percentChance:
+            dLog(logPrefix + "Pass - Roll - " + str(randX) + " < " +
+                 str(percentChance), self._instanceDebug)
+            return(True)
+
+        dLog(logPrefix + "Failed", self._instanceDebug)
+        return(False)
 
     def equipFist(self):
         ''' equip fist, the default weapon - fist is a special weapon that is

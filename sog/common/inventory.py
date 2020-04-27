@@ -1,7 +1,6 @@
 ''' inventory class '''   # noqa
 
 import inflect
-# import logging
 import re
 import textwrap
 
@@ -116,6 +115,10 @@ class Inventory():
             typically used by room object, as player sees it '''
         buf = ''
 
+        dLog("describeInvAsList: showDm=" + str(showDm) +
+             " showHidden=" + str(showHidden) + " showInvisible=" +
+             str(showInvisible), Inventory._instanceDebug)
+
         # create a list of items in inventory and a dict of related DM info
         dmDict = {}
         itemList = []
@@ -124,6 +127,8 @@ class Inventory():
             if (((oneitem.isInvisible() and not showInvisible)
                  or (oneitem.isHidden() and not showHidden) and
                  not showDm)):
+                dLog("describeInvAsList HID/INV: " + str(oneitem),
+                     Inventory._instanceDebug)
                 pass
             else:
                 itemStr += oneitem.getSingular()
@@ -152,7 +157,9 @@ class Inventory():
                 itemStr += words[0]
             else:
                 itemStr += inf.number_to_words(inf.num(itemCnt))
-            itemStr += ' ' + inf.plural_noun(name, itemCnt) + dmDict[name]
+            itemStr += ' ' + inf.plural_noun(name, itemCnt)
+            if showDm:
+                itemStr += dmDict[name]
             countedList.append(itemStr)
 
         # join our list with commas and 'and'
