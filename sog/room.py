@@ -22,6 +22,8 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     _instanceDebug = False
 
+    _baseEncounterTime = 60
+
     directionNameDict = {
         "n": "north",
         "s": "south",
@@ -34,7 +36,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     # int attributes
     intAttributes = ['n', 's', 'e', 'w', 'u', 'd', 'o',
-                     '_encounterTime', '_roomNum']
+                     '_encounterRate', '_roomNum']
     # boolean attributes
     boolAttributes = ['_notifyDM', '_safe', '_antiMagic', '_dark']
     # string attributes
@@ -45,8 +47,9 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     # obsolete attributes (to be removed)
     obsoleteAttributes = ['notifyDM', 'safe', 'antiMagic', 'dark', 'out',
-                          'priceBonus', 'encounterTime' 'encounterList',
-                          '_objectlist', '_creatureList', 'gameObj']
+                          'priceBonus', 'encounterTime', 'encounterList',
+                          '_objectlist', '_creatureList', 'gameObj',
+                          '_encounterTime']
 
     attributesThatShouldntBeSaved = ["_creatureList", '_instanceDebug',
                                      '_characterList', '_objectList',
@@ -54,7 +57,8 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
                                      '_creatureCache', '_timeOfLastEncounter',
                                      '_invWeight', '_maxweight', '_invValue']
 
-    wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w"]
+    wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w",
+                        '_encounterRate']
 
     attributeInfo = {
         "_shortDesc": "short room description when brief prompt is used",
@@ -62,7 +66,9 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         "n": "the room in the north direction (0 for none)",
         "s": "the room in the south direction (0 for none)",
         "e": "the room in the east direction (0 for none)",
-        "w": "the room in the west direction (0 for none)"}
+        "w": "the room in the west direction (0 for none)",
+        "_encounterRate": "Percentage of typical encounter time ",
+        }
 
     def __init__(self, roomNum=1):
         self._roomNum = int(roomNum)  # the room number, not seen by players
@@ -77,7 +83,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         self._safe = False        # players/monsters can't attack here
         self._antiMagic = False   # can't use magic spells here
         self._dark = False        # players can't see here
-        self._encounterTime = 60  # average seconds between encounters
+        self._encounterRate = 100  # average seconds between encounters
         self._encounterList = []  # list of creature numbers for encounters
         self._permanentCreatureList = []  # perm creature instances
         self._permanentObjectList = []    # perm object instances
@@ -129,7 +135,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         buf += (ROW_FORMAT.format("RoomNum", self.getRoomNum()) +
                 ROW_FORMAT.format("desc", self._desc) +
                 ROW_FORMAT.format("shortDesc", self._shortDesc) +
-                ROW_FORMAT.format("encounterTime", self._encounterTime) +
+                ROW_FORMAT.format("encounterRate", self._encounterRate) +
                 ROW_FORMAT.format("notifyDM", self._notifyDM) +
                 ROW_FORMAT.format("safe", self._safe) +
                 ROW_FORMAT.format("antiMagic", self._antiMagic) +
@@ -160,6 +166,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         self._characterList = []
         self._inventory = []
         self._creatureCache = []
+        self.setLastEncounter()
         return(True)
 
     def fixAttributes(self):
@@ -171,7 +178,10 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
         try:
             self.o = self.out  # stop using "out" and instead use "o"
-            logging.debug("Room - translating 'out' to 'o' self.o=" + self.o)
+        except (AttributeError, TypeError):
+            pass
+        try:
+            self._encounterRate = self._encounterTime
         except (AttributeError, TypeError):
             pass
 
@@ -518,8 +528,8 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         debugPrefix = "Room readyForEncounter (" + str(self.getId()) + "): "
 
         # Room has no encounter time.  Will never be ready
-        if not self._encounterTime:
-            dLog(debugPrefix + "Room has no encounter time",
+        if not self._encounterRate:
+            dLog(debugPrefix + "Room has no encounter rate",
                  self._instanceDebug)
             return(False)
 
@@ -531,10 +541,14 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         # Check if the appropriate amount of time has pased
         if self._timeOfLastEncounter != getNeverDate():
             secsSinceLastEncounter = secsSinceDate(self._timeOfLastEncounter)
-            timeLeft = self._encounterTime - secsSinceLastEncounter
+            pctRateAdj = (self._encounterRate - 100) / 100
+            secsAdj = (self._baseEncounterTime * pctRateAdj +
+                       random.randint(-5, 5))
+            secsBetweenEncounters = self._baseEncounterTime - secsAdj
+            timeLeft = secsBetweenEncounters - secsSinceLastEncounter
             if timeLeft > 0:
                 dLog(debugPrefix + "Encounter discarded due to time - " +
-                     str(truncateWithInt(timeLeft)) +
+                     str(int(timeLeft)) +
                      " secs left", self._instanceDebug)
                 return(False)
 

@@ -76,7 +76,8 @@ class Character(Storage, AttributeHelper, Inventory):
             'penaltyStats': ['intelligence', 'piety'],
             'baseDamage': 2,
             'baseHealth': 18,
-            'baseMagic': 2
+            'baseMagic': 2,
+            'identifyLevel': 10
             },
         1: {
             'name': 'rogue',
@@ -88,7 +89,8 @@ class Character(Storage, AttributeHelper, Inventory):
             'penaltyStats': ['strength', 'piety'],
             'baseDamage': 1,
             'baseHealth': 14,
-            'baseMagic': 6
+            'baseMagic': 6,
+            'identifyLevel': 8
             },
         2: {
             'name': 'mage',
@@ -100,7 +102,8 @@ class Character(Storage, AttributeHelper, Inventory):
             'penaltyStats': ['strength', 'strength'],
             'baseDamage': 0,
             'baseHealth': 6,
-            'baseMagic': 14
+            'baseMagic': 14,
+            'identifyLevel': 5
             },
         3: {
             'name': 'cleric',
@@ -113,6 +116,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'baseDamage': 0,
             'baseHealth': 7,
             'baseMagic': 13,
+            'identifyLevel': 8,
             },
         4: {
             'name': 'ranger',
@@ -125,6 +129,7 @@ class Character(Storage, AttributeHelper, Inventory):
             'baseDamage': 1,
             'baseHealth': 12,
             'baseMagic': 8,
+            'identifyLevel': 7,
             },
         5: {
             'name': 'paladin',
@@ -136,7 +141,8 @@ class Character(Storage, AttributeHelper, Inventory):
             'penaltyStats': ['intelligence', 'constitution'],
             'baseDamage': 2,
             'baseHealth': 10,
-            'baseMagic': 10
+            'baseMagic': 10,
+            'identifyLevel': 9
             }
         }  # end classDict
 
@@ -235,6 +241,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self._valiantkills = 0   # kills above current level
         self._epickills = 0      # special kills
         self._playerkills = 0    # player kills
+        self._turnkills = 0      # kills from turning
 
         self.resetTmpStats()
         self.resetDailyStats()

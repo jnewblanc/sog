@@ -31,6 +31,7 @@ class Editor(IoLib, AttributeHelper):
     def __init__(self):
         self._running = True
         super().__init__()
+        self._instanceDebug = True
 
     def processCommand(self, inputStr):
         ''' Process the editor commands '''
@@ -351,7 +352,8 @@ class Editor(IoLib, AttributeHelper):
 
     def editRaw(self, objName, obj, changedSinceLastSave=False):   # noqa C901
         ROW_FORMAT = "({0:3}) {1:25s}({2:4s}): {3}\n"
-        logging.info("Editing " + objName.capitalize())
+        logging.info("Editing " + objName.capitalize() + " -- id = " +
+                     obj.describe())
         obj.fixAttributes()
         while True:
             buf = (colorama.Fore.CYAN + '===== Editing ' +

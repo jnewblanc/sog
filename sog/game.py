@@ -611,7 +611,7 @@ class GameCmd(cmd.Cmd):
                 return(False)
 
             roomnum = itemList[0].getToWhere()
-            roomObj = self.gameObj.roomLoader(exitDict[direction])
+            roomObj = self.gameObj.roomLoader(roomnum)
             if roomObj:
                 if roomObj.canBeJoined(charObj):
                     self.gameObj.joinRoom(roomnum, charObj)

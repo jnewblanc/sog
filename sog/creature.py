@@ -490,10 +490,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
               damage attribute as a weapon with some random fluctuation '''
         damage = self.getDamage()
         damageAdj = int(damage * percentSwing / 100)
-        if random.randint(1, 2) == 1:
-            damage += damageAdj
-        else:
-            damage -= damageAdj
+        damage += random.randInt(-(damageAdj), damageAdj)
         return(damage)
 
     def acDamageReduction(self, damage):
@@ -537,7 +534,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             self.clearInventory()
 
         # Randomly select the itemCount
-        itemCount = getRandomItemFromList(self._numOfItemsCarried)
+        itemCount = int(getRandomItemFromList(self._numOfItemsCarried))
 
         if not itemCount:   # 0 items carried
             return(True)
