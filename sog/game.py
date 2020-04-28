@@ -839,7 +839,7 @@ class GameCmd(cmd.Cmd):
     def do_climb(self, line):
         ''' alias - go '''
         if line == '':
-            self.selfMsg("Climb what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
         self.move(line)
 
     def do_clock(self, line):
@@ -879,6 +879,7 @@ class GameCmd(cmd.Cmd):
         roomObj = charObj.getRoom()
 
         if not charObj.isDm():
+            self.selfMsg("Unknown Command\n")
             return(False)
 
         if len(cmdargs) == 0:
@@ -954,6 +955,7 @@ class GameCmd(cmd.Cmd):
     def do_destroy(self, line):
         ''' dm - destroy an object or creature '''
         if not self.charObj.isDm():
+            self.selfMsg("Unknown Command\n")
             return(False)
 
         charObj = self.charObj
@@ -988,6 +990,8 @@ class GameCmd(cmd.Cmd):
         if self.charObj.isDm():
             self.charObj.removeDm()
             self.selfMsg("ok\n")
+        else:
+            self.selfMsg("Unknown Command\n")
 
     def do_down(self, line):
         ''' navigation '''
@@ -1035,7 +1039,7 @@ class GameCmd(cmd.Cmd):
     def do_enter(self, line):
         ''' alias - go '''
         if line == '':
-            self.selfMsg("Enter what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
         self.move(line)
 
     def do_equip(self, line):
@@ -1090,7 +1094,7 @@ class GameCmd(cmd.Cmd):
         obj2 = itemList[1]
 
         if not obj1:
-            self.selfMsg("Get what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         if obj2:
@@ -1127,6 +1131,7 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
 
         if not self.charObj.isDm():
+            self.selfMsg("Unknown Command\n")
             return(False)
 
         if len(cmdargs) == 0:
@@ -1233,8 +1238,12 @@ class GameCmd(cmd.Cmd):
 
     def do_laugh(self, line):
         ''' communication - reaction '''
-        self.roomMsg(self.charObj.getName(), " falls down laughing\n")
-        self.charObj.setHidden(False)
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        self.gameObj.roomMsg(roomObj, charObj.getName() +
+                             " falls down laughing\n")
+        charObj.setHidden(False)
 
     def do_list(self, line):
         ''' alias - file '''
@@ -1254,7 +1263,7 @@ class GameCmd(cmd.Cmd):
         obj2 = itemList[1]
 
         if not itemList[0]:
-            self.selfMsg("Lock what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         if not obj2:
@@ -1276,7 +1285,10 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(allItems, line)
 
         if line == '':  # display the room
-            self.selfMsg(roomObj.display(self.charObj) + "\n")
+            msg = roomObj.display(self.charObj)
+            if not re.match("\n$"):
+                msg += "\n"
+            self.selfMsg(msg)
             return(False)
 
         if not itemList[0]:
@@ -1329,7 +1341,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomObj.getInventory(), line)
 
         if not itemList[0]:
-            self.selfMsg("Open what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         obj1 = itemList[0]
@@ -1366,12 +1378,12 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomCreatureList, line)
 
         if not itemList[0]:
-            self.selfMsg("parley with whom?\n")
+            self.selfMsg(self.lastcmd + " with whom?\n")
             return(False)
 
         creat1 = itemList[0]
 
-        msg = creat1.getParleyTxt()
+        msg = creat1.getParleyTxt() + '\n'
         if creat1.getParleyAction().lower() == "teleport":
             self.selfMsg(msg)
             self.gameObj.joinRoom(creat1.getParleyTeleportRoomNum(), charObj)
@@ -1450,7 +1462,7 @@ class GameCmd(cmd.Cmd):
         targetList = self.getObjFromCmd(charObjList, line)
 
         if not targetList[0]:
-            self.selfMsg("Put what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         obj1 = targetList[0]
@@ -1475,7 +1487,7 @@ class GameCmd(cmd.Cmd):
         targetList = self.getObjFromCmd(charObjList, line)
 
         if not targetList[0]:
-            self.selfMsg("Read what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         obj1 = targetList[0]
@@ -1510,7 +1522,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(playerInventory, line)
 
         if not itemList[0]:
-            self.selfMsg("Repair what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         obj1 = itemList[0]
@@ -1541,6 +1553,7 @@ class GameCmd(cmd.Cmd):
     def do_roominfo(self, line):
         '''' dm - show room info '''
         if not self.charObj.isDm():
+            self.selfMsg("Unknown Command\n")
             return(False)
         self.selfMsg(self.charObj.getRoom().getInfo())
 
@@ -1562,7 +1575,7 @@ class GameCmd(cmd.Cmd):
     def do_say(self, line):
         ''' communication within room '''
         msg = self.client.promptForInput()
-        self.roomMsg(self.charObj.roomObj, msg)
+        self.gameObj.roomMsg(self.charObj.roomObj, msg)
         self.charObj.setHidden(False)
 
     def do_search(self, line):
@@ -1594,7 +1607,7 @@ class GameCmd(cmd.Cmd):
 
         itemList = self.getObjFromCmd(charObj.getInventory(), line)
         if not itemList[0]:
-            self.selfMsg("Sell what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         obj1 = itemList[0]
@@ -1647,7 +1660,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomObj.getInventory(), line)
 
         if not itemList[0]:
-            self.selfMsg("Smash what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         obj1 = itemList[0]
@@ -1662,8 +1675,8 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("You smash it open!\n")
             otherRoom = self.gameObj.getCorrespondingRoomObj(obj1)
             if otherRoom:
-                self.roomMsg(otherRoom, obj1.getSingular() +
-                             " smashes open\n")
+                self.gameObj.roomMsg(otherRoom, obj1.getSingular() +
+                                     " smashes open\n")
             if obj1.gettype() == "Door":
                 self.gameObj.modifyCorrespondingDoor(obj1)
             return(False)
@@ -1673,8 +1686,9 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("Bang! You fail to smash it open!\n")
             otherRoom = self.gameObj.getCorrespondingRoomObj(obj1)
             if otherRoom:
-                self.roomMsg(otherRoom, "You hear a noise on the other side " +
-                             "of the " + obj1.getSingular() + '\n')
+                self.gameObj.roomMsg(otherRoom, "You hear a noise on the " +
+                                     "other side of the " +
+                                     obj1.getSingular() + '\n')
         return(False)
 
     def do_south(self, line):
@@ -1797,7 +1811,7 @@ class GameCmd(cmd.Cmd):
         targetList = self.getObjFromCmd(charObj.getInventory(), line)
 
         if not targetList[0]:
-            self.selfMsg("Unequip what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
         elif len(targetList) > 0:
             obj1 = targetList[0]
@@ -1817,7 +1831,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomObj.getInventory(), line)
 
         if not itemList[0]:
-            self.selfMsg("Unlock what?\n")
+            self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
         obj1 = itemList[0]
@@ -1858,7 +1872,7 @@ class GameCmd(cmd.Cmd):
         targetList = self.getObjFromCmd(charObjList, line)
 
         if not targetList[0]:
-            self.selfMsg("Use what?\n")
+            self.selfMsg(self.lastcmd + "what?\n")
             return(False)
 
         obj1 = targetList[0]

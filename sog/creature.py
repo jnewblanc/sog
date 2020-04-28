@@ -5,6 +5,7 @@ import logging
 # import os
 import pprint
 import random
+import re
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
@@ -314,10 +315,12 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def setInstanceDebug(self, val):
         self._instanceDebug = bool(val)
 
-    def describe(self, count=1):
+    def describe(self, count=1, article=''):
         if count > 1:
             return(count + " " + self._pluraldesc)
-        return(self._article + " " + self._singledesc)
+        if article == '':
+            article = self._article
+        return(article + " " + self._singledesc)
 
     def examine(self):
         return(self._longdesc)
@@ -490,7 +493,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
               damage attribute as a weapon with some random fluctuation '''
         damage = self.getDamage()
         damageAdj = int(damage * percentSwing / 100)
-        damage += random.randInt(-(damageAdj), damageAdj)
+        damage += random.randint(-(damageAdj), damageAdj)
         return(damage)
 
     def acDamageReduction(self, damage):
@@ -625,16 +628,22 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         return(self.getRandomInventoryItem())
 
     def getParleyTxt(self):
+        ''' Returns a string containing the creatures response to a parley '''
         buf = ''
 
         msg = getRandomItemFromList(self._parleyTxt)
         if not msg:
-            buf += "The " + self._name + " does not respond."
+            buf += self.describe(article='The') + " does not respond"
         elif self._parleyAction.lower() == 'none':
-            buf += "The " + self._name + " " + msg + '.'
+            # None is special, because it doen's add "says".  This is useful
+            # for some responses where a different verb is desired.
+            buf += self.describe(article='The') + " " + msg
         else:
-            buf += "The " + self._name + " says, " + msg + '.'
+            buf += self.describe(article='The') + " says, " + msg.capitalize()
 
+        if re.match('/W$', buf):
+            # Add punctuation if it's not already included
+            buf += "."
         return(buf)
 
     def notices(self, charObj):

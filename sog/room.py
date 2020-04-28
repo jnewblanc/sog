@@ -103,7 +103,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         self.w = 0
         self.u = 0
         self.d = 0
-        self.o = 1
+        self.o = 0
 
         if self._instanceDebug:
             logging.debug("Room init called for " + str(self.getId()))
