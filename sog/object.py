@@ -473,7 +473,7 @@ class Closable(Object):
             return(True)
         return(False)
 
-    def isClosable(self):
+    def isClosable(self, charObj):
         if self.isClosed():
             return(False)
         return(True)

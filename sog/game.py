@@ -694,20 +694,39 @@ class GameCmd(cmd.Cmd):
 
     def do_bribe(self, line):
         ''' transaction - bribe a creature to vanish '''
+        cmdargs = line.split(' ')
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
+        if len(cmdargs) < 2:
+            self.selfMsg("Try 'bribe <creature> <amount>'\n")
+            return(False)
+        if not isIntStr(cmdargs[1]):
+            self.selfMsg("How many shillings are you trying to bribe with?'\n")
+            return(False)
+
+        creatureName = cmdargs[0]
+        coins = int(cmdargs[1])
+
         roomCreatureList = roomObj.getCreatureList()
-        itemList = self.getObjFromCmd(roomCreatureList, line)
+        itemList = self.getObjFromCmd(roomCreatureList, creatureName)
 
         if not itemList[0]:
             self.selfMsg("Who are you trying to bribe?\n")
             return(False)
 
-        creat1 = itemList[0]
-        if creat1:
-            creat1.describe()  # tmp - remove once implemented
-        self.selfMsg(line + " not implemented yet\n")
+        creatureObj = itemList[0]
+        if creatureObj:
+            if creatureObj.acceptsBribe(charObj, coins):
+                # Bribe succeeds - money is already subtracted
+                self.selfMsg(creatureObj.describe(article="The") +
+                             " accepts your offer and leaves\n")
+                roomObj.removeFromInventory(creatureObj)
+                return(False)
+            else:
+                # Bribe failed - contextual response already provided
+                charObj.setHidden(False)
+        return(False)
 
     def do_brief(self, line):
         ''' set the prompt and room description to least verbosity '''
@@ -857,15 +876,21 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("usage: close <item> [number]\n")
             return(False)
 
-        if not itemList[0].isClosable():
+        targetObj = itemList[0]
+
+        if not targetObj.isClosable(charObj):
             self.selfMsg("This is not closable!\n")
             return(False)
 
-        if itemList[0].close(charObj):
+        if targetObj.close():
             self.selfMsg("Ok\n")
-            if itemList[0].gettype() == "Door":
-                self.gameObj.modifyCorrespondingDoor(itemList[0])
+            if targetObj.gettype() == "Door":
+                self.gameObj.modifyCorrespondingDoor(targetObj)
             return(False)
+        else:
+            self.selfMsg("You can not close" +
+                         targetObj.describe(article="The") + "\n")
+
         return(False)
 
     def do_d(self, line):
@@ -1286,7 +1311,7 @@ class GameCmd(cmd.Cmd):
 
         if line == '':  # display the room
             msg = roomObj.display(self.charObj)
-            if not re.match("\n$"):
+            if not re.match("\n$", msg):
                 msg += "\n"
             self.selfMsg(msg)
             return(False)
@@ -1331,7 +1356,7 @@ class GameCmd(cmd.Cmd):
 
     def do_offer(self, line):
         ''' transaction - offer player money/items [in return for $/items] '''
-        self.selfMsg(line + " not implemented yet\n")
+        self.selfMsg(self.lastcmd + " not implemented yet\n")
 
     def do_open(self, line):
         ''' Open a door or a chest '''

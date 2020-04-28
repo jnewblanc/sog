@@ -168,19 +168,19 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     }
 
     _baseStatDict = {
-        1: {'_damage': 3},
-        2: {'_damage': 6},
-        3: {'_damage': 9},
-        4: {'_damage': 12},
-        5: {'_damage': 15},
-        6: {'_damage': 20},
-        7: {'_damage': 25},
-        8: {'_damage': 35},
-        9: {'_damage': 50},
-        10: {'_damage': 75},
-        11: {'_damage': 100},
-        12: {'_damage': 150},
-        99: {'_damage': 200}
+        1: {'_damage': 3, '_bribeAmt': 60},
+        2: {'_damage': 6, '_bribeAmt': 120},
+        3: {'_damage': 9, '_bribeAmt': 400},
+        4: {'_damage': 12, '_bribeAmt': 1000},
+        5: {'_damage': 15, '_bribeAmt': 2000},
+        6: {'_damage': 20, '_bribeAmt': 4000},
+        7: {'_damage': 25, '_bribeAmt': 6000},
+        8: {'_damage': 35, '_bribeAmt': 8000},
+        9: {'_damage': 50, '_bribeAmt': 10000},
+        10: {'_damage': 75, '_bribeAmt': 20000},
+        11: {'_damage': 100, '_bribeAmt': 30000},
+        12: {'_damage': 150, '_bribeAmt': 40000},
+        99: {'_damage': 200, '_bribeAmt': 50000}
     }
 
     _parleyDefaultsDict = {
@@ -708,6 +708,48 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
         dLog(debugPrefix + "Creature is ready for attack", self._instanceDebug)
         return(True)
+
+    def acceptsBribe(self, charObj, amount):
+        ''' subtracts coins and returns true if bribe is accepted
+            * caller will need to remove instance from room
+            * negative reponses are displayed.  Positive is left to the caller
+        '''
+        amountDesired = self._baseStatDict[self.getLevel()]['_bribeAmt']
+        amountDesired -= int((charObj.getCharisma() - 12) *
+                             (100 * charObj.getLevel()))
+        amountDesired = max(0, amountDesired)
+
+        rudeTxt = (str(amount) + " shillings?  That's an insult!  I'll take " +
+                   "your petty coins just for wasting my time.\n")
+        closeTxt = "That's not enough, but we can work something out.\n"
+        offerTxt = ("It'll take at least " + str(amountDesired) +
+                    " shillings to get me to leave.\n")
+
+        if not charObj.canAffordAmount(amount):
+            charObj.client.spoolOut("You can't afford that!\n")
+            return(False)
+
+        if amount >= amountDesired:
+            charObj.subtractCoins(amount)
+            return(True)
+
+        if amount < random.randint(1, 10 * charObj.getLevel()):
+            # Establish a minimum amount
+            charObj.subtractCoins(amount)
+            charObj.client.spoolOut(rudeTxt)
+        elif amount < amountDesired * .05:
+            # if offer is less than X%, then take money as insult
+            charObj.subtractCoins(amount)
+            charObj.client.spoolOut(rudeTxt)
+        elif amount < amountDesired * .30:
+            # if offer is less than X%, then take money an negotiate
+            charObj.subtractCoins(amount)
+            charObj.client.spoolOut(rudeTxt + offerTxt)
+        else:
+            # if offer is more than X%, negotiate without taking money
+            charObj.client.spoolOut(closeTxt + offerTxt)
+
+        return(False)
 
     def fixAttributes(self):
         ''' Sometimes we change attributes, and need to fix them in rooms
