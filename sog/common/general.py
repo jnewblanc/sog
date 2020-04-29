@@ -24,28 +24,39 @@ def getNeverDate():
 def secsSinceDate(date1):
     ''' return seconds since a given date '''
     if not date1:
+        logging.error("secsSinceDate: date was not defined.  Returning 0")
         return(0)
     if date1 == getNeverDate():
+        logging.warning("secsSinceDate: Recieved NeverDate.  Returning 0")
         return(0)
     return((datetime.now() - date1).total_seconds())
 
 
-def dateStr(onedate, datefmt="%Y/%m/%d %H:%M"):
+def dateStr(date1, datefmt="%Y/%m/%d %H:%M"):
     ''' return a given date Obj as a string, in our standard format '''
-    if onedate == getNeverDate():
+    if not date1:
+        logging.error("dateStr: date was not defined.  Returning ''")
+        return('')
+    if date1 == getNeverDate():
         return("Never")
-    elif onedate == 'now':
+    elif date1 == 'now':
         return(datetime.now().strftime(datefmt))
-    elif onedate:
-        return(onedate.strftime(datefmt))
+    elif date1:
+        return(date1.strftime(datefmt))
     else:
-        logging.error("dateStr returned an empty value")
+        logging.error("dateStr: Could not parse - returned an empty value")
         return('')
 
 
 def differentDay(date1, date2):
     ''' Compare dates to see if they are the same day
         * typically used for daily events, counters, stats, etc '''
+    if not date1:
+        logging.error("differentDay: date was not defined.  Returning False")
+        return(False)
+    if not date2:
+        logging.error("differentDay: date was not defined.  Returning False")
+        return(False)
     if ((date1.strftime("%Y/%m/%d") != date2.strftime("%Y/%m/%d"))):
         return(True)
     return(False)
@@ -80,7 +91,14 @@ def getRandomItemFromList(list1):
 
 
 def truncateWithInt(num, decimalPlaces=3):
-    shifter = 10 ^ decimalPlaces
+    ''' Given a number, returns that number truncated to X decimal places '''
+    if not num:
+        logging.error("truncateWithInt: num was not defined.  Returning 0")
+        return(0)
+    if not isinstance(num, float) and not isinstance(num, int):
+        logging.error("truncateWithInt: invalid num.  Returning 0")
+        return(0)
+    shifter = 10 ** decimalPlaces
     return int(num * shifter) / shifter
 
 
