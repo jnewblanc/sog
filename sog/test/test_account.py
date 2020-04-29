@@ -1,10 +1,11 @@
-
+''' test_account '''
 import unittest
 
 import account
+from common.testLib import InitTestLog
 
 
-class TestAccount(unittest.TestCase):
+class TestAccount(unittest.TestCase, InitTestLog):
 
     testAccountId = "someone@test.com"
 

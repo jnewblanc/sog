@@ -27,11 +27,31 @@ class Combat():
             'dodge': 0,
             'slashAdj': 0,
             'bludgeonAdj': 0,
-            'pierceAdj': 0,
+            'pierceAdj': 10,
             'vulnerable': True
         },
         'block': {
             'desc': "a standard attack",
+            'damagepctBonus': -30,
+            'tohit': 0,
+            'dodge': 20,
+            'slashAdj': 0,
+            'bludgeonAdj': 10,
+            'pierceAdj': 0,
+            'vulnerable': False
+        },
+        'circle': {
+            'desc': "step around to slow an attack",
+            'damagepctBonus': 0,
+            'tohit': 0,
+            'dodge': 0,
+            'slashAdj': 0,
+            'bludgeonAdj': 0,
+            'pierceAdj': 0,
+            'vulnerable': False
+        },
+        'feint': {
+            'desc': "a deceptive or pretended blow",
             'damagepctBonus': -30,
             'tohit': 0,
             'dodge': 30,
@@ -40,31 +60,41 @@ class Combat():
             'pierceAdj': 0,
             'vulnerable': False
         },
-        'feint': {
-            'desc': "a standard attack",
-            'damagepctBonus': -50,
-            'tohit': 0,
-            'dodge': 50,
-            'slashAdj': 0,
-            'bludgeonAdj': 0,
-            'pierceAdj': 0,
-            'vulnerable': False
-        },
-        'kill': {
-            'desc': "a standard attack",
-            'damagepctBonus': 10,
-            'tohit': 0,
+        'hit': {
+            'desc': "a precise strike which lands more often",
+            'damagepctBonus': -10,
+            'tohit': 20,
             'dodge': -10,
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
             'vulnerable': False
         },
+        'kill': {
+            'desc': "an agressive attack",
+            'damagepctBonus': 10,
+            'tohit': 10,
+            'dodge': -20,
+            'slashAdj': 0,
+            'bludgeonAdj': 10,
+            'pierceAdj': 0,
+            'vulnerable': False
+        },
+        'lunge': {
+            'desc': "a precise drive forward that leaves you vulnerable",
+            'damagepctBonus': 20,
+            'tohit': 40,
+            'dodge': -70,
+            'slashAdj': 0,
+            'bludgeonAdj': 0,
+            'pierceAdj': 10,
+            'vulnerable': False
+        },
         'parry': {
-            'desc': "a standard attack",
-            'damagepctBonus': -50,
-            'tohit': 0,
-            'dodge': 0,
+            'desc': "ward off attack with a counter move",
+            'damagepctBonus': -40,
+            'tohit': 20,
+            'dodge': 20,
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
@@ -81,23 +111,23 @@ class Combat():
             'vulnerable': False
         },
         'strike': {
-            'desc': "a standard attack",
-            'damagepctBonus': 0,
-            'tohit': 0,
+            'desc': "a slightly agressive attack",
+            'damagepctBonus': 10,
+            'tohit': -10,
             'dodge': 0,
-            'slashAdj': 0,
+            'slashAdj': 10,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
             'vulnerable': False
         },
         'thrust': {
-            'desc': "a standard attack",
+            'desc': "a fierce stab",
             'damagepctBonus': 20,
-            'tohit': 0,
-            'dodge': -20,
+            'tohit': 20,
+            'dodge': -50,
             'slashAdj': 0,
             'bludgeonAdj': 0,
-            'pierceAdj': 0,
+            'pierceAdj': 10,
             'vulnerable': True
         }
     }
@@ -148,7 +178,7 @@ class Combat():
         # armor bonus/penalty
         defenceAdj = defenderObj.getCumulativeDodge()
         hitPercentage -= defenceAdj
-        dLog(logPrefix + str(attackCmdAdj) + "% defence adj",
+        dLog(logPrefix + str(defenceAdj) + "% defence adj",
              self._instanceDebug)
 
         dLog(logPrefix + str(hitPercentage) + "% total hit percent",
@@ -347,7 +377,7 @@ class Combat():
 
         charObj.setHidden(False)
         charObj.setSecondsUntilNextAttack(self._secsBetweenAttacks)
-        charObj.setLastAttack()
+        charObj.setLastAttack(attackCmd)
 
         dLog(logPrefix + charObj.getName() + " attacks " + target.getName() +
              " with " + attackCmd, self._instanceDebug)

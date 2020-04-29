@@ -7,3 +7,7 @@ BYTES_TO_TRANSFER = 2048
 NOOP_STR = "=-o-= NOOP =-o-="
 TERM_STR = "=-o-= TERM =-o-="
 STOP_STR = "=-o-= STOP =-o-="
+
+# These are shared vars that are populated at runtime
+connections = []
+totalConnections = 0

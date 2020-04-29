@@ -1,10 +1,11 @@
-
+''' test_object '''
 import unittest
 
+from common.testLib import InitTestLog
 import object
 
 
-class TestObject(unittest.TestCase):
+class TestObject(unittest.TestCase, InitTestLog):
 
     testObjNumber = 99999
 

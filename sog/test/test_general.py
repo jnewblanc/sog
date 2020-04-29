@@ -1,12 +1,13 @@
-
+''' test_general '''
 from datetime import datetime, timedelta
 import unittest
 
 import common.general
+from common.testLib import InitTestLog
 import object
 
 
-class TestGeneral(unittest.TestCase):
+class TestGeneral(unittest.TestCase, InitTestLog):
     def testDifferentDay(self):
         now = datetime.now()
         yd = now - timedelta(days=1)

@@ -19,7 +19,7 @@ class _Lobby():
         self.userList = []
         return(None)
 
-    def joinLobby(self, client):
+    def joinLobby(self, client, testFlag):
         ''' Handle shared lobby instance and start up the command loop '''
         if not client.acctObj:
             return(False)

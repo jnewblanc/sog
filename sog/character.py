@@ -12,6 +12,7 @@ from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
+from common.general import getRandomItemFromList
 from common.paths import DATADIR
 from object import Weapon
 
@@ -187,8 +188,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self._classname = 'fighter'
 
         # skills are percentages, one of which can go up each level
-        for onestat in self.skillDict.keys():
-            setattr(self, onestat, 0)
+        self.initializeStats()
         self._achievedSkillForLevel = False
 
         # Daily limits
@@ -266,6 +266,10 @@ class Character(Storage, AttributeHelper, Inventory):
     def getInstanceDebug(self):
         return(self._instanceDebug)
 
+    def initializeStats(self, num=0):
+        for onestat in self.skillDict.keys():
+            setattr(self, onestat, 0)
+
     def login(self):
         ''' Login to game with a particular character
             * Return True if character was created or loaded
@@ -308,7 +312,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self.client.spoolOut(buf)
         return(True)
 
-    def create(self, charName):
+    def create(self, charName, promptFlag=True):
         ''' create a new character
             * Call promptForNewCharacter to prompt user for customization
             * return True if character is _creature
@@ -320,7 +324,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self.setLoginDate()
 
         # customize
-        if self.promptForNewCharacter():
+        if self.promptForNewCharacter(promptFlag):
             if not self.isValid():
                 return(False)
 
@@ -891,15 +895,21 @@ class Character(Storage, AttributeHelper, Inventory):
                     return(True)
         return(False)
 
-    def promptForNewCharacter(self, ):
+    def promptForNewCharacter(self, promptFlag=True):
         '''Prompt user to input character info and return the results'''
 
-        ROW_FORMAT = "  ({0:1}) {1:<30}\n"
-        self.promptForClass(ROW_FORMAT)
-        self.promptForGender(ROW_FORMAT)
-        self.promptForAlignment(ROW_FORMAT)
-        self.promptForSkills(ROW_FORMAT)
-        self.promptForDm(ROW_FORMAT)
+        if promptFlag:
+            ROW_FORMAT = "  ({0:1}) {1:<30}\n"
+            self.promptForClass(ROW_FORMAT)
+            self.promptForGender(ROW_FORMAT)
+            self.promptForAlignment(ROW_FORMAT)
+            self.promptForSkills(ROW_FORMAT)
+            self.promptForDm(ROW_FORMAT)
+        else:
+            self._classname = getRandomItemFromList(self.classList)
+            self._gender = getRandomItemFromList(self.genderList)
+            self._alignment = getRandomItemFromList(self.alignmentList)
+            self._dodge = 10
         return(True)
 
     def getRandomStat(self):
@@ -1058,9 +1068,16 @@ class Character(Storage, AttributeHelper, Inventory):
         self._lastLogoutDate = datetime.now()
 
     def setInputDate(self):
-        self._lastInputDateDate = datetime.now()
+        self._lastInputDate = datetime.now()
 
-    def setLastAttack(self):
+    def setLastCmd(self, str1):
+        self._lastCommand = str1
+
+    def getLastCmd(self):
+        return(self._lastCommand)
+
+    def setLastAttack(self, cmd="attack"):
+        self.setLastCmd(cmd)
         self._lastAttackDate = datetime.now()
 
     def getLastAttack(self):
@@ -1239,10 +1256,13 @@ class Character(Storage, AttributeHelper, Inventory):
         for obj in self.getEquippedProtection():
             if not obj.isBroken():
                 dodgePct += obj.getDodgeBonus()
-        return(dodgePct)
 
-    def setInputCommand(self, cmd):
-        self._lastInputDateCommand = cmd
+        # It's a little bit strange to have to traverse back to the game/combat
+        # class to get this data, but it seems to make more sense than trying
+        # to pass it all around.
+        attackList = self.client.svrObj.gameObj.attackList
+        dodgePct += attackList[self.getLastCmd()]['dodge']
+        return(dodgePct)
 
     def isAttackingWithFist(self):
         if self.getEquippedWeapon().getName() == 'fist':

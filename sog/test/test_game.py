@@ -1,14 +1,26 @@
+''' test_game '''
 import unittest
 
+from common.testLib import InitTestLog
 import game
 
 
-class TestGame(unittest.TestCase):
+class TestGame(unittest.TestCase, InitTestLog):
 
     def testGameInstanciation(self):
         gameObj = game.Game()
         out = "Could not instanciate the game object"
         self.assertEqual(gameObj._startdate != '', True, out)
+
+    def testToggleInstanceDebug(self):
+        gameObj = game.Game()
+        startState = gameObj.getInstanceDebug()
+        gameObj.toggleInstanceDebug()
+        out = "toggleInstanceDebug could not be set"
+        self.assertEqual(gameObj.getInstanceDebug() != startState, True, out)
+        gameObj.toggleInstanceDebug()
+        out = "toggleInstanceDebug could not be set"
+        self.assertEqual(gameObj.getInstanceDebug() == startState, True, out)
 
 
 class TestGameCmd(unittest.TestCase):

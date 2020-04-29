@@ -1,12 +1,12 @@
-''' inventory unit tests '''   # noqa
+''' test_inventory '''   # noqa
 
 import logging
 import unittest
 
-import object
-import creature
 from common.inventory import Inventory
-from common.inittestlog import InitTestLog
+from common.testLib import InitTestLog
+import creature
+import object
 
 
 class TestPlayerInventory1(unittest.TestCase, Inventory, InitTestLog):

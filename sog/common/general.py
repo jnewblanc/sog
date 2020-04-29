@@ -6,6 +6,16 @@ import random
 import re
 
 
+class Terminator(Exception):
+    """ Custom exception to trigger termination of all threads & main. """
+    pass
+
+
+def sig_handler(signal_received, frame):
+    print('SIGINT, SIGTERM, or CTRL-C detected. Exiting gracefully')
+    raise Terminator
+
+
 def getNeverDate():
     ''' Return a date object/value that represents never '''
     return(datetime(1900, 1, 1))

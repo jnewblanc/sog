@@ -11,7 +11,6 @@ import logging
 import pprint
 import random
 import re
-from time import sleep
 
 from common.combat import Combat
 from common.ipc import Ipc
@@ -42,8 +41,6 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self._startdate = datetime.now()
 
         self._instanceDebug = _Game._instanceDebug
-
-        self._asyncStopFlag = False    # If true, the async thread will halt
         return(None)
 
     def debug(self):
@@ -55,16 +52,10 @@ class _Game(cmd.Cmd, Combat, Ipc):
     def getInstanceDebug(self):
         return(self._instanceDebug)
 
-    def _asyncTasks(self):
+    def asyncTasks(self):
         ''' Tasks that run in a separate thread with ~1 sec intervals '''
-        logging.info("Thread started - async worker")
-        while not self._asyncStopFlag:
-            self.asyncNonPlayerActions()
-            self.asyncCharacterActions()
-            sleep(1)
-
-    def haltAsyncThread(self):
-        self._asyncStopFlag = True
+        self.asyncNonPlayerActions()
+        self.asyncCharacterActions()
 
     def joinGame(self, client):
         ''' Perform required actions related to joining the game '''
@@ -517,7 +508,7 @@ class GameCmd(cmd.Cmd):
 
     def precmd(self, line):
         ''' cmd method override '''
-        pass
+        self.charObj.setLastCmd(self.lastcmd)
 
     def postcmd(self, stop, line):
         ''' cmd method override '''
