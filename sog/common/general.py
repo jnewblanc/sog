@@ -16,6 +16,13 @@ def sig_handler(signal_received, frame):
     raise Terminator
 
 
+def dLog(msg, show=False):
+    ''' Show debug log messages if flag is set '''
+    if show:
+        logging.debug(msg)
+    return(None)
+
+
 def getNeverDate():
     ''' Return a date object/value that represents never '''
     return(datetime(1900, 1, 1))
@@ -60,12 +67,6 @@ def differentDay(date1, date2):
     if ((date1.strftime("%Y/%m/%d") != date2.strftime("%Y/%m/%d"))):
         return(True)
     return(False)
-
-
-def rreplace(s, old, new, occurrence=1):
-    ''' replace last occurance of a string '''
-    li = s.rsplit(old, occurrence)
-    return new.join(li)
 
 
 def isIntStr(numstr):
@@ -140,13 +141,6 @@ def targetSearch(itemList, targetStr):
     if len(targetWords) > 1:
         targetObj = itemSearch(itemList, targetWords[0], targetWords[1])
     return(targetObj)
-
-
-def dLog(msg, show=False):
-    ''' Show debug log messages if flag is set '''
-    if show:
-        logging.debug(msg)
-    return(None)
 
 
 def itemSearch(itemList, name, desiredNum="#1", typeList=[]):  # noqa: C901
