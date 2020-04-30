@@ -1,6 +1,7 @@
 ''' ipc '''
 
 import re
+# from common.general import logger
 
 
 class Ipc():

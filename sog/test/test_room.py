@@ -1,11 +1,11 @@
 ''' test_room '''
 import unittest
 
-from common.testLib import InitTestLog
+# from common.general import logger
 from room import RoomFactory
 
 
-class TestRoom(unittest.TestCase, InitTestLog):
+class TestRoom(unittest.TestCase):
 
     num = 9999999
 

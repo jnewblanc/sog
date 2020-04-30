@@ -3,8 +3,6 @@
   * Offline editing of accounts, rooms, creatures, and characters
 '''
 import colorama
-import logging
-from pathlib import Path
 # import pprint
 import random
 import re
@@ -17,7 +15,7 @@ from common.attributes import AttributeHelper
 from common.ioLib import IoLib
 from common.paths import LOGDIR
 from common.storage import getNextUnusedFileNumber
-from common.general import isIntStr
+from common.general import isIntStr, logger
 # from object import Portal, Door
 # from object import Armor, Weapon, Shield, Container, Key
 # from object import Card, Scroll, Potion, Wand, Teleport, Ring, Necklace
@@ -182,13 +180,13 @@ class Editor(IoLib, AttributeHelper):
         if not itemObj:
             msg = "Object doesn't exist.  Aborting..."
             print(msg + '\n')
-            logging.warning(msg)
+            logger.warning(msg)
             return(None)
         if not itemObj.load():
             if itemObj.getId() == 0:
                 msg = "Couldn't load object and ID is 0.  Aborting..."
                 print(msg + '\n')
-                logging.warning(msg)
+                logger.warning(msg)
                 return(None)
             else:
                 itemObj._isNew = True
@@ -442,8 +440,8 @@ class Editor(IoLib, AttributeHelper):
 
     def editRaw(self, objName, obj, changedSinceLastSave=False):   # noqa C901
         ROW_FORMAT = "({0:3}) {1:25s}({2:4s}): {3}\n"
-        logging.info("Editing " + objName.capitalize() + " -- id = " +
-                     obj.describe())
+        logger.info("Editing " + objName.capitalize() + " -- id = " +
+                    obj.describe())
         obj.fixAttributes()
         while True:
             buf = (colorama.Fore.CYAN + '===== Editing ' +
@@ -488,7 +486,7 @@ class Editor(IoLib, AttributeHelper):
                           obj.getId())
                 elif obj.save():
                     print(objName.capitalize(), obj.getId(), "saved")
-                    logging.info(objName + " changes saved")
+                    logger.info(objName + " changes saved")
                     changedSinceLastSave = False   # reset flag after save
                 else:
                     print("ERROR", objName, "could not be saved")
@@ -503,7 +501,7 @@ class Editor(IoLib, AttributeHelper):
                                       " and quit [y/N]: ")
                     if verifyStr == "y":
                         print("Changes abandoned")
-                        logging.info(objName + " changes abandoned")
+                        logger.info(objName + " changes abandoned")
                         break
                 else:
                     break
@@ -612,14 +610,7 @@ class Editor(IoLib, AttributeHelper):
 
     def start(self):
         ''' Start the editor '''
-        # Set up logging
-        logpath = Path(LOGDIR)
-        logpath.mkdir(parents=True, exist_ok=True)
-        FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
-        logging.basicConfig(filename=(LOGDIR + '/editor.log'),
-                            level=logging.DEBUG,
-                            format=FORMAT, datefmt='%m/%d/%y %H:%M:%S')
-        logging.info("Editor Started - " + sys.argv[0])
+        logger.info("Editor Started - " + sys.argv[0])
         print("Logs: " + LOGDIR + '\\editor.log')
 
         colorama.init()

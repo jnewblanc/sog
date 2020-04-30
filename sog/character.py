@@ -2,7 +2,6 @@
 
 from datetime import datetime
 import inflect
-import logging
 import os
 import pprint
 import random
@@ -13,6 +12,7 @@ from common.attributes import AttributeHelper
 from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
 from common.general import getRandomItemFromList
+from common.general import logger
 from common.paths import DATADIR
 from object import Weapon
 
@@ -497,9 +497,9 @@ class Character(Storage, AttributeHelper, Inventory):
             self.bankAccountAdd(remainingCoin)
             self.bankFeeAdd(bankfee)
             self.save()
-            logging.info("bank - " + self.getName() + " deposited " +
-                         str(remainingCoin) + " and paid " + str(bankfee) +
-                         " in fees")
+            logger.info("bank - " + self.getName() + " deposited " +
+                        str(remainingCoin) + " and paid " + str(bankfee) +
+                        " in fees")
             return(True)
         return(False)
 
@@ -515,9 +515,9 @@ class Character(Storage, AttributeHelper, Inventory):
             self.addCoins(remainingCoin)
             self.bankFeeAdd(bankfee)
             self.save()
-            logging.info("bank - " + self.getName() + " withdrew " +
-                         str(remainingCoin) + " and paid " + str(bankfee) +
-                         " in fees")
+            logger.info("bank - " + self.getName() + " withdrew " +
+                        str(remainingCoin) + " and paid " + str(bankfee) +
+                        " in fees")
             return(True)
         return(False)
 
@@ -706,7 +706,7 @@ class Character(Storage, AttributeHelper, Inventory):
         if re.match(r"^.+@.+\..+/.+$", self.getId()):
             return(True)
 
-        logging.error(logPrefix + "Could not generate ID - " + self.getId())
+        logger.error(logPrefix + "Could not generate ID - " + self.getId())
         return(False)
 
     def getArticle(gender):
@@ -1333,7 +1333,7 @@ class Character(Storage, AttributeHelper, Inventory):
         secsSinceLastAttack = secsSinceDate(self._lastAttackDate)
         secsRemaining = secs - secsSinceLastAttack
 
-        # logging.debug("cooldown: ses(" + str(secs) +
+        # logger.debug("cooldown: ses(" + str(secs) +
         #               ') - secsSinceLastAttack(' +
         #               str(secsSinceLastAttack) + ") = secsRemaining(" +
         #               str(secsRemaining) + ") - " +
@@ -1511,7 +1511,7 @@ class Character(Storage, AttributeHelper, Inventory):
         # lose one or two levels
         buf = 'You are Dead'
         self.client.broadcast(self._displayName + ' has died\n')   # toDo: fix
-        logging.info(self._displayName + ' has died')
+        logger.info(self._displayName + ' has died')
 
         # random chance of losing two levels
         randX = random.randint(1, 100)
@@ -1641,12 +1641,12 @@ class Character(Storage, AttributeHelper, Inventory):
             pass
 
         if not id:
-            logging.error(logPrefix + "Could not retrieve Id to " +
-                          "generate filename")
+            logger.error(logPrefix + "Could not retrieve Id to " +
+                         "generate filename")
             return(False)
 
         if not re.match(r"^.+@.+\..+/.+$", id):
-            logging.error(logPrefix + "ID is blank while generating filename")
+            logger.error(logPrefix + "ID is blank while generating filename")
             return(False)
 
         self._datafile = os.path.abspath(DATADIR + '/Account/' +

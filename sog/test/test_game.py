@@ -1,11 +1,11 @@
 ''' test_game '''
 import unittest
 
-from common.testLib import InitTestLog
+# from common.general import logger
 import game
 
 
-class TestGame(unittest.TestCase, InitTestLog):
+class TestGame(unittest.TestCase):
 
     def testGameInstanciation(self):
         gameObj = game.Game()

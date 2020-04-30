@@ -1,7 +1,6 @@
 ''' creature Class '''     # noqa
 
 from datetime import datetime
-import logging
 # import os
 import pprint
 import random
@@ -11,7 +10,7 @@ from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
 from common.general import getNeverDate, getRandomItemFromList, secsSinceDate
-from common.general import dLog
+from common.general import logger, dLog
 from common.inventory import Inventory
 # from common.paths import DATADIR
 from object import ObjectFactory
@@ -293,7 +292,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
         self._instanceDebug = Creature._instanceDebug
 
-        logging.debug("Creature __init__" + str(self._creatureId))
+        logger.debug("Creature __init__" + str(self._creatureId))
 
         dLog("Creature init called for " + str(self.getId()),
              self._instanceDebug)

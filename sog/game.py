@@ -7,14 +7,13 @@
 
 import cmd
 from datetime import datetime
-import logging
 import pprint
 import random
 import re
 
 from common.combat import Combat
 from common.ipc import Ipc
-from common.general import isIntStr, dateStr, dLog
+from common.general import isIntStr, dateStr, logger, dLog
 from common.general import splitTargets, targetSearch
 from common.general import getRandomItemFromList
 from common.help import enterHelp
@@ -61,7 +60,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         ''' Perform required actions related to joining the game '''
         charObj = client.charObj
         if not charObj:
-            logging.warn("Game: Character not defined - returning False")
+            logger.warn("Game: Character not defined - returning False")
             return(False)
 
         gameCmd = GameCmd(client)      # each user gets their own cmd shell
@@ -72,7 +71,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         msg = client.txtBanner(charObj.getName() +
                                ' has entered the game', bChar='=')
         self.gameMsg(msg + '\n')
-        logging.info("JOINED GAME " + charObj.getId())
+        logger.info("JOINED GAME " + charObj.getId())
 
         # add room to charObj and then display the room
         if self.joinRoom(1, charObj):
@@ -102,7 +101,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         msg = client.txtBanner(charObj.getName() +
                                ' has left the game', bChar='=')
         self.gameMsg(msg + '\n')
-        logging.info("LEFT GAME " + charObj.getId())
+        logger.info("LEFT GAME " + charObj.getId())
 
         # Discard charObj
         charObj = None
@@ -187,10 +186,10 @@ class _Game(cmd.Cmd, Combat, Ipc):
         if isIntStr(roomNum):
             roomNum = int(roomNum)
             if roomNum == 0:
-                logging.error(logPrefix + "Room number is 0")
+                logger.error(logPrefix + "Room number is 0")
                 return(None)
         else:
-            logging.error(logPrefix + "Room number is invalid")
+            logger.error(logPrefix + "Room number is invalid")
             return(None)
 
         # See if room is already active
@@ -203,7 +202,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
             roomObj.load(logStr=__class__.__name__)  # load room from disk
 
         if roomObj is None:
-            logging.error(logPrefix + "Room object is None")
+            logger.error(logPrefix + "Room object is None")
 
         return(roomObj)
 
@@ -224,7 +223,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
             roomObj = self.roomLoader(roomThing)
 
         if not roomObj:
-            logging.error("joinRoom: Could not get roomObj")
+            logger.error("joinRoom: Could not get roomObj")
             return(False)
 
         existingRoom = charObj.getRoom()
@@ -324,8 +323,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 roomObj.recordTransaction("sale/" + str(price))
                 charObj.recordTax(roomObj.getTaxAmount(price))
             self.charMsg(charObj, successTxt)
-            logging.info("PURCHASE " + charObj.getId() + " bought " +
-                         obj.describe() + " for " + str(price))
+            logger.info("PURCHASE " + charObj.getId() + " bought " +
+                        obj.describe() + " for " + str(price))
             return(True)
         else:
             self.charMsg(charObj, abortTxt)
@@ -344,8 +343,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 roomObj.recordTransaction("purchase/" + str(price))
                 charObj.recordTax(roomObj.getTaxAmount(price))
             self.charMsg(charObj, successTxt)
-            logging.info("SALE " + charObj.getId() + " sold " +
-                         obj.describe() + " for " + str(price))
+            logger.info("SALE " + charObj.getId() + " sold " +
+                        obj.describe() + " for " + str(price))
 
             return(True)
         else:
@@ -522,7 +521,7 @@ class GameCmd(cmd.Cmd):
 
     def default(self, line):
         ''' cmd method override '''
-        logging.warn('*** Invalid game command: %s\n' % line)
+        logger.warn('*** Invalid game command: %s\n' % line)
         self.charObj.client.spoolOut("Invalid Command\n")
 
     def getObjFromCmd(self, itemList, cmdline):
@@ -1749,7 +1748,7 @@ class GameCmd(cmd.Cmd):
         self.charObj = None
         self.acctObj.removeCharacterFromAccount(charName)
         self.gameObj.gameMsg(msg)
-        logging.info("Character deleted: " + charName)
+        logger.info("Character deleted: " + charName)
         return(True)
 
     def do_take(self, line):

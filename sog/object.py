@@ -2,7 +2,6 @@
 
 import bisect
 import datetime
-import logging
 import pprint
 import random
 import re
@@ -10,6 +9,7 @@ import re
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
 from common.storage import Storage
+from common.general import logger
 
 # create obj staff in chest in 3001,ty=magdevice,magic=true,spell=3,
 #    value=1000,charges=2
@@ -93,12 +93,12 @@ class Object(Storage, EditWizard):
         self._instanceDebug = Object._instanceDebug
 
         if self._instanceDebug:
-            logging.debug("Object init called for " + str(self.getId()))
+            logger.debug("Object init called for " + str(self.getId()))
         return(None)
 
     def __del__(self):
         if self._instanceDebug:
-            logging.debug("Object destructor called for " + str(self.getId()))
+            logger.debug("Object destructor called for " + str(self.getId()))
 
     def describe(self, count=1, noarticle=False):
         buf = ''
@@ -1089,6 +1089,6 @@ def ObjectFactory(objType, id=0):       # noqa: C901
     try:
         obj.getId()
     except AttributeError:
-        logging.error("ObjectFactory: Could not obtain id for newly" +
-                      "instanciated " + objType + " object")
+        logger.error("ObjectFactory: Could not obtain id for newly" +
+                     "instanciated " + objType + " object")
     return(obj)

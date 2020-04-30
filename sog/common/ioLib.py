@@ -1,7 +1,7 @@
 ''' i/o spool class '''
 
 # import importlib
-import logging
+from common.general import logger
 import queue
 import re
 import sys
@@ -79,13 +79,13 @@ class IoLib():
     def promptForInput(self, promptStr, regex='', requirementsTxt=''):
         ''' prompt for string input - return str or empty if none '''
         for x in range(1, self.getMaxPromptRetries()):
-            # logging.debug("PromptForInput try " + str(x))
+            # logger.debug("PromptForInput try " + str(x))
             self.spoolOut(promptStr)
             oneStr = ''
             if self._sendAndReceive():
                 oneStr = self.getInputStr()
             else:
-                logging.debug("S&R returned False")
+                logger.debug("S&R returned False")
 
             if oneStr == '' or not self.isRunning():
                 return('')

@@ -2,10 +2,9 @@
 # lobby class is set up to be a single instance
 
 import cmd
-import logging
 from character import Character
 
-from common.general import dLog
+from common.general import logger, dLog
 
 
 class _Lobby():
@@ -94,7 +93,7 @@ class LobbyCmd(cmd.Cmd):
 
     def default(self, line):
         ''' cmd method override '''
-        logging.warn('*** Invalid lobby command: %s\n' % line)
+        logger.warn('*** Invalid lobby command: %s\n' % line)
         self.client.spoolOut("Invalid Command\n")
 
     def do_addcharacterondisk(self, line):
@@ -202,7 +201,7 @@ class LobbyCmd(cmd.Cmd):
         else:
             self.client.charObj = None
             msg = "Could not login to game"
-            logging.warning(msg)
+            logger.warning(msg)
             self.client.spoolOut('Error: ' + msg + '\n')
             self.acctObj.save(logStr=__class__.__name__)
         return(False)

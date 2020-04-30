@@ -2,10 +2,10 @@
 import unittest
 
 import account
-from common.testLib import InitTestLog
+# from common.general import logger
 
 
-class TestAccount(unittest.TestCase, InitTestLog):
+class TestAccount(unittest.TestCase):
 
     testAccountId = "someone@test.com"
 

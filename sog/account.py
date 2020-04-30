@@ -2,13 +2,13 @@
 
 from datetime import datetime
 # import getpass
-import logging
 import os
 import re
 
 from character import Character
 from common.attributes import AttributeHelper
 from common.general import getNeverDate, dateStr
+from common.general import logger
 from common.storage import Storage
 from common.paths import DATADIR
 
@@ -92,11 +92,11 @@ class Account(Storage, AttributeHelper):
         self.setLoginDate()
 
         if self.isValid():
-            logging.info(str(self.client) + ' Account login sucessful - ' +
-                         self.getEmail())
+            logger.info(str(self.client) + ' Account login sucessful - ' +
+                        self.getEmail())
         else:
-            logging.info(str(self.client) + ' Account ' + self.getEmail() +
-                         " is invalid")
+            logger.info(str(self.client) + ' Account ' + self.getEmail() +
+                        " is invalid")
             self.client.spoolOut("Password verification failed.  This " +
                                  "transaction has been logged and will be " +
                                  "investigated.\n")
@@ -122,7 +122,7 @@ class Account(Storage, AttributeHelper):
         self.client.spoolOut(buf)
         self.save(logStr=__class__.__name__)
         if self.client:
-            logging.info(str(self.client) + ' Logout ' + self.getEmail())
+            logger.info(str(self.client) + ' Logout ' + self.getEmail())
         self.__init__(self.client)
         return(True)
 
@@ -186,7 +186,7 @@ class Account(Storage, AttributeHelper):
             if self.email != '':
                 return(True)
             else:
-                logging.warning("Account is missing email address")
+                logger.warning("Account is missing email address")
         return(False)
 
     def getInfo(self):
@@ -270,7 +270,7 @@ class Account(Storage, AttributeHelper):
         ''' Prompt user to verify password, returns True if successful '''
 
         if not self.email or self.email == '':
-            logging.debug("verifyAcctPassword failed.  email not defined")
+            logger.debug("verifyAcctPassword failed.  email not defined")
             return(False)
 
         if self.load(['password'], logStr=__class__.__name__):
@@ -282,8 +282,8 @@ class Account(Storage, AttributeHelper):
                                          self.email + ' (attempt ' + str(x) +
                                          ' of 3).\n')
                     if x == 3:
-                        logging.warning("Failed password verification for " +
-                                        "account " + self.email)
+                        logger.warning("Failed password verification for " +
+                                       "account " + self.email)
         return(False)
 
     def validatePassword(self, loadedpassword, promptStr='Verify Password: '):
@@ -310,10 +310,10 @@ class Account(Storage, AttributeHelper):
             charObj.setName(cName)            # set the charName
             self.setDataFilename()            # set the filename
             if not self.dataFileExists():
-                logging.warning(__class__.__name__ + ' - Character ' + cName +
-                                ' of player ' + self.email + ' does ' +
-                                ' not exist at ' + self.getDataFilename() +
-                                '.  Removing character from account')
+                logger.warning(__class__.__name__ + ' - Character ' + cName +
+                               ' of player ' + self.email + ' does ' +
+                               ' not exist at ' + self.getDataFilename() +
+                               '.  Removing character from account')
                 self.characterList.remove(cName)
                 changed = True
         charObj = None
@@ -361,8 +361,8 @@ class Account(Storage, AttributeHelper):
             self.characterList.remove(characterName)
             self.save(logStr=__class__.__name__)
         else:
-            logging.warning("Could not remove character " + characterName +
-                            " from account " + self.getId())
+            logger.warning("Could not remove character " + characterName +
+                           " from account " + self.getId())
 
     def getMaxNumOfCharacters(self):
         return(self._maxcharacters)

@@ -1,10 +1,10 @@
 ''' attack functions '''
 
-# import logging
 import random
 
 from character import Character
 from common.general import dLog
+# from common.general import logger
 
 
 class Combat():

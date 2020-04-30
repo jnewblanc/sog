@@ -4,11 +4,11 @@ import re
 import unittest
 
 import common.general
-from common.testLib import InitTestLog
+# from common.general import logger
 import object
 
 
-class TestGeneral(unittest.TestCase, InitTestLog):
+class TestGeneral(unittest.TestCase):
     def testIsIntStr(self):
         inputs = ['apple',
                   'apple 1',

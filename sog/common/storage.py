@@ -1,7 +1,7 @@
 ''' common functions '''
 
 import glob
-import logging
+from common.general import logger
 import os
 from pathlib import Path
 import pickle
@@ -27,7 +27,7 @@ class Storage():
 
     def getDataFilename(self):
         ''' returns the filename - should always be overridden '''
-        logging.error("storage.getDataFilename: method not overwritten")
+        logger.error("storage.getDataFilename: method not overwritten")
         return(self._datafile)
 
     def setDataFilename(self, dfStr=''):
@@ -46,13 +46,13 @@ class Storage():
                 pass
 
             if not id:
-                logging.error(logPrefix + "Could not retrieve Id to " +
-                              "generate filename")
+                logger.error(logPrefix + "Could not retrieve Id to " +
+                             "generate filename")
                 return(False)
 
             if id == '':
-                logging.error(logPrefix + "ID is empty while generating " +
-                              "datafile name")
+                logger.error(logPrefix + "ID is empty while generating " +
+                             "datafile name")
                 return(False)
 
             self._datafile = os.path.abspath(DATADIR + '/' +
@@ -63,8 +63,8 @@ class Storage():
             self._datafile = os.path.abspath(str(dfStr))
 
         if self._debugStorage:
-            logging.debug(logPrefix + "_datafile = " +
-                          self._datafile)
+            logger.debug(logPrefix + "_datafile = " +
+                         self._datafile)
         return(True)
 
     def getId(self):
@@ -83,12 +83,12 @@ class Storage():
 
         logPrefix = self.__class__.__name__ + " save: "
         if filename == "":
-            logging.error(logPrefix + "Could not determine filename " +
-                          " while saving " + logStr + str(self.getId()))
+            logger.error(logPrefix + "Could not determine filename " +
+                         " while saving " + logStr + str(self.getId()))
             return(False)
         if not self.isValid():  # if the instance we are saving is not valid
-            logging.error(logPrefix + "Save aborted - " + logStr +
-                          str(self.getId()) + " is not valid")
+            logger.error(logPrefix + "Save aborted - " + logStr +
+                         str(self.getId()) + " is not valid")
             return(False)
 
         # create directory
@@ -106,8 +106,8 @@ class Storage():
                 pass
             setattr(self, attName, None)
             if self._debugStorage:
-                logging.debug(logPrefix + "ignoring " +
-                              attName + " during save")
+                logger.debug(logPrefix + "ignoring " +
+                             attName + " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
         with open(filename, 'wb') as outputfilehandle:
@@ -116,8 +116,8 @@ class Storage():
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
         if self._debugStorage:
-            logging.debug(logPrefix + "saved " + logStr + " - " +
-                          str(self.getId()))
+            logger.debug(logPrefix + "saved " + logStr + " - " +
+                         str(self.getId()))
         return(True)
 
     def load(self, desiredAttributes=[], logStr=''):   # noqa: C901
@@ -137,12 +137,12 @@ class Storage():
         logPrefix = self.__class__.__name__ + " load: "
 
         if filename == "":
-            logging.error(logPrefix + " Could not determine " +
-                          "filename for loading " + logStr)
+            logger.error(logPrefix + " Could not determine " +
+                         "filename for loading " + logStr)
             return(False)
 
         if self._debugStorage:
-            logging.debug(logPrefix + "Loading " + filename + "...")
+            logger.debug(logPrefix + "Loading " + filename + "...")
 
         if self.dataFileExists():
             with open(filename, 'rb') as inputfilehandle:
@@ -152,9 +152,9 @@ class Storage():
             # filter out instance attributes that we want to ignore
             for onevar in self.attributesThatShouldntBeSaved:
                 if self._debugStorage:
-                    logging.debug(logPrefix + " ignoring " +
-                                  logStr + "attribute " +
-                                  onevar + " during import")
+                    logger.debug(logPrefix + " ignoring " +
+                                 logStr + "attribute " +
+                                 onevar + " during import")
                 instanceAttributes = list(filter((onevar).__ne__,
                                                  instanceAttributes))
 
@@ -176,19 +176,19 @@ class Storage():
                      isinstance(value, list))):
                     buf += '=' + str(value)
                 if self._debugStorage:
-                    logging.debug(logPrefix + " " + buf + '\n')
+                    logger.debug(logPrefix + " " + buf + '\n')
 
             if self._debugStorage:
-                logging.debug(logPrefix + " loaded " + logStr +
-                              str(self.getId()))
+                logger.debug(logPrefix + " loaded " + logStr +
+                             str(self.getId()))
             self.initTmpAttributes()
             self.fixAttributes()
             self.postLoad()
             if self.isValid():
                 return(True)
         else:
-            logging.warn(logPrefix + " " + logStr +
-                         'datafile doesn\'t exist at ' + self._datafile)
+            logger.warn(logPrefix + " " + logStr +
+                        'datafile doesn\'t exist at ' + self._datafile)
         return(False)
 
     def delete(self, logStr=''):
@@ -196,32 +196,32 @@ class Storage():
         self.setDataFilename()
         filename = self._datafile
         if filename == "":
-            logging.error(logPrefix + " Could not determine filename " +
-                          " while deleting " + logStr + str(self.getId()))
+            logger.error(logPrefix + " Could not determine filename " +
+                         " while deleting " + logStr + str(self.getId()))
             return(False)
         if not os.path.isfile(filename):
-            logging.error(logPrefix + " Could not delete " + filename +
-                          " because it is not a file ")
+            logger.error(logPrefix + " Could not delete " + filename +
+                         " because it is not a file ")
             return(False)
         if self.dataFileExists():
-            logging.info(logPrefix + " Preparing to delete " +
-                         logStr + " " + filename)
+            logger.info(logPrefix + " Preparing to delete " +
+                        logStr + " " + filename)
             try:
                 os.remove(filename)
             except OSError as e:
-                logging.error(logPrefix + "Failed with:" + e.strerror)
-                logging.error(logPrefix + "Error code:" + e.code)
+                logger.error(logPrefix + "Failed with:" + e.strerror)
+                logger.error(logPrefix + "Error code:" + e.code)
 
             if os.path.isfile(filename):
-                logging.error(logPrefix + " " + filename + " could not " +
-                              "be deleted")
+                logger.error(logPrefix + " " + filename + " could not " +
+                             "be deleted")
                 return(False)
             else:
-                logging.info(logPrefix + " " + filename + " deleted")
+                logger.info(logPrefix + " " + filename + " deleted")
                 return(True)
         else:
-            logging.error(logPrefix + " " + filename + " could not " +
-                          "be deleted because it doesn't exist")
+            logger.error(logPrefix + " " + filename + " could not " +
+                         "be deleted because it doesn't exist")
             return(False)
         return(False)
 

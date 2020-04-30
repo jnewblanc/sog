@@ -5,11 +5,11 @@ import unittest
 import account
 import character
 import common.serverLib
-from common.testLib import InitTestLog
+# from common.general import logger
 import threads
 
 
-class TestIntegration(unittest.TestCase, InitTestLog):
+class TestIntegration(unittest.TestCase):
 
     _testAcctName = "sogIntTest@gadgetshead.com"
     _testCharName = "intChar1"
@@ -110,11 +110,4 @@ class TestIntegration(unittest.TestCase, InitTestLog):
 
 
 if __name__ == '__main__':
-    # log = logging.getLogger(__name__)
-    # out_hdlr = logging.StreamHandler(sys.stdout)
-    # out_hdlr.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
-    # out_hdlr.setLevel(logging.INFO)
-    # log.addHandler(out_hdlr)
-    # log.setLevel(logging.INFO)
-
     unittest.main()

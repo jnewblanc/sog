@@ -1,6 +1,6 @@
 ''' help sybsystem functions and data '''
 
-import logging
+from common.general import logger
 
 # Original commands:
 #
@@ -377,7 +377,7 @@ def enterHelp(client):
         elif helpIn == 'topics':
             contextMenu = ''
             for oneTopic in gameCommands.keys():
-                logging.debug("topic: " + oneTopic)
+                logger.debug("topic: " + oneTopic)
                 contextMenu = (contextMenu + "  " + oneTopic + " - " +
                                "info about " + oneTopic + "\n")
         elif helpIn in gameCommands.keys():

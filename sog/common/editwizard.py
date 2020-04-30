@@ -1,5 +1,7 @@
 ''' editWizard '''
 
+# from common.general import logger
+
 
 class EditWizard():
     ''' SuperClass for objects that get edited

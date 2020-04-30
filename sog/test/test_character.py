@@ -2,11 +2,11 @@
 import unittest
 
 import character
-from common.testLib import InitTestLog
+# from common.general import logger
 import object
 
 
-class TestCharacter(unittest.TestCase, InitTestLog):
+class TestCharacter(unittest.TestCase):
 
     testCharName = "test99999"
     testObjNumber = 99999

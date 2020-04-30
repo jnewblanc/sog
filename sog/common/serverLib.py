@@ -1,35 +1,24 @@
 #!/usr/bin/env python
 ''' SoG server library module
-   * server - runs the server loop, including exception handler, and log setup
+   * server - runs the server loop, including exception handler
    * helper functions for starting/stopping threads
 '''
 
-import logging
-from pathlib import Path
 # import selectors
 import socket
 import sys
 import time
 
 import common.network
-from common.paths import LOGDIR
 import common.serverLib
-from common.general import Terminator
+from common.general import Terminator, logger
 from threads import ClientThread, AsyncThread
 import game
 
 
 def server(email=''):
-    # Set up logging
-    logpath = Path(LOGDIR)
-    logpath.mkdir(parents=True, exist_ok=True)
-    FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
-    logging.basicConfig(filename=(LOGDIR + '/system.log'),
-                        level=logging.DEBUG,
-                        format=FORMAT, datefmt='%m/%d/%y %H:%M:%S')
-    logging.info("-------------------------------------------------------")
-    logging.info("Server Start - " + sys.argv[0])
-    print("Logs: " + LOGDIR + '\\system.log')
+    logger.info("-------------------------------------------------------")
+    logger.info("Server Start - " + sys.argv[0])
 
     asyncThread = createAndStartAsyncThread()
 
@@ -53,7 +42,7 @@ def server(email=''):
                     common.network.connections[newthread.getId()].start()
                 except OSError:
                     # This seems to happen when timeout occurs, but isn't fatal
-                    logging.warning("socket accept() failed - timeout?")
+                    logger.warning("socket accept() failed - timeout?")
 
                 time.sleep(1)
 
@@ -67,14 +56,14 @@ def server(email=''):
 
 def haltAsyncThread(gameObj, asyncThread):
     if asyncThread:
-        logging.info("Halting asyncThread")
+        logger.info("Halting asyncThread")
         asyncThread.halt()
         asyncThread.join()
 
 
 def haltClientThreads():
     for num, client in enumerate(common.network.connections):
-        logging.info("Halting ClientThread " + str(num))
+        logger.info("Halting ClientThread " + str(num))
         client.terminateClientConnection()
         client.join()
 
@@ -88,7 +77,7 @@ def createAndStartAsyncThread():
 
 def exitProg(statusCode=0):
     ''' Cleanup and Exit program '''
-    logging.info("Server Exit - " + sys.argv[0])
+    logger.info("Server Exit - " + sys.argv[0])
 
     # exit server
     try:

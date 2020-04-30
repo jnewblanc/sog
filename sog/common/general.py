@@ -2,8 +2,14 @@
 
 from datetime import datetime
 import logging
+from logging.handlers import TimedRotatingFileHandler
+from os.path import basename
+from pathlib import Path
 import random
 import re
+import sys
+
+from common.paths import LOGDIR
 
 
 class Terminator(Exception):
@@ -16,10 +22,37 @@ def sig_handler(signal_received, frame):
     raise Terminator
 
 
+def getLogger(logName, loglevel=logging.DEBUG):
+    logpath = Path(LOGDIR)
+    logpath.mkdir(parents=True, exist_ok=True)
+    FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
+    DATEFORMAT = '%m/%d/%y %H:%M:%S'
+    LOGFILE = LOGDIR + '/' + logName + '.log'
+
+    logger = logging.getLogger(logName)
+    logger.setLevel(loglevel)
+
+    # create a file handler
+    # logHandler = logging.FileHandler(LOGFILE)
+    # daily logs rotated after 30 days
+    logHandler = TimedRotatingFileHandler(LOGFILE, when="d", interval=1,
+                                          backupCount=30)
+    logHandler.setLevel(loglevel)
+
+    # create a logging format
+    logFormatter = logging.Formatter(FORMAT, DATEFORMAT)
+    # add the format to the handler
+    logHandler.setFormatter(logFormatter)
+
+    # add the handler to the logger
+    logger.addHandler(logHandler)
+    return(logger)
+
+
 def dLog(msg, show=False):
     ''' Show debug log messages if flag is set '''
     if show:
-        logging.debug(msg)
+        logger.debug(msg)
     return(None)
 
 
@@ -31,10 +64,10 @@ def getNeverDate():
 def secsSinceDate(date1):
     ''' return seconds since a given date '''
     if not date1:
-        logging.error("secsSinceDate: date was not defined.  Returning 0")
+        logger.error("secsSinceDate: date was not defined.  Returning 0")
         return(0)
     if date1 == getNeverDate():
-        logging.warning("secsSinceDate: Recieved NeverDate.  Returning 0")
+        logger.warning("secsSinceDate: Recieved NeverDate.  Returning 0")
         return(0)
     return((datetime.now() - date1).total_seconds())
 
@@ -42,7 +75,7 @@ def secsSinceDate(date1):
 def dateStr(date1, datefmt="%Y/%m/%d %H:%M"):
     ''' return a given date Obj as a string, in our standard format '''
     if not date1:
-        logging.error("dateStr: date was not defined.  Returning ''")
+        logger.error("dateStr: date was not defined.  Returning ''")
         return('')
     if date1 == getNeverDate():
         return("Never")
@@ -51,7 +84,7 @@ def dateStr(date1, datefmt="%Y/%m/%d %H:%M"):
     elif date1:
         return(date1.strftime(datefmt))
     else:
-        logging.error("dateStr: Could not parse - returned an empty value")
+        logger.error("dateStr: Could not parse - returned an empty value")
         return('')
 
 
@@ -59,10 +92,10 @@ def differentDay(date1, date2):
     ''' Compare dates to see if they are the same day
         * typically used for daily events, counters, stats, etc '''
     if not date1:
-        logging.error("differentDay: date was not defined.  Returning False")
+        logger.error("differentDay: date was not defined.  Returning False")
         return(False)
     if not date2:
-        logging.error("differentDay: date was not defined.  Returning False")
+        logger.error("differentDay: date was not defined.  Returning False")
         return(False)
     if ((date1.strftime("%Y/%m/%d") != date2.strftime("%Y/%m/%d"))):
         return(True)
@@ -94,10 +127,10 @@ def getRandomItemFromList(list1):
 def truncateWithInt(num, decimalPlaces=3):
     ''' Given a number, returns that number truncated to X decimal places '''
     if not num:
-        logging.error("truncateWithInt: num was not defined.  Returning 0")
+        logger.error("truncateWithInt: num was not defined.  Returning 0")
         return(0)
     if not isinstance(num, float) and not isinstance(num, int):
-        logging.error("truncateWithInt: invalid num.  Returning 0")
+        logger.error("truncateWithInt: invalid num.  Returning 0")
         return(0)
     shifter = 10 ** decimalPlaces
     return int(num * shifter) / shifter
@@ -194,3 +227,19 @@ def itemSearch(itemList, name, desiredNum="#1", typeList=[]):  # noqa: C901
         dLog("sea - Found item " + myitem.getName(), debugItemSearch)
 
     return(myitem)
+
+
+# Set up global logger
+global logger
+try:
+    logger            # Test to see if logger is defined
+except NameError:
+    # Set up the logger if it doesn't already exist
+    logname = re.sub('\\..*$', '', str(basename(sys.argv[0])).lower())
+    if logname == '':
+        logname = 'generic'
+    logger = getLogger(logname)
+    logLocation = LOGDIR + '\\' + logname + '.log'
+    print("Log: " + logLocation)
+    logger.info("-----------------------------------------------------------")
+    logger.info("Log: " + logLocation)

@@ -5,6 +5,9 @@
 # The player must also type in the chant for a spell to cast it, which means
 # the player must also find out what the chant is.
 
+# from common.general import logger
+
+
 SpellList = ['null',
              'vigor', 'heal', 'fireball', 'lightning', 'hurt',
              'curepoison', 'disintegrate', 'befuddle', 'teleport', 'wish',

@@ -1,6 +1,6 @@
 ''' common attribute superClass '''
 
-import logging
+from common.general import logger
 
 
 class AttributeHelper():
@@ -37,40 +37,40 @@ class AttributeHelper():
                     newVal = int(getattr(self, attName, 0))
                     setattr(self, attName, newVal)
                     changed = True
-                    logging.warning(logPrefix + "Changed " + attName +
-                                    " to int for " + self.describe())
+                    logger.warning(logPrefix + "Changed " + attName +
+                                   " to int for " + self.describe())
             except ValueError:
                 setattr(self, attName, 0)
-                logging.warning(logPrefix + "Set " + attName + "= 0")
+                logger.warning(logPrefix + "Set " + attName + "= 0")
         for attName in self.boolAttributes:
             try:
                 if not isinstance(getattr(self, attName), bool):
                     newVal = bool(getattr(self, attName, False))
                     setattr(self, attName, newVal)
                     changed = True
-                    logging.warning(logPrefix + "Changed " + attName +
-                                    " to bool for " + self.describe())
+                    logger.warning(logPrefix + "Changed " + attName +
+                                   " to bool for " + self.describe())
             except ValueError:
                 setattr(self, attName, False)
-                logging.warning(logPrefix + "Set " + attName + "= False")
+                logger.warning(logPrefix + "Set " + attName + "= False")
         for attName in self.strAttributes:
             try:
                 if not isinstance(getattr(self, attName), str):
                     newVal = str(getattr(self, attName, False))
                     setattr(self, attName, newVal)
                     changed = True
-                    logging.warning(logPrefix + "Changed " + attName +
-                                    " to str for " + self.describe())
+                    logger.warning(logPrefix + "Changed " + attName +
+                                   " to str for " + self.describe())
             except ValueError:
                 setattr(self, attName, '')
-                logging.warning(logPrefix + "Set " + attName + "= ''")
+                logger.warning(logPrefix + "Set " + attName + "= ''")
         for attName in (self.obsoleteAttributes):
             try:
                 if hasattr(self, attName):
                     delattr(self, attName)
                     changed = True
-                    logging.warning(logPrefix + "Removed '" + attName +
-                                    "' from " + self.describe())
+                    logger.warning(logPrefix + "Removed '" + attName +
+                                   "' from " + self.describe())
             except AttributeError:
                 pass
         return(changed)

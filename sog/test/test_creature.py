@@ -1,11 +1,11 @@
 ''' test_creature '''
 import unittest
 
-from common.testLib import InitTestLog
+# from common.general import logger
 import creature
 
 
-class TestCreature(unittest.TestCase, InitTestLog):
+class TestCreature(unittest.TestCase):
 
     testCreatureNumber = 99999
 

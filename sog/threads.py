@@ -5,7 +5,6 @@
     * Note: threads must be started before use'''
 
 from datetime import datetime
-import logging
 import socket
 import threading
 import time
@@ -13,7 +12,7 @@ import time
 import account
 from common.attributes import AttributeHelper
 from common.ioLib import IoLib
-from common.general import Terminator
+from common.general import Terminator, logger
 import common.network
 import game
 import lobby
@@ -45,7 +44,7 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
             self._test = True
 
         if self._debugServer:
-            logging.info(str(self) + " New ClientThread")
+            logger.info(str(self) + " New ClientThread")
 
     def __str__(self):
         ''' Connection/Thread ID Str - often used as a prefix for logging '''
@@ -54,7 +53,7 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
     # main program
     def serverMain(self):
         ''' This is the main entry point into the app '''
-        logging.info(str(self) + " Client connection established")
+        logger.info(str(self) + " Client connection established")
         try:
             while True:                             # Server loop
                 self.welcome("Sog Server\n")
@@ -73,7 +72,7 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
                         self.acctObj.logout()
                     self.acctObj = None
                 else:
-                    logging.warning(str(self) + ' Authentication failed')
+                    logger.warning(str(self) + ' Authentication failed')
                     self.acctObj = None
                     if not self.isRunning():
                         break                # exit loop to terminate
@@ -107,10 +106,10 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
             try:
                 # send the data
                 if self._debugServer:
-                    logging.debug(str(self) + " SENDING:\n" + dataToSend)
+                    logger.debug(str(self) + " SENDING:\n" + dataToSend)
                 self.socket.sendall(str.encode(dataToSend))
                 if self._debugServer:
-                    logging.debug(str(self) + " SEND: Data Sent")
+                    logger.debug(str(self) + " SEND: Data Sent")
             except (ConnectionResetError, ConnectionAbortedError):
                 self.terminateClientConnection()
                 return(False)
@@ -119,18 +118,18 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
 
             try:
                 if self._debugServer:
-                    logging.debug(str(self) + " REC: Waiting for input")
+                    logger.debug(str(self) + " REC: Waiting for input")
                 clientdata = self.socket.recv(common.network.BYTES_TO_TRANSFER)
                 if self._debugServer:
-                    logging.debug(str(self) + " REC: " +
-                                  str(clientdata.decode("utf-8")))
+                    logger.debug(str(self) + " REC: " +
+                                 str(clientdata.decode("utf-8")))
             except (ConnectionResetError, ConnectionAbortedError):
                 self.terminateClientConnection()
                 return(False)
             except IOError:
                 pass
         else:
-            logging.debug(str(self) + ' No socket to receive input from')
+            logger.debug(str(self) + ' No socket to receive input from')
             return(False)
 
         if clientdata:
@@ -138,21 +137,21 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
             if clientdata == common.network.NOOP_STR:  # empty sends
                 clientdata = ""
                 if self._debugServer:
-                    logging.debug("Server recieved NO_OP from client")
+                    logger.debug("Server recieved NO_OP from client")
             elif clientdata == common.network.TERM_STR:  # client shut down
                 if self._debugServer:
-                    logging.debug("Server recieved TERM_STR from client")
+                    logger.debug("Server recieved TERM_STR from client")
                 self.terminateClientConnection()
                 return(False)
             elif clientdata == common.network.STOP_STR:  # server shut down
                 if self._debugServer:
-                    logging.debug("Server recieved STOP_STR from client")
+                    logger.debug("Server recieved STOP_STR from client")
                 self.terminateClientConnection()
                 raise Terminator
                 return(False)
             self.setInputStr(clientdata)
         else:
-            logging.debug(str(self) + ' No clientdata returned')
+            logger.debug(str(self) + ' No clientdata returned')
             return(False)
         return(True)
 
@@ -160,7 +159,7 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
         ''' terminate the connection and clean up loose ends '''
         if self._running:
             if self in common.network.connections:
-                logging.info(str(self) + " Client connection terminated")
+                logger.info(str(self) + " Client connection terminated")
                 common.network.connections.remove(self)
                 common.network.totalConnections -= 1
             self._running = False
@@ -175,8 +174,8 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
                 self.socket.close()
             except OSError:
                 if self._debugServer:
-                    logging.debug("Server term - Couldn't close " +
-                                  "non-existent socket")
+                    logger.debug("Server term - Couldn't close " +
+                                 "non-existent socket")
         return(None)
 
     def setArea(self, area):
@@ -221,7 +220,7 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
     def broadcast(self, data, header=None):
         ''' output a message to all users '''
         sentCount = 0
-        logging.debug("broadcast - " + str(data))
+        logger.debug("broadcast - " + str(data))
 
         if data[-1] != '\n':        # Add newline if needed
             data += '\n'
@@ -246,7 +245,7 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
     def directMessage(self, data, who, header=None):
         ''' output a message to specific user '''
         sentCount = 0
-        logging.debug("broadcast - " + str(data) + " - " + str(who))
+        logger.debug("broadcast - " + str(data) + " - " + str(who))
 
         if data[-1] != '\n':        # Add newline if needed
             data += '\n'
@@ -287,8 +286,8 @@ class AsyncThread(threading.Thread):
         ''' Call the _asyncTasks method of the single game instance.
             * Thread control and tasks are handled in the game instance. '''
         if self._debugAsync:
-            logging.debug(str(self) + 'AsyncThread._asyncMain')
-        logging.info("Thread started - async worker")
+            logger.debug(str(self) + 'AsyncThread._asyncMain')
+        logger.info("Thread started - async worker")
         while not self._stopFlag:
             self.gameObj.asyncTasks()
             time.sleep(1)

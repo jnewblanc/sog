@@ -1,7 +1,6 @@
 ''' room class '''
 
 from datetime import datetime
-import logging
 import os
 import pprint
 import random
@@ -11,7 +10,8 @@ import textwrap
 from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
-from common.general import getNeverDate, differentDay, secsSinceDate, dLog
+from common.general import getNeverDate, differentDay, secsSinceDate
+from common.general import logger, dLog
 from common.inventory import Inventory
 from common.paths import DATADIR
 from object import ObjectFactory, Door
@@ -106,12 +106,12 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         self.o = 0
 
         if self._instanceDebug:
-            logging.debug("Room init called for " + str(self.getId()))
+            logger.debug("Room init called for " + str(self.getId()))
         return(None)
 
     def __del__(self):
         if self._instanceDebug:
-            logging.debug("Room destructor called for " + str(self.getId()))
+            logger.debug("Room destructor called for " + str(self.getId()))
 
     def debug(self):
         return(pprint.pformat(vars(self)))
@@ -487,7 +487,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             if oneObj:
                 objList.append(oneObj)
             else:
-                logging.debug("Could not add permanent " + permId + ' to list')
+                logger.debug("Could not add permanent " + permId + ' to list')
         return(objList)
 
     def getPermanent(self, permId):
@@ -726,8 +726,8 @@ def RoomFactory(objType="room", id=0):
         obj = Shop(id)
 
     if not obj.getId():
-        logging.error("RoomFactory: Could not obtain id for newly" +
-                      "instanciated " + objType + " object")
+        logger.error("RoomFactory: Could not obtain id for newly" +
+                     "instanciated " + objType + " object")
 
     return(obj)
     # End of RoomFactory

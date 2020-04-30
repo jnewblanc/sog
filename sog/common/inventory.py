@@ -4,8 +4,8 @@ import inflect
 import re
 import textwrap
 
-
 from common.general import getRandomItemFromList, dLog
+# from common.general import logger
 
 
 class Inventory():
