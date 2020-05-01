@@ -1,6 +1,6 @@
 ''' room class '''
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import pprint
 import random
@@ -165,7 +165,9 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         self._characterList = []
         self._inventory = []
         self._creatureCache = []
-        self.setLastEncounter()
+        # Accelerate first encounter by mucking with the last encounter time
+        secsToReduceLastEncounter = random.randint(0, 60)
+        self.setLastEncounter(secsToReduceLastEncounter)
         return(True)
 
     def fixAttributes(self):
@@ -560,10 +562,10 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         dLog(debugPrefix + "Room is ready for encounter", self._instanceDebug)
         return(True)
 
-    def setLastEncounter(self):
-        self._timeOfLastEncounter = datetime.now()
+    def setLastEncounter(self, secs=0):
+        self._timeOfLastEncounter = datetime.now() - timedelta(seconds=secs)
 
-    def setLastAttack(self):
+    def setLastAttackDate(self):
         self._timeOfLastAttack = datetime.now()
 
     def getBlockingCreatures(self, charObj):

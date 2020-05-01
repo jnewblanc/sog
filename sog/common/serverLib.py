@@ -20,9 +20,9 @@ def server(email=''):
     logger.info("-------------------------------------------------------")
     logger.info("Server Start - " + sys.argv[0])
 
-    asyncThread = createAndStartAsyncThread()
-
     try:
+        asyncThread = createAndStartAsyncThread()
+
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverHandle:
 
             serverHandle.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

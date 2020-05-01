@@ -388,7 +388,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         if not target:
             return(False)
 
-        # charObj.setlastAttackDamageType("magic")
+        # charObj.setLastAttackDateDamageType("magic")
 
         # roll/check for spell success
         if isinstance(target, Character):   # use on Character
@@ -507,7 +507,8 @@ class GameCmd(cmd.Cmd):
 
     def precmd(self, line):
         ''' cmd method override '''
-        self.charObj.setLastCmd(self.lastcmd)
+        if self.lastcmd != '':
+            self.charObj.setLastCmd(self.lastcmd)
 
     def postcmd(self, stop, line):
         ''' cmd method override '''
@@ -628,6 +629,10 @@ class GameCmd(cmd.Cmd):
     def do_appeal(self, line):
         ''' ask DMs for help '''
         self.selfMsg(line + " not implemented yet\n")
+
+    def do_att(self, line):
+        ''' combat - alias '''
+        return(self.do_attack(line))
 
     def do_attack(self, line):
         ''' combat '''
@@ -836,13 +841,20 @@ class GameCmd(cmd.Cmd):
                          itemBuf)
 
     def do_circle(self, line):
-        ''' combat '''
+        ''' combat - If creature is not attacking, then delay their first
+            attack by X seconds '''
+
         target = self.getCombatTarget(line)
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        if target.isAttacking():
+            self.selfMsg("You can't circle an attacking creature\n")
+            return(False)
+
+        self.gameObj.circle(self.charObj, target,
+                            self.lastcmd.split(" ", 1)[0])
+        self.selfMsg("Ok.\n")
         return(False)
 
     def do_climb(self, line):
@@ -1421,7 +1433,13 @@ class GameCmd(cmd.Cmd):
 
     def do_parry(self, line):
         ''' combat '''
-        pass
+        target = self.getCombatTarget(line)
+        if not target:
+            return(False)
+
+        self.gameObj.attackCreature(self.charObj, target,
+                                    self.lastcmd.split(" ", 1)[0])
+        return(False)
 
     def do_pawn(self, line):
         ''' alias - sell '''

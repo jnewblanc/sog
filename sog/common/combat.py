@@ -9,7 +9,7 @@ from common.general import dLog
 
 class Combat():
 
-    attackList = {
+    attackDict = {
         'attack': {
             'desc': "a standard attack",
             'damagepctBonus': 0,
@@ -41,9 +41,9 @@ class Combat():
             'vulnerable': False
         },
         'circle': {
-            'desc': "step around to slow an attack",
-            'damagepctBonus': 0,
-            'tohit': 0,
+            'desc': "step around to slow an attack - no damage - delays atck",
+            'damagepctBonus': -100,
+            'tohit': 20,
             'dodge': 0,
             'slashAdj': 0,
             'bludgeonAdj': 0,
@@ -133,8 +133,12 @@ class Combat():
     }
 
     _secsBetweenAttacks = 5
+    _playerAdvantageSecs = 3
     _jailRoomNum = 280
     _kidnapRoomNum = 184
+
+    def getAttackDict(self):
+        return(self.attackDict)
 
     def attackHit(self, attackerObj, defenderObj, attackCmd='attack'):
         ''' Determine if an attack hits '''
@@ -164,7 +168,7 @@ class Combat():
                  self._instanceDebug)
 
         # attack command bonus/penalty
-        attackCmdAdj = self.attackList[attackCmd]['tohit']
+        attackCmdAdj = self.attackDict[attackCmd]['tohit']
         hitPercentage += attackCmdAdj
         dLog(logPrefix + str(attackCmdAdj) + "% cmd adj",
              self._instanceDebug)
@@ -229,15 +233,15 @@ class Combat():
         # backstab bonus/penalty - risk = reward
         if attackCmd == 'backstab':
             if attackerObj.isHidden():
-                cmdPercent = self.attackList[attackCmd]['damagepctBonus']
+                cmdPercent = self.attackDict[attackCmd]['damagepctBonus']
             else:
-                cmdPercent = -(self.attackList[attackCmd]['damagepctBonus'])
-        elif attackCmd in self.attackList.keys():
+                cmdPercent = -(self.attackDict[attackCmd]['damagepctBonus'])
+        elif attackCmd in self.attackDict.keys():
             # specialized attacks
-            cmdPercent = self.attackList[attackCmd]['damagepctBonus']
+            cmdPercent = self.attackDict[attackCmd]['damagepctBonus']
         else:
             # standard attack
-            cmdPercent = self.attackList['attack']['damagepctBonus']
+            cmdPercent = self.attackDict['attack']['damagepctBonus']
 
         damagePercent += cmdPercent
         dLog(logPrefix + str(cmdPercent) + "% attack cmd bonus",
@@ -252,12 +256,15 @@ class Combat():
             return(True)
         return(False)
 
-    def checkForDD(self, ddpercent=6):
+    def checkForDD(self, target, ddpercent=6):
+        if target.getVulnerable():
+            target.setVulnerable(False)
+            return(True)
         if random.randint(1, 100) <= ddpercent:
             return(True)
         return(False)
 
-    def applyCritOrDD(self, damage, notify=[]):
+    def applyCritOrDD(self, damage, target, notify=[]):
         logPrefix = "applyCritOrDD: "
         buf = ''
 
@@ -265,7 +272,7 @@ class Combat():
             buf = "Critical Damage!\n"
             damage = max(1, damage) * 3   # critical hit
             dLog(logPrefix + "critical damage (*3)", self._instanceDebug)
-        elif self.checkForDD():
+        elif self.checkForDD(target):
             buf = "Double Damage!\n"
             damage = max(1, damage) * 2   # double damage
             dLog(logPrefix + "double damage (*2)", self._instanceDebug)
@@ -295,7 +302,8 @@ class Combat():
         damage = opponentObj.acDamageReduction(damage)
 
         # check for crit or double damage
-        damage = self.applyCritOrDD(damage, [attackerObj, opponentObj])
+        damage = self.applyCritOrDD(damage, opponentObj,
+                                    [attackerObj, opponentObj])
 
         dLog(logPrefix + "total damage(" + str(damage) + ")",
              self._instanceDebug)
@@ -363,9 +371,12 @@ class Combat():
                 remainingExp -= exp
         return(True)
 
-    def attackCreature(self, charObj, target, attackCmd='attack'):  # noqa: C901, E501
+    def attackCreature(self, charObj, target, attackCmd='attack'):
         logPrefix = "Game attackCreature: "
         roomObj = charObj.getRoom()
+
+        if attackCmd not in self.attackDict.keys():
+            attackCmd = 'attack'
 
         self._instanceDebug = True
 
@@ -378,19 +389,13 @@ class Combat():
         charObj.setHidden(False)
         charObj.setSecondsUntilNextAttack(self._secsBetweenAttacks)
         charObj.setLastAttack(attackCmd)
+        charObj.setVulnerable(self.attackDict[attackCmd]['vulnerable'])
 
         dLog(logPrefix + charObj.getName() + " attacks " + target.getName() +
              " with " + attackCmd, self._instanceDebug)
 
-        # creature begins to attack player
-        if target.attacksBack():
-            target.setCurrentlyAttacking(charObj)
-
-        # player becomes locked on to creature
-        if charObj.getCurrentlyAttacking() != target:
-            charObj.setCurrentlyAttacking(target)
-            self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
-                                 " attacks " + target.describe() + "\n")
+        # creature attacks player * player becomes locked on to creature
+        self.engageTarget(charObj, target)
 
         if self.misses(charObj, target, attackCmd):
             self.charMsg(charObj, "You miss.\n")
@@ -407,50 +412,7 @@ class Combat():
             # calculate attack damage
             damage = self.attackDamage(charObj, target, attackCmd)
 
-        if damage:
-            dLog(logPrefix + "target takes damage", self._instanceDebug)
-            if charObj.getEquippedWeapon().getName() == 'fist':
-                # It's important that we clearly identify weaponless attacks
-                self.charMsg(charObj, "Pow!  You punch " + target.describe() +
-                             " for " + str(damage) + " damage.\n")
-            else:
-                self.charMsg(charObj, "You hit " + target.describe() +
-                             " for " + str(damage) + " damage.\n")
-
-            if target.damageIsLethal(damage):
-                dLog(logPrefix + "target dies", self._instanceDebug)
-
-                self.charMsg(charObj, "You killed " + target.describe() + "\n")
-                self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
-                                     " kills " + target.describe() + "\n")
-                truncsize = roomObj.getInventoryTruncSize()
-                for item in target.getInventory():
-                    if roomObj.addToInventory(item, maxSize=truncsize):
-                        self.roomMsg(roomObj, item.describe() +
-                                     " falls to the floor\n")
-                    else:
-                        self.roomMsg(roomObj, item.describe() +
-                                     "falls to the floor and rolls away")
-
-                # dole out experience
-                self.allocateExp(charObj, roomObj, target)
-
-                # determine if skill is increased
-                if charObj.getLevel() >= target.getLevel():
-                    damageType = charObj.getEquippedWeaponDamageType()
-                    charObj.rollToBumpSkillForLevel(damageType)
-
-                # update player kill stats
-                charObj.updateKillCount(target)
-
-                # destroy creature
-                roomObj.removeFromInventory(target)
-            else:
-                target.takeDamage(damage)
-                if target.flees(target):
-                    self.roomMsg(roomObj, target.describe() + " flees.\n")
-                    # destroy creature
-                    roomObj.removeFromInventory(target)
+            self.applyDamage(charObj, charObj, target, damage)
         # end attackCreature
 
     def creaturesAttack(self, roomObj):
@@ -500,7 +462,8 @@ class Combat():
             return(False)
 
         secs = random.randint(self._secsBetweenAttacks,
-                              self._secsBetweenAttacks + 1)
+                              self._secsBetweenAttacks +
+                              self._playerAdvantageSecs)
         creatureObj.setSecondsUntilNextAttack(secs)
         creatureObj.setLastAttack()
 
@@ -518,31 +481,128 @@ class Combat():
         # reduce charges of armor/shield protection
         charObj.decreaseChargeOfEquippedProtection()
 
-        if damage:
-            dLog(logPrefix + creatureObj.getName() + " hits " +
-                 charObj.getName() + " for " + str(damage) + " damage",
-                 self._instanceDebug)
-            if charObj.damageIsLethal(damage):
-                dLog(logPrefix + "player takes lethal damage",
-                     self._instanceDebug)
-                if creatureObj.kidnaps():
-                    self.whiskAwayInsteadOfDeath()
-                if creatureObj.sendsToJail():
-                    self.whiskAwayInsteadOfDeath(charObj,
-                                                 roomNum=self._kidnapRoomNum)
-                else:
-                    if not charObj.isDm():
-                        # Transfer players inventory to room
-                        for item in charObj.getInventory():
-                            if charObj.getRoom().addToInventory(item):
-                                charObj.removeFromInventory(item)
-
-            # notify
-            self.charMsg(charObj, creatureObj.describe() + " hits you for " +
-                         str(damage) + " damage.\n")
-            charObj.takeDamage(damage)
+        self.applyDamage(charObj, creatureObj, charObj, damage)
         return(None)
         # end creatureAttacksPlayer
+
+    def applyDamage(self, charObj, attacker, target, damage):
+        ''' apply damage to target or player '''
+        logPrefix = "combat.applyDamage: "
+        if damage:
+            # Parse attackers/targets to get a set of attack/target words
+            atkDict = self.getattackMsgDict(charObj, attacker, target)
+
+            # Display the message about the hit
+            self.charMsg(charObj, self.getHitMsg(atkDict, damage))
+
+        if target.damageIsLethal(damage):
+            debugMsg = (atkDict['attackerSubject'] +
+                        ' does leathal damage to ' + atkDict['targetSubject'])
+            dLog(logPrefix + debugMsg, self._instanceDebug)
+
+        if isinstance(target, Character):
+            self.applyPlayerDamage(charObj, attacker, damage)
+        else:
+            self.applyCreatureDamage(charObj, target, damage)
+
+    def getattackMsgDict(self, charObj, attacker, target):
+        ''' returns a dict of attacker and target strings '''
+        msgDict = {}
+        msgDict['msgPrefix'] = ''
+        if attacker == charObj:   # You
+            msgDict['attackerSubject'] = "You"
+            msgDict['attackerName'] = attacker.describe()
+            msgDict['attackerVerb'] = "hit"
+            if charObj.getEquippedWeapon().getName() == 'fist':
+                # It's important that we clearly identify weaponless attacks
+                msgDict['msgPrefix'] = "Pow!  "
+                msgDict['attackerVerb'] = "punch"
+        else:  # Creature or another player
+            msgDict['attackerSubject'] = attacker.describe()
+            msgDict['attackerName'] = attacker.describe()
+            msgDict['attackerVerb'] = "hits"
+
+        if target == charObj:  # You
+            msgDict['targetSubject'] = "you"
+            msgDict['targetName'] = target.describe()
+        else:  # Creature or another player
+            msgDict['targetSubject'] = target.describe()
+            msgDict['targetName'] = target.describe()
+        return(msgDict)
+
+    def getHitMsg(self, atkDict, damage):
+        ''' return the hit message based on the attacker and target '''
+        logPrefix = "combat.hitMsg: "
+
+        msg = (atkDict['msgPrefix'] + atkDict['attackerSubject'] + ' ' +
+               atkDict['attackerVerb'] + ' ' + atkDict['targetSubject'] +
+               ' for ' + str(damage) + " damage.\n")
+
+        # Construct separate message where all subjects are identified by name
+        debugMsg = (atkDict['attackerName'] + ' hits ' +
+                    atkDict['targetName'] + ' for ' +
+                    str(damage) + ' damage')
+        dLog(logPrefix + debugMsg, self._instanceDebug)
+
+        return(msg)
+
+    def applyCreatureDamage(self, charObj, target, damage):
+        ''' applys damage/death to a creature when a player hits it '''
+        roomObj = charObj.getRoom()
+
+        if target.damageIsLethal(damage):
+            self.charMsg(charObj, "You killed " + target.describe() + "\n")
+            self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
+                                 " kills " + target.describe() + "\n")
+            truncsize = roomObj.getInventoryTruncSize()
+            for item in target.getInventory():
+                if roomObj.addToInventory(item, maxSize=truncsize):
+                    self.roomMsg(roomObj, item.describe() +
+                                 " falls to the floor\n")
+                else:
+                    self.roomMsg(roomObj, item.describe() +
+                                 "falls to the floor and rolls away")
+
+            # dole out experience
+            self.allocateExp(charObj, roomObj, target)
+
+            # determine if skill is increased
+            if charObj.getLevel() >= target.getLevel():
+                damageType = charObj.getEquippedWeaponDamageType()
+                charObj.rollToBumpSkillForLevel(damageType)
+
+            # update player kill stats
+            charObj.updateKillCount(target)
+
+            # destroy creature
+            roomObj.removeFromInventory(target)
+        else:
+            target.takeDamage(damage)
+            if target.flees(target):
+                self.roomMsg(roomObj, target.describe() + " flees.\n")
+                # destroy creature
+                roomObj.removeFromInventory(target)
+        # end applyCreatureDamage
+
+    def applyPlayerDamage(self, charObj, attacker, damage):
+        ''' apply player damage from a creature or player '''
+
+        if charObj.damageIsLethal(damage):
+            if attacker.kidnaps():
+                self.whiskAwayInsteadOfDeath()
+            elif attacker.sendsToJail():
+                self.whiskAwayInsteadOfDeath(charObj,
+                                             roomNum=self._kidnapRoomNum)
+            else:
+                if not charObj.isDm():
+                    # Transfer players inventory to room
+                    for item in charObj.getInventory():
+                        if charObj.getRoom().addToInventory(item):
+                            charObj.removeFromInventory(item)
+                # death is handled in charObj.takeDamage
+
+        charObj.takeDamage(damage)
+        # end applyPlayerDamage
 
     def unAttack(self, roomObj, charObj):
         ''' When a player leaves the room, creatures that are still in
@@ -550,3 +610,34 @@ class Combat():
         for creatureObj in roomObj.getCreatureList():
             if creatureObj.getCurrentlyAttacking() == charObj:
                 creatureObj.setCurrentlyAttacking = None
+
+    def engageTarget(self, charObj, target):
+        ''' Character locks on to creature and creature begins to defend '''
+
+        if not isinstance(target, Character):
+            # creature begins to attack player
+            if target.attacksBack():
+                target.setSecondsUntilNextAttack(random.randint(3, 5))
+                target.setCurrentlyAttacking(charObj)
+
+        # attacker becomes locked on to target
+        if charObj.getCurrentlyAttacking() != target:
+            charObj.setCurrentlyAttacking(target)
+            self.othersInRoomMsg(charObj, charObj.getRoom(),
+                                 charObj.getName() + " attacks " +
+                                 target.describe() + "\n")
+
+    def circle(self, charObj, target, attackCmd='attack'):
+        ''' delays a defender's first strike and engages creature
+            * chance of success based on attack toHit
+            * In terms of timing, counts as an attack
+            * engages creature regardless of success
+            * player isn't informed if circle was successful or not
+        '''
+        if self.attackHit(charObj, target, attackCmd):
+            target.setSecondsUntilNextAttack(charObj.getCircleSecs())
+            charObj.setLastAttack()
+
+        self.engageTarget(charObj, target)
+
+        return(None)

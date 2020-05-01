@@ -11,7 +11,7 @@ from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
-from common.general import getRandomItemFromList
+from common.general import getRandomItemFromList, truncateWithInt
 from common.general import logger
 from common.paths import DATADIR
 from object import Weapon
@@ -388,6 +388,7 @@ class Character(Storage, AttributeHelper, Inventory):
 
         self._lastInputDate = getNeverDate()
         self._lastAttackDate = getNeverDate()
+        self._lastAttackCmd = 'attack'
         self._lastRegenDate = getNeverDate()
         self._currentlyAttacking = None
         self._secondsUntilNextAttack = 0
@@ -1076,11 +1077,20 @@ class Character(Storage, AttributeHelper, Inventory):
     def getLastCmd(self):
         return(self._lastCommand)
 
+    def setLastAttackCmd(self, str1):
+        self._lastAttackCommand = str1
+
+    def getLastAttackCmd(self):
+        return(self._lastAttackCommand)
+
     def setLastAttack(self, cmd="attack"):
-        self.setLastCmd(cmd)
+        self.setLastAttackCmd(cmd)
+        self.setLastAttackDate()
+
+    def setLastAttackDate(self):
         self._lastAttackDate = datetime.now()
 
-    def getLastAttack(self):
+    def getLastAttackDate(self):
         return(self._lastAttackDate)
 
     def setSecondsUntilNextAttack(self, secs=3):
@@ -1100,6 +1110,12 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def setLastPoison(self):
         self._lastPoisonDate = datetime.now()
+
+    def getVulnerable(self):
+        return(self._vulnerable)
+
+    def setVulnerable(self, val=True):
+        self._vulnerable = bool(val)
 
     def getHitPoints(self):
         return(self._hitpoints)
@@ -1168,6 +1184,9 @@ class Character(Storage, AttributeHelper, Inventory):
         return(self._level)
 
     def isCarryable(self):
+        return(False)
+
+    def isMagic(self):
         return(False)
 
     def isAttacking(self):
@@ -1249,19 +1268,25 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def getCumulativeDodge(self):
         ''' return dodge percentage of armor + shield '''
+        logPrefix = 'character.getCumulativeDodge: '
         # Start off with dodge skill
         dodgePct = self._dodge
+        dLog(logPrefix + "dodgeSkill=" + str(dodgePct), self._instanceDebug)
 
         # Add on dodge from armor/shields
         for obj in self.getEquippedProtection():
             if not obj.isBroken():
                 dodgePct += obj.getDodgeBonus()
 
+        dLog(logPrefix + "withGear=" + str(dodgePct), self._instanceDebug)
+
         # It's a little bit strange to have to traverse back to the game/combat
         # class to get this data, but it seems to make more sense than trying
         # to pass it all around.
-        attackList = self.client.svrObj.gameObj.attackList
-        dodgePct += attackList[self.getLastCmd()]['dodge']
+        fullAttackDict = self.client.gameObj.getAttackDict()
+        attackDict = fullAttackDict.get(self.getLastAttackCmd(), {})
+        dodgePct += attackDict.get('dodge', 0)
+        dLog(logPrefix + "totalDodge=" + str(dodgePct), self._instanceDebug)
         return(dodgePct)
 
     def isAttackingWithFist(self):
@@ -1342,8 +1367,8 @@ class Character(Storage, AttributeHelper, Inventory):
         if secsRemaining <= 0:
             return(True)
 
-        buf = ("You are not ready.  " + str(secsRemaining) +
-               " seconds remain")
+        buf = ("You are not ready.  " +
+               str(truncateWithInt(secsRemaining, 1)) + " seconds remain")
         if msgStr != '':
             buf += ' ' + msgStr
         buf += ".\n"
@@ -1369,22 +1394,22 @@ class Character(Storage, AttributeHelper, Inventory):
         return(self._acctName + "/" + str(self.getName()))
 
     def getStrength(self):
-        return(self.strength)
+        return(int(self.strength))
 
     def getDexterity(self):
-        return(self.dexterity)
+        return(int(self.dexterity))
 
     def getIntelligence(self):
-        return(self.intelligence)
+        return(int(self.intelligence))
 
     def getCharisma(self):
-        return(self.charisma)
+        return(int(self.charisma))
 
     def getConstitution(self):
-        return(self.constitution)
+        return(int(self.constitution))
 
     def getLuck(self):
-        return(self.constitution)
+        return(int(self.constitution))
 
     def getAttacking(self):
         return(self._attackTargets)
@@ -1426,6 +1451,12 @@ class Character(Storage, AttributeHelper, Inventory):
     def canAffordAmount(self, num):
         if self._coins >= int(num):
             return(True)
+        return(False)
+
+    def kidnaps(self):
+        return(False)
+
+    def sendsToJail(self):
         return(False)
 
     def condition(self):
@@ -1787,3 +1818,10 @@ class Character(Storage, AttributeHelper, Inventory):
 
         if opponent.isPermanent():
             self._epickills += 1
+
+    def getCircleSecs(self):
+        ''' Returns the number seconds a creature will wait given a sucessful
+            circle - based on character level/stats'''
+        secsToWait = random.randint(self.getLevel(),
+                                    20 + self.getDexterity())
+        return(secsToWait)

@@ -527,7 +527,7 @@ class Closable(Object):
         if not charObj.checkCooldown(15):
             return(False)
         else:
-            charObj.setLastAttack()
+            charObj.setLastAttackDate()
 
         charHp = charObj.getHitPoints()
         if self.smashSucceds(charObj):
@@ -558,7 +558,7 @@ class Closable(Object):
         if not charObj.checkCooldown(15):
             return(False)
         else:
-            charObj.setLastAttack()
+            charObj.setLastAttackDate()
 
         if self.pickSuccess(charObj):
             self._locked = 'False'

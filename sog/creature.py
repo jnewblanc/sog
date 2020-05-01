@@ -50,7 +50,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
                                      '_enterRoomTime', '_instanceDebug',
                                      '_invWeight', '_invValue',
                                      '_attackPlayer', '_lastAttackDate',
-                                     '_secondsUntilNextAttack']
+                                     '_secondsUntilNextAttack', '_vulnerable']
 
     intAttributes = ['_weight', '_value', '_level', '_exp', '_ac',
                      '_damagePct', '_tohit', '_dodge', '_frequency',
@@ -275,10 +275,10 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._numOfItemsCarried = [0, 1, 2]  # number of items dropped - random
 
         self._creationDate = datetime.now()   # ag - when creatObj was created
-        self._enterRoomTime = getNeverDate()  # ag - when creture entered room
+        self._enterRoomTime = datetime.now()  # ag - when creture entered room
         self._currentlyAttacking = None       # ag - Who creature is attacking
-        self._lastAttackDate = getNeverDate()  # ag
-        self._secondsUntilNextAttack = 0
+        self._lastAttackDate = datetime.now()  # ag
+        self._secondsUntilNextAttack = 5
 
         self._permanent = False      # stays in room when room is not active
         self._unique = False         # only one allowed in room at a time
@@ -289,6 +289,8 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._parleyTeleportRooms = []  # room to transport to.  empty=1-300
 
         self._alignment = 'neutral'  # Values: neutral, good, evil
+
+        self._vulnerable = False     # Target is vulnerable for DD next attack
 
         self._instanceDebug = Creature._instanceDebug
 
@@ -667,9 +669,12 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         return(self._attackRate)
 
     def setLastAttack(self):
+        self.setLastAttackDate()
+
+    def setLastAttackDate(self):
         self._lastAttackDate = datetime.now()
 
-    def getLastAttack(self):
+    def getLastAttackDate(self):
         return(self._lastAttackDate)
 
     def setSecondsUntilNextAttack(self, secs=10):
@@ -691,7 +696,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         # Check if the appropriate amount of time has pased
         timeLeft = int((self.getSecondsUntilNextAttack() /
                        (self.getAttackRate() / 100)) -
-                       secsSinceDate(self.getLastAttack()))
+                       secsSinceDate(self.getLastAttackDate()))
         if timeLeft > 0:
             dLog(debugPrefix + "Attack discarded due to time - " +
                  str(timeLeft) + " secs left", self._instanceDebug)
@@ -700,7 +705,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         # % chance that creature does not attack
         randX = random.randint(1, 10)
         if randX == 1:
-            self.setLastAttack()
+            self.setLastAttackDate()
             dLog(debugPrefix + "Creature randomly chose not to attack (" +
                  str(randX) + ' = 1)', self._instanceDebug)
             return(False)
@@ -749,6 +754,12 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
             charObj.client.spoolOut(closeTxt + offerTxt)
 
         return(False)
+
+    def getVulnerable(self):
+        return(self._vulnerable)
+
+    def setVulnerable(self, val=True):
+        self._vulnerable = bool(val)
 
     def fixAttributes(self):
         ''' Sometimes we change attributes, and need to fix them in rooms
