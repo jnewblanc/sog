@@ -6,7 +6,7 @@ import unittest
 import character
 import creature
 import object
-import common.magic
+import magic
 
 
 class TestMagic(unittest.TestCase):
@@ -40,9 +40,8 @@ class TestMagic(unittest.TestCase):
             for level in [1, 3, 7, 10]:
                 charObj._level = level
                 for spellName in spells:
-                    chant = common.magic.getSpellChant(spellName)
-                    spellObj = common.magic.Spell(charObj, target,
-                                                  spellName, chant)
+                    chant = magic.getSpellChant(spellName)
+                    spellObj = magic.Spell(charObj, target, spellName, chant)
                     msg = ('testDamageSpells - class=' + charClass +
                            ' - level=' + str(level) +
                            ' - spell=' + spellName +
@@ -57,9 +56,8 @@ class TestMagic(unittest.TestCase):
             for level in [1, 3, 7, 10]:
                 charObj._level = level
                 for spellName in spells:
-                    chant = common.magic.getSpellChant(spellName)
-                    spellObj = common.magic.Spell(charObj, target,
-                                                  spellName, chant)
+                    chant = magic.getSpellChant(spellName)
+                    spellObj = magic.Spell(charObj, target, spellName, chant)
                     msg = ('testHealthSpells - class=' + charClass +
                            ' - level=' + str(level) +
                            ' - spell=' + spellName +
@@ -74,9 +72,8 @@ class TestMagic(unittest.TestCase):
             for level in [1, 3, 7, 10]:
                 charObj._level = level
                 for spellName in spells:
-                    chant = common.magic.getSpellChant(spellName)
-                    spellObj = common.magic.Spell(charObj, target,
-                                                  spellName, chant)
+                    chant = magic.getSpellChant(spellName)
+                    spellObj = magic.Spell(charObj, target, spellName, chant)
                     msg = ('testDoorSpells - class=' + charClass +
                            ' - level=' + str(level) +
                            ' - spell=' + spellName +
@@ -85,15 +82,14 @@ class TestMagic(unittest.TestCase):
                     msg = msg  # remove when we complete the assert
 
     def testFailedChants(self):
-        spells = common.magic.SpellList
+        spells = magic.SpellList
         charObj = self.charDict.get('mage')
         target = self.targetCharObj
         chant = "I don't know the chant"
         for spellName in spells:
             if spellName == '':
                 continue
-            spellObj = common.magic.Spell(charObj, target,
-                                          spellName, chant)
+            spellObj = magic.Spell(charObj, target, spellName, chant)
             assert not spellObj.succeeded
 
     def testBadTargets(self):
@@ -101,10 +97,9 @@ class TestMagic(unittest.TestCase):
         badTargets = [self.targetCharObj, self.targetCreaObj]
         charObj = self.charDict.get('mage')
         for spellName in spells:
-            chant = common.magic.getSpellChant(spellName)
+            chant = magic.getSpellChant(spellName)
             for target in badTargets:
-                spellObj = common.magic.Spell(charObj, target,
-                                              spellName, chant)
+                spellObj = magic.Spell(charObj, target, spellName, chant)
                 assert not spellObj.succeeded
         spells = ['vigor', 'heal',
                   'fireball', 'lightning', 'hurt', 'disintegrate', 'turn',
@@ -113,10 +108,9 @@ class TestMagic(unittest.TestCase):
                   'vuln']
         badTargets = [self.targetDoorObj]
         for spellName in spells:
-            chant = common.magic.getSpellChant(spellName)
+            chant = magic.getSpellChant(spellName)
             for target in badTargets:
-                spellObj = common.magic.Spell(charObj, target,
-                                              spellName, chant)
+                spellObj = magic.Spell(charObj, target, spellName, chant)
                 assert not spellObj.succeeded
 
     def testBadLevels(self):
@@ -149,11 +143,10 @@ class TestMagic(unittest.TestCase):
         for className in goodLvls.keys():
             charObj = self.charDict.get(className)
             for spellName in spells:
-                chant = common.magic.getSpellChant(spellName)
+                chant = magic.getSpellChant(spellName)
                 for level in goodLvls[className][spellName]:
                     charObj._level = level
-                    spellObj = common.magic.Spell(charObj, target,
-                                                  spellName, chant)
+                    spellObj = magic.Spell(charObj, target, spellName, chant)
                     lvlReq = str(spellObj.levelRequired)
                     assert spellObj.succeeded, ("level " +
                                                 str(charObj.getLevel()) + " " +
@@ -164,8 +157,7 @@ class TestMagic(unittest.TestCase):
                                                 str(lvlReq))
                 for level in badLvls[className][spellName]:
                     charObj._level = level
-                    spellObj = common.magic.Spell(charObj, target,
-                                                  spellName, chant)
+                    spellObj = magic.Spell(charObj, target, spellName, chant)
                     lvlReq = str(spellObj.levelRequired)
                     assert not spellObj.succeeded, ("level " +
                                                     str(charObj.getLevel()) +

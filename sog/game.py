@@ -11,13 +11,13 @@ import pprint
 import random
 import re
 
-from common.combat import Combat
+from combat import Combat
 from common.ipc import Ipc
 from common.general import isIntStr, dateStr, logger, dLog
 from common.general import splitTargets, targetSearch
 from common.general import getRandomItemFromList
 from common.help import enterHelp
-from common.magic import Spell, SpellList
+from magic import Spell, SpellList
 from room import Room, RoomFactory
 from object import ObjectFactory
 # from object import Potion, Scroll, Teleport, Staff
