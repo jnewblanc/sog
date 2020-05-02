@@ -1,13 +1,14 @@
 ''' i/o spool class '''
 
 # import importlib
-from common.general import logger
+from common.general import Terminator, logger
+import common.network
 import queue
 import re
 import sys
 
 
-class IoLib():
+class Spooler():
     ''' Superclass for I/O spooling '''
     def __init__(self):
         self._inputStr = ''                # user input buffer
@@ -26,9 +27,6 @@ class IoLib():
     def setInputStr(self, iStr):
         ''' Set the inputStr, replacing whatever was there before '''
         self._inputStr = str(iStr)
-
-    def getMaxPromptRetries(self):
-        return(self._maxPromptRetries)
 
     def popOutSpool(self):
         ''' Return string with entirety of outpool spool.
@@ -58,23 +56,8 @@ class IoLib():
             return(True)
         return(False)
 
-    def _sendAndReceive(self):
-        ''' Send data as output and recieve input
-            This is the simple "terminal" case for send/receive, but it
-            can be overwritten for client/server or for automated testing '''
-        clientdata = ''
-        dataToSend = self.popOutSpool()  # get data from spool
-
-        print(dataToSend, end='')        # show data
-        try:
-            clientdata = input('')           # accept input
-        except (KeyboardInterrupt, TypeError, AttributeError,
-                KeyError, RecursionError, NameError):
-            sys.exit(1)
-
-        self.setInputStr(clientdata)     # store input
-
-        return(True)
+    def getMaxPromptRetries(self):
+        return(self._maxPromptRetries)
 
     def promptForInput(self, promptStr, regex='', requirementsTxt=''):
         ''' prompt for string input - return str or empty if none '''
@@ -191,3 +174,130 @@ class IoLib():
                ----------------------------------------------------------------
         '''
         return(lineChar * lineSize)
+
+
+class LocalIo(Spooler):
+    ''' Superclass for client I/O spooling
+        * _sendAndReceive is server specific.  Keep it separate so we can
+          replace it when running tests'''
+    def __init__(self):
+        super().__init__()
+
+    def _sendAndReceive(self):
+        ''' Send data as output and recieve input
+            This is the simple "terminal" case for send/receive, but it
+            can be overwritten for client/server or for automated testing '''
+        clientdata = ''
+        dataToSend = self.popOutSpool()  # get data from spool
+
+        print(dataToSend, end='')        # show data
+        try:
+            clientdata = input('')           # accept input
+        except (KeyboardInterrupt, TypeError, AttributeError,
+                KeyError, RecursionError, NameError):
+            sys.exit(1)
+
+        self.setInputStr(clientdata)     # store input
+
+        return(True)
+
+
+class TestIo(Spooler):
+    ''' Superclass for client I/O spooling
+        * _sendAndReceive is server specific.  Keep it separate so we can
+          replace it when running tests'''
+    def __init__(self):
+        super().__init__()
+        self._inputCmds = []
+        self._cmdCounter = 0
+        self._outputStr = ''
+
+    def setInputs(self, inputList):
+        self._inputCmds.append(inputList)
+
+    def getOutput(self):
+        return(self._outputStr)
+
+    def _sendAndReceive(self):
+        ''' Send data as output and recieve input
+            This is the simple "terminal" case for send/receive, but it
+            can be overwritten for client/server or for automated testing '''
+        # Simulate output
+        # pop output off the spool and storing it where we can retrieve it
+        self._outputStr = self.popOutSpool()
+        logger.info('testIo.sr output = ' + self._outputStr)
+
+        # Simulate input by using the next unused input command in _inputCmds
+        if self._cmdCounter < len(self._inputCmds):
+            cmd = self._inputCmds[self._cmdCounter]
+        else:
+            cmd = 'exit'
+        self._cmdCounter += 1
+        self.setInputStr(cmd)     # store input
+        logger.info('testIo.sr input = ' + self.cmd)
+
+        return(True)
+
+
+class ServerIo(Spooler):
+    def _sendAndReceive(self):     # noqa: C901
+        ''' All client Input and output function go through here
+              * Override IOspool for client/server communication
+              * send and recieve is connected in a single transaction
+              * Data to be sent comes from the outputSpool queue
+              * Data Recieveed goed into the inputStr var '''
+        clientdata = ''
+        dataToSend = self.popOutSpool()
+
+        if self.socket:
+            try:
+                # send the data
+                if self._debugServer:
+                    logger.debug(str(self) + " SENDING:\n" + dataToSend)
+                self.socket.sendall(str.encode(dataToSend))
+                if self._debugServer:
+                    logger.debug(str(self) + " SEND: Data Sent")
+            except (ConnectionResetError, ConnectionAbortedError):
+                self.terminateClientConnection()
+                return(False)
+            except IOError:
+                pass
+
+            try:
+                if self._debugServer:
+                    logger.debug(str(self) + " REC: Waiting for input")
+                clientdata = self.socket.recv(common.network.BYTES_TO_TRANSFER)
+                if self._debugServer:
+                    logger.debug(str(self) + " REC: " +
+                                 str(clientdata.decode("utf-8")))
+            except (ConnectionResetError, ConnectionAbortedError):
+                self.terminateClientConnection()
+                return(False)
+            except IOError:
+                pass
+        else:
+            logger.debug(str(self) + ' No socket to receive input from')
+            return(False)
+
+        if clientdata:
+            clientdata = str(clientdata.decode("utf-8"))
+            if clientdata == common.network.NOOP_STR:  # empty sends
+                clientdata = ""
+                if self._debugServer:
+                    logger.debug("Server recieved NO_OP from client")
+            elif clientdata == common.network.TERM_STR:  # client shut down
+                if self._debugServer:
+                    logger.debug("Server recieved TERM_STR from client")
+                self.terminateClientConnection()
+                return(False)
+            elif clientdata == common.network.STOP_STR:  # server shut down
+                if self._debugServer:
+                    logger.debug("Server recieved STOP_STR from client")
+                self.terminateClientConnection()
+                raise Terminator
+                return(False)
+            self.setInputStr(clientdata)
+        else:
+            logger.debug(str(self) + ' No clientdata returned')
+            return(False)
+        return(True)

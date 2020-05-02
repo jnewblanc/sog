@@ -17,7 +17,7 @@ from common.general import isIntStr, dateStr, logger, dLog
 from common.general import splitTargets, targetSearch
 from common.general import getRandomItemFromList
 from common.help import enterHelp
-from magic import Spell, SpellList
+from magic import Spell, SpellList, getSpellChant
 from room import Room, RoomFactory
 from object import ObjectFactory
 # from object import Potion, Scroll, Teleport, Staff
@@ -779,39 +779,40 @@ class GameCmd(cmd.Cmd):
 
     def do_cast(self, line):
         ''' magic '''
+        cmdargs = line.split(' ')
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        if line == '':
+        if len(cmdargs) < 1:
             self.selfMsg("Cast what spell?\n")
+        spellName = cmdargs[0]
+        line = line.lstrip(spellName)
 
-        parts = line.split(' ', 1)
-        spell = parts[0]
-        if len(parts) > 1:
-            targetline = parts[1]
-
-        if spell not in SpellList:
+        if spellName not in SpellList:
             self.selfMsg("That's not a valid spell.\n")
             return(False)
 
-        if not charObj.knowsSpell(spell):
+        if not charObj.knowsSpell(spellName):
             self.selfMsg("You haven't learned that spell.\n")
             return(False)
 
-        allTargets = roomObj.getCharsAndInventory()
-        targetList = self.getObjFromCmd(allTargets, targetline)
+        if len(cmdargs) > 1:
+            possibleTargets = (charObj.getInventory() +
+                               roomObj.getCharsAndInventory())
+            targetList = self.getObjFromCmd(possibleTargets, line)
 
-        if targetList[0]:
-            target = targetList[0]
-        else:
-            if targetline != '':
+            if targetList[0]:
+                targetObj = targetList[0]
+            else:
                 self.selfMsg("Could not determine target for spell.\n")
                 return(False)
-            target = charObj
+        else:
+            targetObj = self.charObj
 
-        spellObj = Spell(charObj.getClass(), spell)
+        spellObj = Spell(charObj, targetObj, spellName)
 
-        self.castSpell(charObj, spellObj, target)
+        # Apply effects of spell
+        spellObj.cast(roomObj)
 
     def do_catalog(self, line):
         ''' info - get the catalog of items from a vendor '''
@@ -1511,25 +1512,45 @@ class GameCmd(cmd.Cmd):
         return(self.do_exit(line))
 
     def do_read(self, line):
-        ''' magic - read a scroll to get the chant '''
+        ''' magic - read a scroll to use the spell '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
         charObjList = charObj.getInventory()
+        roomInv = roomObj.getCharsAndInventory()
+        targetList = self.getObjFromCmd(charObjList + roomInv, line)
 
-        targetList = self.getObjFromCmd(charObjList, line)
-
-        if not targetList[0]:
+        if len(targetList) < 1:
             self.selfMsg(self.lastcmd + " what?\n")
             return(False)
 
-        obj1 = targetList[0]
-        obj2 = targetList[1]
+        scrollObj = targetList[0]
 
-        if roomObj or obj1 or obj2:  # tmp - delete when implemented
+        if not isinstance(scrollObj, Scroll):
+            self.selfMsg("You can't read that.\n")
+            return(False)
+
+        if len(targetList) >= 2:
+            targetObj = targetList[1]
+        else:
+            targetObj = charObj
+
+        # Get the spell object - no chant required for scrolls
+        spellName = scrollObj.getSpell()
+        spellChant = getSpellChant(spellName)
+        spellObj = Spell(charObj, targetObj, spellName, spellChant)
+
+        # Remove item from player's inventory
+        self.selfMsg(scrollObj.describe(article='The') + "disintegrates\n")
+        charObj.removeFromInventory(scrollObj)
+
+        # Apply effects of spell
+        if spellObj.cast(roomObj):
             pass
+        else:
+            self.selfMsg(spellObj.getFailedReason() + "\n")
 
-        self.selfMsg("'read' not implemented yet\n")
+        return(False)
 
     def do_remove(self, line):
         ''' unequip an item that you have equipped '''
@@ -1748,6 +1769,39 @@ class GameCmd(cmd.Cmd):
 
         self.gameObj.attackCreature(self.charObj, target,
                                     self.lastcmd.split(" ", 1)[0])
+        return(False)
+
+    def do_study(self, line):
+        ''' magic - study a scroll to learn the chant '''
+        charObj = self.charObj
+        charObjList = charObj.getInventory()
+
+        targetList = self.getObjFromCmd(charObjList, line)
+
+        if len(targetList) < 1:
+            self.selfMsg(self.lastcmd + " what?\n")
+            return(False)
+
+        scrollObj = targetList[0]
+
+        if not isinstance(scrollObj, Scroll):
+            self.selfMsg("You can't study that.\n")
+            return(False)
+
+        # Get the chant
+        spellName = scrollObj.getSpell()
+        spellChant = getSpellChant(spellName)
+        self.selfMsg(scrollObj.describe(article='The') + ' reads, "' +
+                     spellChant + '"\n')
+
+        # Learn the spell
+        if charObj.learnSpell(spellName):
+            self.selfMsg('You learn the "' + spellName + '" spell\n')
+
+        # Remove item from player's inventory
+        self.selfMsg(scrollObj.describe(article='The') + " disintegrates\n")
+        charObj.removeFromInventory(scrollObj)
+
         return(False)
 
     def do_suicide(self, line):

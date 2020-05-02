@@ -7,14 +7,15 @@
 
 import random      # noqa: F401
 
-from common.general import dLog
-
+from common.general import dLog, logger
+from common.ioLib import TestIo
 
 SpellDict = {
     'none': {
         'desc': '',
         'chant': '',
         'spellTargets': [],
+        'spellType': '',
         'limitedNumberPerDay': False,
         'magicPoints': 1,
         'intRequired': 1,
@@ -33,6 +34,7 @@ SpellDict = {
         'desc': 'Restores 5 * caster_level fatigue points',
         'chant': 'I return vigor',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'health',
         'limitedNumberPerDay': False,
         'magicPoints': 3,
         'intRequired': 10,
@@ -51,6 +53,7 @@ SpellDict = {
         'desc': 'Restores 12 * caster_level fatigue points',
         'chant': 'Thy wounds are mended!',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'health',
         'limitedNumberPerDay': False,
         'magicPoints': 6,
         'intRequired': 10,
@@ -69,6 +72,7 @@ SpellDict = {
         'desc': 'Attack spell, min(3 * (lvl+1), int * 2) hp',
         'chant': 'Ball of fire fly to thee!',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'damage',
         'limitedNumberPerDay': False,
         'magicPoints': 10,
         'intRequired': 11,
@@ -88,6 +92,7 @@ SpellDict = {
         'desc': 'Attack spell, min(20 + 2 * (lvl+1)) hp.',
         'chant': 'I command you to glow with energy!',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'damage',
         'limitedNumberPerDay': False,
         'magicPoints': 15,
         'intRequired': 13,
@@ -107,6 +112,7 @@ SpellDict = {
         'desc': 'Attack spell, 1-3 hp',
         'chant': 'Ouch! That hurt!',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'damage',
         'limitedNumberPerDay': False,
         'magicPoints': 6,
         'intRequired': 10,
@@ -125,6 +131,7 @@ SpellDict = {
         'desc': 'Most powerful attack spell, lvl * 2 + ran(5 * int)',
         'chant': 'I disrupt they molecular structure!',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'damage',
         'limitedNumberPerDay': True,
         'magicPoints': 20,
         'intRequired': 14,
@@ -144,6 +151,7 @@ SpellDict = {
         'desc': 'Exorcise or dispell undead - target must be =< level',
         'chant': '',
         'spellTargets': ['Creature'],
+        'spellType': 'slay',
         'limitedNumberPerDay': False,
         'magicPoints': 10,
         'intRequired': 9,
@@ -162,6 +170,7 @@ SpellDict = {
         'desc': 'Cures player of poison.',
         'chant': 'Let thy fluids run pure!',
         'spellTargets': ['Character'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': False,
         'magicPoints': 6,
         'intRequired': 9,
@@ -180,6 +189,7 @@ SpellDict = {
         'desc': 'player= paused 30 secs; monster = paused 3 * MONSPEED secs',
         'chant': 'Be thou confused utterly!',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'alteration',
         'magicPoints': 15,
         'limitedNumberPerDay': False,
         'intRequired': 11,
@@ -198,6 +208,7 @@ SpellDict = {
         'desc': 'Randomly transported to a room# 30-300',
         'chant': 'Let me go to someplace new!',
         'spellTargets': ['Character'],
+        'spellType': 'room',
         'magicPoints': 30,
         'limitedNumberPerDay': False,
         'intRequired': 14,
@@ -216,6 +227,7 @@ SpellDict = {
         'desc': 'Passes through any door where MAGIC=false',
         'chant': 'I refuse to be stopped!',
         'spellTargets': ['Door'],
+        'spellType': 'room',
         'limitedNumberPerDay': False,
         'magicPoints': 20,
         'intRequired': 13,
@@ -234,6 +246,7 @@ SpellDict = {
         'desc': 'Makes object magical; it must be carryable. doesnt change hp',
         'chant': 'I infuse you with magical dweomer!',
         'spellTargets': ['Weapon', 'Armor', 'Shield'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': True,
         'magicPoints': 20,
         'intRequired': 13,
@@ -252,6 +265,7 @@ SpellDict = {
         'desc': '+1 to piety of someone else. Must be equal or lower level.',
         'chant': 'Your soul is now pure again!',
         'spellTargets': ['Character'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': True,
         'magicPoints': 15,
         'intRequired': 11,
@@ -270,6 +284,7 @@ SpellDict = {
         'desc': 'Temporarily improve armor class by 1',
         'chant': 'You are being watched!',
         'spellTargets': ['Character'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': False,
         'magicPoints': 10,
         'intRequired': 10,
@@ -288,6 +303,7 @@ SpellDict = {
         'desc': '-1 to piety of someone else.  Must be <= caster level.',
         'chant': 'I denigrate thee for all to see!',
         'spellTargets': ['Character', 'Object'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': True,
         'magicPoints': 10,
         'intRequired': 10,
@@ -306,6 +322,7 @@ SpellDict = {
         'desc': 'Poison Someone',
         'chant': 'May thy blood fester in thy veins!',
         'spellTargets': ['Character'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': False,
         'magicPoints': 10,
         'intRequired': 10,
@@ -324,6 +341,7 @@ SpellDict = {
         'desc': 'Recipient is drunk for 60 seconds',
         'chant': 'More than one hundred proof!',
         'spellTargets': ['Character'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': False,
         'magicPoints': 8,
         'intRequired': 9,
@@ -342,6 +360,7 @@ SpellDict = {
         'desc': 'Show all the stats of an object or player',
         'chant': 'Show thee thou true nature!',
         'spellTargets': ['Character', 'Creature', 'Object'],
+        'spellType': 'info',
         'limitedNumberPerDay': True,
         'magicPoints': 20,
         'intRequired': 18,
@@ -360,6 +379,7 @@ SpellDict = {
         'desc': 'Removes a curse from an item',
         'chant': 'Release thou unholiness.',
         'spellTargets': ['Character', 'Object'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': True,
         'magicPoints': 20,
         'intRequired': 14,
@@ -378,6 +398,7 @@ SpellDict = {
         'desc': 'Makes target vulnerable (dd) for next attack',
         'chant': 'Be afraid of what is to come.',
         'spellTargets': ['Character', 'Creature'],
+        'spellType': 'alteration',
         'limitedNumberPerDay': False,
         'magicPoints': 10,
         'intRequired': 13,
@@ -396,6 +417,7 @@ SpellDict = {
         'desc': 'Appeal to gods (DMs) - costs one piety point',
         'chant': 'Let thee rewrite history.',
         'spellTargets': [],
+        'spellType': 'ask',
         'limitedNumberPerDay': True,
         'magicPoints': 10,
         'intRequired': 12,
@@ -414,6 +436,7 @@ SpellDict = {
         'desc': 'Sent to DM; DM then decides',
         'chant': 'This is the last time I want to change this chant!',
         'spellTargets': [],
+        'spellType': 'ask',
         'limitedNumberPerDay': True,
         'magicPoints': 50,  # Also costs a constitution point
         'intRequired': 17,
@@ -442,10 +465,16 @@ def getSpellChant(spellName=''):
 
 class Spell():
     ''' Spell Class '''
-    def __init__(self, charObj, targetObj, spellName='', chant=''):
+    def __init__(self, charObj, targetObj=None, spellName='', chant=''):
         self.charObj = charObj
         self.targetObj = targetObj
         self.givenChant = chant   # Enables us to pass in chants for testing
+
+        if charObj.client:
+            self._spoolOut = charObj.client.spoolOut
+        else:
+            testIo = TestIo()
+            self._spoolOut = testIo.spoolOut
 
         if spellName not in SpellDict.keys():
             spellName = 'none'
@@ -483,8 +512,88 @@ class Spell():
             else:
                 setattr(self, att, SpellDict[spellName][att])
 
-        self.succeeded = self._checkIfSucceeds()
+        self.failedReason = ''
+        if self._checkIfSucceeds():
+            self.succeeded = True
+            # deduct spell points from charObj
+            charObj.setLastAttack(cmd=spellName)
+        else:
+            self.succeeded = False
+            if spellName == 'turn':
+                charObj.setVulnerable(True)
         return(None)
+
+    def cast(self, roomObj):
+        ''' Returns true if spell was sucessfully cast '''
+        if not self.succeeded:
+            self._spoolOut('Spell failed!  ' + self.getFailedReason())
+            return(False)
+
+        self._spoolOut("You cast " + self.spellName + "\n")
+
+        if not self.targetObj:
+            logger.warning("magic.cast: targetObj is not defined")
+
+        if self.spellType == 'health':
+            self.targetObj.addHP(self.getHealth())
+        elif self.spellType == 'room':
+            self.targetObj.joinRoom(self.getRoom())
+        elif self.spellType == 'damage':
+            logger.warning("Spell.cast: " + str(self.targetObj) +
+                           " was hit by a " + str(self.damage) + " damage " +
+                           self.spellName + " from " + self.charObj.getName())
+            if self.charObj.client:
+                self.charObj.client.gameObj.attackCreature(
+                    self.charObj, self.targetObj, attackCmd='spell',
+                    spellObj=self)
+            else:
+                logger.warning("magic.cast could not deal damage - " +
+                               "charObj.client == None")
+        elif self.spellType == 'alteration':
+            self.alterations()
+        elif self.spellType == 'info':
+            if self.spellName == 'identify':
+                # Todo: something nicer than debug
+                self._spoolOut(self.targetObj.debug())
+                self.charObj.reduceLimitedSpellCount()
+            else:
+                self._spoolOut("not implemented yet\n")
+        elif self.spellType == 'ask':
+            self.ask()
+        else:
+            self._spoolOut("not implemented yet\n")
+
+        return(True)
+
+    def alterations(self):
+        self._spoolOut("not implemented yet\n")
+
+    def ask(self):
+        self._spoolOut("not implemented yet\n")
+
+    def isHealing(self):
+        return(False)
+
+    def getHealth(self):
+        ''' Returns health or 0 '''
+        if hasattr(self, 'health'):
+            return(self.health)
+        return(0)
+
+    def getDamage(self):
+        ''' Returns damage or 0 '''
+        if hasattr(self, 'damage'):
+            return(self.damage)
+        return(0)
+
+    def getRoom(self):
+        ''' Returns room or 0 '''
+        if hasattr(self, 'room'):
+            return(self.room)
+        return(0)
+
+    def getFailedReason(self):
+        return(self.failedReason)
 
     def _checkIfSucceeds(self):
         ''' Returns true if spell is sucessful '''
@@ -503,41 +612,67 @@ class Spell():
             return(True)
 
         if self.givenChant == '':
-            playerInput = self.charObj.client.promptForInput()
+            prompt = "Enter Chant:"
+            playerInput = self.charObj.client.promptForInput(prompt)
         else:
             playerInput = self.givenChant
 
         if playerInput.lower() == self.chant.lower():
             return(True)
 
+        msg = "The divine are unimpressed with your chant"
+        self.failedReason += msg + '\n'
+
         dLog("_promptForChant Failed: bad chant", self._instanceDebug)
         return(False)
 
     def _selfCriteriaAreMet(self):
+        logPrefix = "magic.selfCriteria: Failed - "
+        cName = self.charObj.getName()
         if not self.charObj.canAttack():
-            dLog("_selfCriteriaAreMet Failed: Character cant attack",
-                 self._instanceDebug)
+            msg = "You can't attack"
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
             return(False)
         if self.levelRequired < 1:
-            dLog("_selfCriteriaAreMet Failed: Character can't cast " +
-                 self.spellName, self._instanceDebug)
+            msg = "You can't cast " + self.spellName
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
             return(False)
         if self.charObj.getLevel() < self.levelRequired:
-            dLog("lvlChk falied: a level " + str(self.charObj.getLevel()) +
-                 ' ' + self.charObj.getClassName() + ' can not cast ' +
-                 self.spellName + ' which requires level ' +
-                 str(self.levelRequired), self._instanceDebug)
+            msg = ("a level " + str(self.charObj.getLevel()) + ' ' +
+                   self.charObj.getClassName() + ' can not cast ' +
+                   self.spellName + ' which requires level ' +
+                   str(self.levelRequired))
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
+            return(False)
+        if ((self.limitedNumberPerDay and not
+             self.charObj.getLimitedSpellCount())):
+            msg = "You have used all of your limited spells for today"
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
+            return(False)
+        if self.charObj.getSpellPoints() < self.magicPoints:
+            msg = "You don't have enough mana for that"
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
             return(False)
         return(True)
 
     def _targetCriteriaAreMet(self):
+        logPrefix = "magic.targetCriteria: Failed - "
+        cName = self.charObj.getName()
         if self.targetObj.isMagic():
-            dLog("_targetCriteriaAreMet Failed: target is Magic",
-                 self._instanceDebug)
+            msg = "magical target can not be affected by spell"
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
             return(False)
         spellTargets = SpellDict[self.spellName]['spellTargets']
         if self.targetObj.getType() not in spellTargets:
-            dLog("_targetCriteriaAreMet Failed: invalid target",
-                 self._instanceDebug)
+            msg = (self.targetObj.getType() + " is not a valid target for " +
+                   "spell " + self.spellName)
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
             return(False)
         return(True)

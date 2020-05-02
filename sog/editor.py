@@ -12,7 +12,7 @@ import sys
 from character import Character
 from creature import Creature
 from common.attributes import AttributeHelper
-from common.ioLib import IoLib
+from common.ioLib import LocalIo
 from common.paths import LOGDIR
 from common.storage import getNextUnusedFileNumber
 from common.general import isIntStr, logger
@@ -24,7 +24,7 @@ from object import getObjectFactoryTypes, ObjectFactory
 from room import RoomFactory
 
 
-class Editor(IoLib, AttributeHelper):
+class Editor(LocalIo, AttributeHelper):
 
     def __init__(self):
         self._running = True

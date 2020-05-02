@@ -369,7 +369,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         if num:
             self._hp = int(num)
         else:
-            self._hp = self.getMaxHitPoints()
+            self._hp = self.getMaxHP()
 
     def takeDamage(self, num=0):
         self._hp -= num
@@ -382,7 +382,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         if not self.fleesIfAttacked():
             return(False)
 
-        if self.getHitPoints() <= (self.getMaxHitPoints() * .10):
+        if self.getHitPoints() <= (self.getMaxHP() * .10):
             if random.randint(1, 100) <= percentChanceOfFleeing:
                 return(True)
         return(False)
@@ -402,7 +402,10 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def setEnterRoomTime(self):
         self._enterRoomTime = datetime.now()
 
-    def getMaxHitPoints(self):
+    def addHP(self, num=0):
+        self._hp = min((self._hp + num), self.getMaxHP())
+
+    def getMaxHP(self):
         return(self._maxhp)
 
     def getName(self):
@@ -597,12 +600,12 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         exp = 0
 
         level = min(1, self.getLevel())
-        exp += self.getMaxHitPoints() + self._levelDefaultsDict[level]['_exp']
+        exp += self.getMaxHP() + self._levelDefaultsDict[level]['_exp']
 
         # Monster level	Bonus
         monsterLevelBonus = (((self.getAttributeCount('primary') + 2) *
                              self.getAttributeCount('secondary')) *
-                             (self.getMaxHitPoints() / 10))
+                             (self.getMaxHP() / 10))
 
         if self.getLevel() in range(6, 8 + 1):
             monsterLevelBonus *= 2
@@ -614,7 +617,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
     def getHitPointPercent(self):
         ''' returns the int percentage of health remaining '''
-        percent = self.getHitPoints() * 100 / self.getMaxHitPoints()
+        percent = self.getHitPoints() * 100 / self.getMaxHP()
         return(int(percent))
 
     def getParleyAction(self):

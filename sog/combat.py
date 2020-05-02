@@ -4,6 +4,7 @@ import random
 
 from character import Character
 from common.general import dLog
+from magic import SpellList
 # from common.general import logger
 
 
@@ -18,7 +19,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'backstab': {
             'desc': "a standard attack",
@@ -28,7 +30,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 10,
-            'vulnerable': True
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': True,
         },
         'block': {
             'desc': "a standard attack",
@@ -38,7 +41,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 10,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'circle': {
             'desc': "step around to slow an attack - no damage - delays atck",
@@ -48,7 +52,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'feint': {
             'desc': "a deceptive or pretended blow",
@@ -58,7 +63,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'hit': {
             'desc': "a precise strike which lands more often",
@@ -68,7 +74,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'kill': {
             'desc': "an agressive attack",
@@ -78,7 +85,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 10,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'lunge': {
             'desc': "a precise drive forward that leaves you vulnerable",
@@ -88,7 +96,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 10,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': True,
         },
         'parry': {
             'desc': "ward off attack with a counter move",
@@ -98,7 +107,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'slay': {
             'desc': "a mighty DM only attack",
@@ -108,7 +118,8 @@ class Combat():
             'slashAdj': 0,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'strike': {
             'desc': "a slightly agressive attack",
@@ -118,19 +129,34 @@ class Combat():
             'slashAdj': 10,
             'bludgeonAdj': 0,
             'pierceAdj': 0,
-            'vulnerable': False
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         },
         'thrust': {
             'desc': "a fierce stab",
             'damagepctBonus': 20,
-            'tohit': 20,
-            'dodge': -50,
+            'tohit': 100,
+            'dodge': -10,
+            'slashAdj': 10,
+            'bludgeonAdj': 0,
+            'pierceAdj': 20,
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
+        },
+        'spell': {
+            'desc': "used to calc toHit and Dodge - damage is ignored here",
+            'damagepctBonus': 0,
+            'tohit': 25,
+            'dodge': 0,
             'slashAdj': 0,
             'bludgeonAdj': 0,
-            'pierceAdj': 10,
-            'vulnerable': True
+            'pierceAdj': 0,
+            'vulnerableAlways': False,
+            'vulnerableOnMiss': False,
         }
     }
+
+    CombatAttacks = attackDict.keys()
 
     _secsBetweenAttacks = 5
     _playerAdvantageSecs = 3
@@ -139,6 +165,14 @@ class Combat():
 
     def getAttackDict(self):
         return(self.attackDict)
+
+    def getToHit(self, attackCmd):
+        if attackCmd in self.CombatAttacks:
+            return(self.attackDict[attackCmd]['tohit'])
+        elif attackCmd in SpellList:
+            return(self.attackDict['spell']['tohit'])
+        else:
+            return(self.attackDict['attack']['tohit'])
 
     def attackHit(self, attackerObj, defenderObj, attackCmd='attack'):
         ''' Determine if an attack hits '''
@@ -168,7 +202,7 @@ class Combat():
                  self._instanceDebug)
 
         # attack command bonus/penalty
-        attackCmdAdj = self.attackDict[attackCmd]['tohit']
+        attackCmdAdj = self.getToHit(attackCmd)
         hitPercentage += attackCmdAdj
         dLog(logPrefix + str(attackCmdAdj) + "% cmd adj",
              self._instanceDebug)
@@ -371,14 +405,17 @@ class Combat():
                 remainingExp -= exp
         return(True)
 
-    def attackCreature(self, charObj, target, attackCmd='attack'):
+    def attackCreature(self, charObj, target, attackCmd='attack',
+                       spellObj=None):
         logPrefix = "Game attackCreature: "
         roomObj = charObj.getRoom()
-
-        if attackCmd not in self.attackDict.keys():
-            attackCmd = 'attack'
-
         self._instanceDebug = True
+
+        isSpell = False
+        if attackCmd == 'spell':
+            isSpell = True
+        elif attackCmd not in self.attackDict.keys():
+            attackCmd = 'attack'
 
         if not target:
             return(False)
@@ -389,7 +426,10 @@ class Combat():
         charObj.setHidden(False)
         charObj.setSecondsUntilNextAttack(self._secsBetweenAttacks)
         charObj.setLastAttack(attackCmd)
-        charObj.setVulnerable(self.attackDict[attackCmd]['vulnerable'])
+
+        if not isSpell:
+            attackVuln = self.attackDict[attackCmd]['vulnerableAlways']
+            charObj.setVulnerable(attackVuln)
 
         dLog(logPrefix + charObj.getName() + " attacks " + target.getName() +
              " with " + attackCmd, self._instanceDebug)
@@ -397,22 +437,29 @@ class Combat():
         # creature attacks player * player becomes locked on to creature
         self.engageTarget(charObj, target)
 
-        if self.misses(charObj, target, attackCmd):
+        if attackCmd != 'slay' and self.misses(charObj, target, attackCmd):
             self.charMsg(charObj, "You miss.\n")
             damage = 0
-        elif charObj.fumbles():
-            self.charMsg(charObj, "Fumble!  You trip and drop your gear" +
-                         " to catch yourself.\n")
+            if not isSpell:
+                attackVuln = self.attackDict[attackCmd]['vulnerableOnMiss']
+                charObj.setVulnerable(attackVuln)
+        elif attackCmd != 'slay' and charObj.fumbles():
+            self.charMsg(charObj, "Fumble!  You trip and need a moment to " +
+                         " recover.\n")
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
                                  " stumbles.\n")
             damage = 0
         else:
-            # reduce weapon charge counter
-            charObj.decreaseChargeOfEquippedWeapon()
-            # calculate attack damage
-            damage = self.attackDamage(charObj, target, attackCmd)
+            if isSpell:
+                damage = spellObj.getDamage()
+            else:
+                # reduce weapon charge counter
+                charObj.decreaseChargeOfEquippedWeapon()
+                # calculate attack damage
+                damage = self.attackDamage(charObj, target, attackCmd)
 
-            self.applyDamage(charObj, charObj, target, damage)
+            self.applyDamage(charObj, charObj, target, damage,
+                             attackCmd=attackCmd)
         # end attackCreature
 
     def creaturesAttack(self, roomObj):
@@ -481,16 +528,18 @@ class Combat():
         # reduce charges of armor/shield protection
         charObj.decreaseChargeOfEquippedProtection()
 
-        self.applyDamage(charObj, creatureObj, charObj, damage)
+        self.applyDamage(charObj, creatureObj, charObj, damage,
+                         attackCmd=attackCmd)
         return(None)
         # end creatureAttacksPlayer
 
-    def applyDamage(self, charObj, attacker, target, damage):
+    def applyDamage(self, charObj, attacker, target, damage, attackCmd):
         ''' apply damage to target or player '''
         logPrefix = "combat.applyDamage: "
         if damage:
             # Parse attackers/targets to get a set of attack/target words
-            atkDict = self.getattackMsgDict(charObj, attacker, target)
+            atkDict = self.getattackMsgDict(charObj, attacker, target,
+                                            attackCmd)
 
             # Display the message about the hit
             self.charMsg(charObj, self.getHitMsg(atkDict, damage))
@@ -505,7 +554,7 @@ class Combat():
         else:
             self.applyCreatureDamage(charObj, target, damage)
 
-    def getattackMsgDict(self, charObj, attacker, target):
+    def getattackMsgDict(self, charObj, attacker, target, attackCmd):
         ''' returns a dict of attacker and target strings '''
         msgDict = {}
         msgDict['msgPrefix'] = ''
@@ -513,7 +562,10 @@ class Combat():
             msgDict['attackerSubject'] = "You"
             msgDict['attackerName'] = attacker.describe()
             msgDict['attackerVerb'] = "hit"
-            if charObj.getEquippedWeapon().getName() == 'fist':
+            if attackCmd in SpellList:
+                msgDict['msgPrefix'] = "Phouf! "
+                msgDict['attackerVerb'] = "blast"
+            elif charObj.getEquippedWeapon().getName() == 'fist':
                 # It's important that we clearly identify weaponless attacks
                 msgDict['msgPrefix'] = "Pow!  "
                 msgDict['attackerVerb'] = "punch"

@@ -11,17 +11,17 @@ import time
 
 import account
 from common.attributes import AttributeHelper
-from common.ioLib import IoLib
-from common.general import Terminator, logger
+from common.ioLib import ServerIo
+from common.general import logger
 import common.network
 import game
 import lobby
 
 
-class ClientThread(threading.Thread, IoLib, AttributeHelper):
+class ClientThread(threading.Thread, ServerIo, AttributeHelper):
     def __init__(self, socket, address, id, clientThreadInitCallBack=None):
         threading.Thread.__init__(self, daemon=True, target=self.serverMain)
-        IoLib.__init__(self)
+        ServerIo.__init__(self)
         self.socket = socket
         self.address = address
         self.id = id
@@ -92,68 +92,6 @@ class ClientThread(threading.Thread, IoLib, AttributeHelper):
 
     def getId(self):
         return(self.id)
-
-    def _sendAndReceive(self):     # noqa: C901
-        ''' All client Input and output function go through here
-              * Override IOspool for client/server communication
-              * send and recieve is connected in a single transaction
-              * Data to be sent comes from the outputSpool queue
-              * Data Recieveed goed into the inputStr var '''
-        clientdata = ''
-        dataToSend = self.popOutSpool()
-
-        if self.socket:
-            try:
-                # send the data
-                if self._debugServer:
-                    logger.debug(str(self) + " SENDING:\n" + dataToSend)
-                self.socket.sendall(str.encode(dataToSend))
-                if self._debugServer:
-                    logger.debug(str(self) + " SEND: Data Sent")
-            except (ConnectionResetError, ConnectionAbortedError):
-                self.terminateClientConnection()
-                return(False)
-            except IOError:
-                pass
-
-            try:
-                if self._debugServer:
-                    logger.debug(str(self) + " REC: Waiting for input")
-                clientdata = self.socket.recv(common.network.BYTES_TO_TRANSFER)
-                if self._debugServer:
-                    logger.debug(str(self) + " REC: " +
-                                 str(clientdata.decode("utf-8")))
-            except (ConnectionResetError, ConnectionAbortedError):
-                self.terminateClientConnection()
-                return(False)
-            except IOError:
-                pass
-        else:
-            logger.debug(str(self) + ' No socket to receive input from')
-            return(False)
-
-        if clientdata:
-            clientdata = str(clientdata.decode("utf-8"))
-            if clientdata == common.network.NOOP_STR:  # empty sends
-                clientdata = ""
-                if self._debugServer:
-                    logger.debug("Server recieved NO_OP from client")
-            elif clientdata == common.network.TERM_STR:  # client shut down
-                if self._debugServer:
-                    logger.debug("Server recieved TERM_STR from client")
-                self.terminateClientConnection()
-                return(False)
-            elif clientdata == common.network.STOP_STR:  # server shut down
-                if self._debugServer:
-                    logger.debug("Server recieved STOP_STR from client")
-                self.terminateClientConnection()
-                raise Terminator
-                return(False)
-            self.setInputStr(clientdata)
-        else:
-            logger.debug(str(self) + ' No clientdata returned')
-            return(False)
-        return(True)
 
     def terminateClientConnection(self):
         ''' terminate the connection and clean up loose ends '''

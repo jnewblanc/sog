@@ -7,17 +7,19 @@ import pprint
 import random
 import re
 
-from common.storage import Storage
 from common.attributes import AttributeHelper
+from common.editwizard import EditWizard
+from common.ioLib import TestIo
 from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
 from common.general import getRandomItemFromList, truncateWithInt
 from common.general import logger
 from common.paths import DATADIR
+from common.storage import Storage
 from object import Weapon
 
 
-class Character(Storage, AttributeHelper, Inventory):
+class Character(Storage, AttributeHelper, Inventory, EditWizard):
     """ Character class """
 
     _instanceDebug = False
@@ -25,7 +27,7 @@ class Character(Storage, AttributeHelper, Inventory):
     attributesThatShouldntBeSaved = \
         ['client', '_instanceDebug', '_currentlyAttacking', '_vulnerable',
          '_secondsUntilNextAttack', '_lastInputDate', '_lastAttackDate',
-         '_lastRegenDate']
+         '_lastRegenDate', '_spoolOut']
 
     # int attributes
     intAttributes = ['_expToNextLevel', '_level', '_maxhitpoints',
@@ -47,6 +49,9 @@ class Character(Storage, AttributeHelper, Inventory):
 
     # obsolete attributes (to be removed)
     obsoleteAtt = ['_money', '_heal']
+
+    attributeInfo = {
+    }
 
     genderDict = {
         0: {
@@ -167,6 +172,12 @@ class Character(Storage, AttributeHelper, Inventory):
         Storage.__init__(self)
         Inventory.__init__(self)
         self.setName('')
+
+        if self.client:
+            self._spoolOut = self.client.spoolOut
+        else:
+            testIo = TestIo()
+            self._spoolOut = testIo.spoolOut
 
         self._dm = False
 
@@ -296,12 +307,12 @@ class Character(Storage, AttributeHelper, Inventory):
                     buf = ('Character ' + charName +
                            ' could not be created for ' + self._acctName)
                     dLog(pStr + buf, self._instanceDebug)
-                    self.client.spoolOut(buf + '\n')
+                    self._spoolOut(buf + '\n')
                     return(False)
             if not self.isValid():
                 buf = 'Character ' + charName + ' is not valid'
                 dLog(pStr + buf, self._instanceDebug)
-                self.client.spoolOut(buf + '\n')
+                self._spoolOut(buf + '\n')
                 return(False)
         else:
             return(False)
@@ -309,7 +320,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self.setLoginDate()
         self.client.charObj = self
 
-        self.client.spoolOut(buf)
+        self._spoolOut(buf)
         return(True)
 
     def create(self, charName, promptFlag=True):
@@ -462,6 +473,12 @@ class Character(Storage, AttributeHelper, Inventory):
 
     def knowsSpell(self, spell):
         if spell in self._knownSpells:
+            return(True)
+        return(False)
+
+    def learnSpell(self, spell):
+        if not self.knowsSpell(spell):
+            self._knownSpells.append(spell)
             return(True)
         return(False)
 
@@ -690,12 +707,12 @@ class Character(Storage, AttributeHelper, Inventory):
                 elif charName in self.client.acctObj.getCharactersOnDisk():
                     msg = ("Invalid Character Name.  You already have a " +
                            "character named " + charName + ".\n")
-                    self.client.spoolOut(msg)
+                    self._spoolOut(msg)
                     dLog(logPrefix + msg, self._instanceDebug)
                     continue
                 elif not self.client.acctObj.characterNameIsUnique(charName):
                     msg = ("Name is already in use.  Please try again\n")
-                    self.client.spoolOut(msg)
+                    self._spoolOut(msg)
                     dLog(logPrefix + msg, self._instanceDebug)
                     continue
                 self.setName(charName)
@@ -1144,6 +1161,12 @@ class Character(Storage, AttributeHelper, Inventory):
     def setInvisible(self, val=True):
         self._invisible = val
 
+    def getLimitedSpellCount(self):
+        return(int(self._limitedSpellsLeft))
+
+    def reduceLimitedSpellCount(self, num=1):
+        self._limitedSpellsLeft -= int(num)
+
     def addExp(self, num):
         self._expToNextLevel -= num
 
@@ -1210,7 +1233,7 @@ class Character(Storage, AttributeHelper, Inventory):
             return(damage)
 
         if self.getEquippedWeapon().isBroken():
-            self.client.spoolOut("Your weapon is broken.\n")
+            self._spoolOut("Your weapon is broken.\n")
             return(0)
 
         weapon = self.getEquippedWeapon()
@@ -1227,14 +1250,12 @@ class Character(Storage, AttributeHelper, Inventory):
         if weapon.getName() != 'fist':
             weapon.decrementChargeCounter()
             if weapon.isBroken():
-                self.client.spoolOut("Snap!  Your " +
-                                     weapon.describe(noarticle=True) +
-                                     " breaks\n")
+                self._spoolOut("Snap!  Your " +
+                               weapon.describe(article='none') +
+                               " breaks\n")
             elif self.getClassName() == 'ranger' and weapon.getCharges() == 10:
-                self.client.spoolOut("Your " +
-                                     weapon.describe(noarticle=True) +
-                                     " is worse for wear and in need of " +
-                                     "repair.\n")
+                self._spoolOut("Your " + weapon.describe(article='none') +
+                               " is worse for wear and in need of repair.\n")
 
     def getEquippedProtection(self):
         ''' returns equipped armor and/or shield, as a list '''
@@ -1252,12 +1273,11 @@ class Character(Storage, AttributeHelper, Inventory):
         for obj in self.getEquippedProtection():
             obj.decrementChargeCounter()
             if obj.isBroken():
-                self.client.spoolOut("Your " + obj.describe(noarticle=True) +
-                                     " falls apart\n")
+                self._spoolOut("Your " + obj.describe(article='none') +
+                               " falls apart\n")
             elif self.getClassName() == 'ranger' and obj.getCharges() == 10:
-                self.client.spoolOut("Your " + obj.describe(noarticle=True) +
-                                     " is worse for wear and in need of " +
-                                     "repair.\n")
+                self._spoolOut("Your " + obj.describe(article='none') +
+                               " is worse for wear and in need of repair.\n")
 
     def getEquippedWeaponToHit(self):
         ''' return tohit percentage of armor + shield '''
@@ -1372,7 +1392,7 @@ class Character(Storage, AttributeHelper, Inventory):
         if msgStr != '':
             buf += ' ' + msgStr
         buf += ".\n"
-        self.client.spoolOut(buf)
+        self._spoolOut(buf)
         return(False)
 
     def getName(self):
@@ -1531,8 +1551,8 @@ class Character(Storage, AttributeHelper, Inventory):
         self.save()
         if self.getHitPoints() <= 0:
             if self.isDm():
-                self.client.spoolOut("You would be dead if you weren't a dm." +
-                                     "  Resetting hp to maxhp.\n")
+                self._spoolOut("You would be dead if you weren't a dm." +
+                               "  Resetting hp to maxhp.\n")
                 self._hitpoints = self._maxhitpoints
             else:
                 self.processDeath()
@@ -1567,7 +1587,7 @@ class Character(Storage, AttributeHelper, Inventory):
         self._roomObj = self.client.gameObj.placePlayer(0)
 
         self.save()
-        self.client.spoolOut(buf)
+        self._spoolOut(buf)
         return(True)
 
     def setRoom(self, roomObj):

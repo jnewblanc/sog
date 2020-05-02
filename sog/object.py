@@ -34,7 +34,7 @@ class Object(Storage, EditWizard):
                           '_alignmentAllowed', '_genderAllowed', '_isMetal',
                           '_equippable', '_equipable', '_usable',
                           'equippedSlotName', 'damageReduction',
-                          '_multiplier']
+                          '_multiplier', '_depletable']
 
     attributesThatShouldntBeSaved = ['_instanceDebug']
 
@@ -100,15 +100,16 @@ class Object(Storage, EditWizard):
         if self._instanceDebug:
             logger.debug("Object destructor called for " + str(self.getId()))
 
-    def describe(self, count=1, noarticle=False):
-        buf = ''
+    def describe(self, count=1, article=''):
         if count > 1:
-            buf = count + " " + self._pluraldesc
-        elif noarticle:
-            buf = self._singledesc
+            return(count + " " + self._pluraldesc)
+        if article == '':
+            article = self._article + ' '
+        elif article == 'none':
+            article == ''
         else:
-            buf = self._article + " " + self._singledesc
-        return(buf)
+            article += ' '
+        return(article + self._singledesc)
 
     def debug(self):
         return(pprint.pformat(vars(self)))
@@ -287,7 +288,7 @@ class Exhaustible(Object):
         self._cooldown = 0        # Time between uses (in seconds)
         self._broken = False
         self._breakable = True
-        self._depletable = True
+        self._depleatable = True
         self._lastUse = None
 
     def setLastUse(self):
@@ -343,7 +344,7 @@ class Exhaustible(Object):
         return(self._charges)
 
     def decrementChargeCounter(self, num=1):
-        if self._depletable:
+        if self._depleatable:
             self._charges -= num
         if self._charges <= 0:
             if self._breakable:
@@ -442,6 +443,11 @@ class Closable(Object):
         except ValueError:
             newVal = False
         setattr(self, attName, newVal)
+
+        try:
+            self._depletable = self._depleatable
+        except (AttributeError, TypeError):
+            pass
 
         AttributeHelper.fixAttributes(self)
         return(True)
@@ -875,7 +881,7 @@ class Door(Portal, Closable):
     def getCorresspondingDoorId(self):
         return(self._correspondingDoorId)
 
-    def describe(self, count=1):
+    def describe(self, count=1, article=''):
         if self.isClosed():
             return(self._article + " closed " + self._singledesc)
         else:
@@ -936,7 +942,10 @@ class Scroll(MagicalDevice):
 
     def __init__(self, objId=0):
         super().__init__(objId)
-        self._usesRemaining = 1
+        self._maxCharges = 1
+        self._charges = 1
+        self._value = 10
+        self._weight = 1
         return(None)
 
     def read(self):
@@ -945,6 +954,7 @@ class Scroll(MagicalDevice):
 
     def study(self):
         ''' study the spell to learn it - scroll disintrgrates '''
+        getSpellChant(obj1.get)
         return(None)
 
 
@@ -996,7 +1006,7 @@ class Coins(Object):
         self._count = 1       # auto-generated number of coins in current batch
         return(None)
 
-    def describe(self):
+    def describe(self, article=''):
         if self._count > 1:
             return(self._count + " " + self._pluraldesc)
         return(self._article + " " + self._singledesc)
