@@ -19,7 +19,7 @@ class TestPlayerInventory1(unittest.TestCase, Inventory):
     def populateInventory(self, iList):
         for itemName in iList:
             iType, iNum = itemName.split('/')
-            if iType.lower() in object.getObjectFactoryTypes():  # Objects
+            if object.isObjectFactoryType(iType.lower()):  # Objects
                 logger.debug("In " + __class__.__name__ + ": creating obj " +
                              str(iType) + ":" + str(iNum))
                 item = object.ObjectFactory(iType, iNum)
@@ -34,7 +34,7 @@ class TestPlayerInventory1(unittest.TestCase, Inventory):
             else:
                 logger.debug("In " + __class__.__name__ + ": unknown " +
                              str(iType) + " in " +
-                             str(object.getObjectFactoryTypes()))
+                             str(object.ObjFactoryTypes))
                 print("Unknown Item type")
         return(None)
 
@@ -68,7 +68,7 @@ class TestRoomInventory1(unittest.TestCase, Inventory):
     def populateInventory(self, iList):
         for itemName in iList:
             iType, iNum = itemName.split('/')
-            if iType.lower() in object.getObjectFactoryTypes():  # Objects
+            if object.isObjectFactoryType(iType.lower()):  # Objects
                 logger.debug("In " + __class__.__name__ + ": creating obj " +
                              str(iType) + ":" + str(iNum))
                 item = object.ObjectFactory(iType, iNum)
@@ -83,7 +83,7 @@ class TestRoomInventory1(unittest.TestCase, Inventory):
             else:
                 logger.debug("In " + __class__.__name__ + ": unknown " +
                              str(iType) + " in " +
-                             str(object.getObjectFactoryTypes()))
+                             str(object.ObjFactoryTypes))
                 print("Unknown Item type")
         return(None)
 

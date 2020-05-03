@@ -24,7 +24,7 @@ class TestCharacter(unittest.TestCase):
         charObj._classname = "fighter"
         charObj._alignment = 'neutral'
         charObj.setMaxHP(100)
-        charObj._hitpoints = 100
+        charObj.setHitPoints(100)
         desc = charObj.getDesc()
         msg = "Could not instanciate the character object"
         self.assertEqual(desc != '', True, msg)
@@ -60,7 +60,7 @@ class TestCharacter(unittest.TestCase):
         ''' Test armor AC effectiveness '''
         charObj = character.Character()
         charObj.setName(self.testCharName)
-        charObj._hitpoints = 100
+        charObj.setHitPoints(100)
         obj1 = object.Armor(self.testObjNumber)
         obj1._ac = 4
         obj1._singledesc = "french fry"

@@ -10,6 +10,7 @@ from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
 from common.storage import Storage
 from common.general import logger
+from magic import getSpellChant, Spell
 
 # create obj staff in chest in 3001,ty=magdevice,magic=true,spell=3,
 #    value=1000,charges=2
@@ -91,6 +92,7 @@ class Object(Storage, EditWizard):
         self._maxLevelAllowed = 100
 
         self._instanceDebug = Object._instanceDebug
+        self._isObject = True
 
         if self._instanceDebug:
             logger.debug("Object init called for " + str(self.getId()))
@@ -125,9 +127,6 @@ class Object(Storage, EditWizard):
 
     def examine(self):
         return(self._longdesc)
-
-    def isUseable(self):
-        return(True)
 
     def setName(self, name):
         self._name = str(name)
@@ -387,7 +386,7 @@ class Equippable(Object):
     def isEquippable(self):
         return(True)
 
-    def isUseable(self):
+    def isUsable(self):
         return(True)
 
 
@@ -414,11 +413,37 @@ class MagicalDevice(Exhaustible):
     def isMagicItem(self):
         return(True)
 
-    def getSpell(self):
+    def getSpellName(self):
         return(self._spell)
 
-    def isUseable(self):
+    def isUsable(self):
         return(True)
+
+    def cast(self, charObj, targetObj):
+        ''' cast a spell using a device '''
+        if self.getCharges() <= 0:
+            self.charObj.client.spoolOut("This item has no charges left\n")
+            return(False)
+        if self.getCharges() == 1:
+            self.charObj.client.spoolOut(self.getName() + "fizzles\n")
+
+        spellName = self.getSpellName()
+        # With devices, spellChant is not required, so we get it and pass it in
+        spellChant = getSpellChant(spellName)
+
+        # create the spell object, which determines if it succeeds
+        spellObj = Spell(charObj, targetObj, spellName, chant=spellChant,
+                         requiresmana=False)
+
+        # Apply effects of spell
+        if spellObj.cast(charObj.getRoom()):
+            pass
+        else:
+            self.selfMsg(spellObj.getFailedReason() + "\n")
+
+        self.decrementChargeCounter()
+
+        return(None)
 
 
 class Closable(Object):
@@ -767,7 +792,8 @@ class Weapon(Equippable, Exhaustible):
         Weapons can be repaired (i.e., have strikesleft increase) at the
         repair shop (room 18) as long as “strikesleft” is more than 0.
         There’s a 50% chance that the repair will be botched if the weapon is
-        magical or has MH more than 30.'''
+        magical or has MH more than 30.
+    '''
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
                         "_longdesc", "_minimumDamage", "_maximumDamage",
@@ -948,14 +974,29 @@ class Scroll(MagicalDevice):
         self._weight = 1
         return(None)
 
-    def read(self):
-        ''' cast the spell - scroll disintegrates '''
+    def read(self, charObj, targetObj):
+        ''' cast the spell
+            * scroll disintegrates in calling function '''
+        # Get the spell object - no chant required for scrolls
+        self.cast(charObj, targetObj)
         return(None)
 
-    def study(self):
-        ''' study the spell to learn it - scroll disintrgrates '''
-        getSpellChant(obj1.get)
-        return(None)
+    def study(self, charObj):
+        ''' Display the spell chant and add spell to Char's known spells
+            * scroll disintegrates in calling function '''
+
+        msg = ''
+        spellName = self.getSpellName()
+
+        # Get the chant
+        spellChant = getSpellChant(spellName)
+        msg += self.describe(article='The') + ' reads, "' + spellChant + '"\n'
+
+        # Learn the spell
+        if charObj.learnSpell(spellName):
+            msg += 'You learn the "' + spellName + '" spell\n'
+
+        return(msg)
 
 
 class Potion(MagicalDevice):
@@ -1052,11 +1093,14 @@ class Treasure(Object):
         return(None)
 
 
-def getObjectFactoryTypes():
-    objTypeList = ['object', 'portal', 'door', 'armor', 'weapon', 'shield',
+ObjFactoryTypes = ['object', 'portal', 'door', 'armor', 'weapon', 'shield',
                    'container', 'key', 'card', 'scroll', 'potion', 'staff',
                    'teleport', 'coins', 'ring', 'necklace', 'treasure']
-    return(objTypeList)
+
+
+def isObjectFactoryType(name):
+    ''' Return True if name is a valid object FacotryType '''
+    return(name in ObjFactoryTypes)
 
 
 def ObjectFactory(objType, id=0):       # noqa: C901

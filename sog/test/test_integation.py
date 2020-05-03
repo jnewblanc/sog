@@ -66,7 +66,7 @@ class TestIntegration(unittest.TestCase):
         self._charObj.initializeStats(10)
         self._charObj.setMaxHP(100)
         self._charObj.create(charName=self._testCharName, promptFlag=False)
-        self._charObj._hitpoints = 100
+        self._charObj.setHitPoints(100)
 
     def XsetUp(self):
         self._patchObj = patch.object(threads.ClientThread, '_sendAndReceive',

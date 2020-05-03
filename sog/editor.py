@@ -20,7 +20,7 @@ from common.general import isIntStr, logger
 # from object import Armor, Weapon, Shield, Container, Key
 # from object import Card, Scroll, Potion, Wand, Teleport, Ring, Necklace
 # from object import Coins, Treasure
-from object import getObjectFactoryTypes, ObjectFactory
+from object import isObjectFactoryType, ObjectFactory
 from room import RoomFactory
 
 
@@ -171,7 +171,7 @@ class Editor(LocalIo, AttributeHelper):
             itemObj.setName(id1)
         elif itemStr.lower() == 'creature':
             itemObj = Creature(id1)
-        elif itemStr.lower() in getObjectFactoryTypes():
+        elif isObjectFactoryType(itemStr.lower()):
             itemObj = ObjectFactory(itemStr, id1)
         else:
             print("Can not determine object type.")

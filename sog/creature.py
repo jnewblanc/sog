@@ -432,14 +432,8 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def isHostile(self):
         return(self._hostile)
 
-    def isCarryable(self):
-        return(self._carry)
-
     def isPermanent(self):
         return(self._permanent)
-
-    def isUsable(self):
-        return(False)
 
     def isMagic(self):
         return(self._magicImmunity)
@@ -450,10 +444,22 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def isUndead(self):
         return(self._undead)
 
-    def getWeight(self):
+    def isCarryable(self):  # set for objects, not usually useful for Creatures
+        return(self._carry)
+
+    def isUsable(self):      # True for some objects, but not for Creatures
+        return(False)
+
+    def isEquippable(self):  # True for some objects, but not for Creatures
+        return(False)
+
+    def isMagicItem(self):   # True for some objects, but not for Creatures
+        return(False)
+
+    def getWeight(self):    # set for objects, not usually useful for Creatures
         return(self._weight)
 
-    def getValue(self):
+    def getValue(self):     # set for objects, not usually useful for Creatures
         return(self._value)
 
     def getDamage(self):

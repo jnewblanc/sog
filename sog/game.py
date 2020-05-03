@@ -17,12 +17,9 @@ from common.general import isIntStr, dateStr, logger, dLog
 from common.general import splitTargets, targetSearch
 from common.general import getRandomItemFromList
 from common.help import enterHelp
-from magic import Spell, SpellList, getSpellChant
-from room import Room, RoomFactory
+from magic import Spell, SpellList, spellCanTargetSelf
+from room import RoomFactory
 from object import ObjectFactory
-# from object import Potion, Scroll, Teleport, Staff
-from object import Scroll
-from character import Character
 from creature import Creature
 
 
@@ -217,10 +214,10 @@ class _Game(cmd.Cmd, Combat, Ipc):
             # roomStr can be a room number or can be in the form Shop/35
         '''
 
-        if isinstance(roomThing, Room):
-            roomObj = roomThing
-        else:
+        if isinstance(roomThing, int):
             roomObj = self.roomLoader(roomThing)
+        elif roomThing.getType().lower() == 'room':
+            roomObj = roomThing
 
         if not roomObj:
             logger.error("joinRoom: Could not get roomObj")
@@ -351,54 +348,6 @@ class _Game(cmd.Cmd, Combat, Ipc):
             self.charMsg(charObj, abortTxt)
             return(False)
 
-    def use_scroll(self, charObj, itemObj, targetObj):
-        ''' using a scroll will cast a spell, but then it disintegrates '''
-        spellObj = Spell(charObj.getClass(), itemObj.getSpell())
-        self.charMsg(charObj, "The scroll disintegrates\n")
-
-        if not targetObj:           # if second target is not defined
-            targetObj = charObj     # current character is the target
-
-        self.castSpell(charObj, spellObj, targetObj)
-        charObj.removeFromInventory(itemObj)     # remove item
-
-    def use_magicitem(self, charObj, itemObj, targetObj):
-        ''' using a magic casts a spell and depletes one charge of the item '''
-        if itemObj.getCharges() <= 0:
-            self.charMsg(charObj, "This item has no charges left\n")
-            return(False)
-        if itemObj.getCharges() == 1:
-            self.charMsg(charObj, itemObj.getName() + "fizzles\n")
-
-        spellObj = Spell(charObj.getClass(), itemObj.getSpell())
-
-        if not targetObj:           # if second target is not defined
-            targetObj = charObj     # current character is the target
-
-        self.castSpell(charObj, spellObj, targetObj)
-        itemObj.decrementChargeCounter()
-
-    def castSpell(self, charObj, spellObj, target):
-        ''' perform the spell
-            * assume that all other checks are complete
-        '''
-        if not spellObj:
-            return(False)
-
-        if not target:
-            return(False)
-
-        # charObj.setLastAttackDateDamageType("magic")
-
-        # roll/check for spell success
-        if isinstance(target, Character):   # use on Character
-            pass
-        elif isinstance(target, Creature):  # use on Creature
-            pass
-        else:                             # use on object
-            pass
-        return(False)
-
     def creatureEncounter(self, roomObj):
         ''' As an encounter, add creature to room
             Chance based on
@@ -451,6 +400,19 @@ class _Game(cmd.Cmd, Combat, Ipc):
             self.roomMsg(roomObj, creatureObj.describe() + ' has arrived\n')
             creatureObj.setEnterRoomTime()
             roomObj.setLastEncounter()
+        return(None)
+
+    def removeFromPlayerInventory(self, charObj, item, msg=''):
+        ''' display message and remove item from player's inventory
+            * Has some canned responses, such as "disintegrate"     '''
+        if msg == 'disint':
+            msg = item.describe(article='The') + "disintegrates"
+
+        if msg != '':
+            self.selfMsg(msg + '\n')
+
+        # Remove item from player's inventory
+        charObj.removeFromInventory(item)
         return(None)
 
 
@@ -525,6 +487,15 @@ class GameCmd(cmd.Cmd):
         logger.warn('*** Invalid game command: %s\n' % line)
         self.charObj.client.spoolOut("Invalid Command\n")
 
+    def getLastCmd(self):
+        ''' Returns the first part of the last command '''
+        return(self.lastcmd.split(" ", 1)[0])
+
+    def missingArgFailure(self):
+        ''' Print missing arg message and return False '''
+        self.selfMsg(self.getLastCmd() + " what?\n")
+        return(False)
+
     def getObjFromCmd(self, itemList, cmdline):
         ''' Returns a list of target Items, given the full cmdargs '''
         targetItems = []
@@ -560,6 +531,41 @@ class GameCmd(cmd.Cmd):
             return(None)
 
         return(target)
+
+    def parseSpellArgs(self, line):
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        charObjList = charObj.getInventory()
+        roomInv = roomObj.getCharsAndInventory()
+        targetList = self.getObjFromCmd(charObjList + roomInv, line)
+
+        targetObj = None
+        spellItem = None
+
+        if self.getLastCmd() == 'cast':
+            # When casting a spell, there is no spellItem, so the first item
+            # in the list is the target
+            if len(targetList) >= 1:
+                targetObj = targetList[0]
+            spellName = line.split(" ", 1)[0]
+        else:
+            # When using a magic item, the first magic item encountered is the
+            # spellItem and the next, if any, is the target
+            for target in targetList:
+                if not target.isMagicItem():
+                    continue
+                if not spellItem:
+                    spellItem = target
+                if not targetObj:
+                    targetObj = target
+                break
+            spellName = spellItem.getSpellName()
+
+        if not targetObj and spellCanTargetSelf(spellName):
+            targetObj = charObj
+
+        return(spellItem, spellName, targetObj)
 
     def selfMsg(self, msg):
         ''' send message using Game communnication.  This simply allows us
@@ -622,6 +628,37 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("You can not go there!\n")
         return(False)
 
+    def useObject(self, obj, line):
+        ''' Call method for using object, based on it's type/attributes '''
+        if obj.isEquippable():
+            if self.charObj.equip(obj):
+                self.selfMsg("Ok\n")
+            else:
+                self.selfMsg("You can't do that\n")
+        elif obj.isMagicItem():
+            self.useMagicItem(line)
+
+    def useMagicItem(self, line):
+        if line == '':
+            return(self.missingArgFailure())
+
+        (spellItem, spellName, targetObj) = self.parseSpellArgs(line)
+
+        if not spellItem:
+            return(self.missingArgFailure())
+
+        if not targetObj:
+            self.selfMsg("Invalid target for spell." + spellName + "\n")
+            return(False)
+
+        if spellItem.getType().lower() == 'scroll':
+            spellItem.read(self.charObj, targetObj)
+            self.gameObj.removeFromPlayerInventory(self.charObj, spellItem,
+                                                   'disint')
+        else:
+            spellItem.cast(self.charObj, targetObj)
+        return(None)
+
     def do_accept(self, line):
         ''' transaction - accept an offer '''
         self.selfMsg(line + " not implemented yet\n")
@@ -640,8 +677,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_backstab(self, line):
@@ -653,8 +689,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_balance(self, line):
@@ -679,8 +714,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_break(self, line):
@@ -853,16 +887,13 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("You can't circle an attacking creature\n")
             return(False)
 
-        self.gameObj.circle(self.charObj, target,
-                            self.lastcmd.split(" ", 1)[0])
+        self.gameObj.circle(self.charObj, target, self.getLastCmd())
         self.selfMsg("Ok.\n")
         return(False)
 
     def do_climb(self, line):
         ''' alias - go '''
-        if line == '':
-            self.selfMsg(self.lastcmd + " what?\n")
-        self.move(line)
+        return(self.do_go(line))
 
     def do_clock(self, line):
         ''' info - time '''
@@ -1067,7 +1098,7 @@ class GameCmd(cmd.Cmd):
     def do_enter(self, line):
         ''' alias - go '''
         if line == '':
-            self.selfMsg(self.lastcmd + " what?\n")
+            return(self.missingArgFailure())
         self.move(line)
 
     def do_equip(self, line):
@@ -1095,8 +1126,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_file(self, line):
@@ -1122,8 +1152,7 @@ class GameCmd(cmd.Cmd):
         obj2 = itemList[1]
 
         if not obj1:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         if obj2:
             # todo: check if we're getting item from a chest
@@ -1225,8 +1254,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_hold(self, line):
@@ -1260,8 +1288,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_laugh(self, line):
@@ -1291,8 +1318,7 @@ class GameCmd(cmd.Cmd):
         obj2 = itemList[1]
 
         if not itemList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         if not obj2:
             self.selfMsg("You can't lock anything without a key\n")
@@ -1337,8 +1363,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_n(self, line):
@@ -1359,7 +1384,7 @@ class GameCmd(cmd.Cmd):
 
     def do_offer(self, line):
         ''' transaction - offer player money/items [in return for $/items] '''
-        self.selfMsg(self.lastcmd + " not implemented yet\n")
+        self.selfMsg(self.getLastCmd() + " not implemented yet\n")
 
     def do_open(self, line):
         ''' Open a door or a chest '''
@@ -1369,8 +1394,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomObj.getInventory(), line)
 
         if not itemList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         obj1 = itemList[0]
 
@@ -1406,7 +1430,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomCreatureList, line)
 
         if not itemList[0]:
-            self.selfMsg(self.lastcmd + " with whom?\n")
+            self.selfMsg(self.getLastCmd() + " with whom?\n")
             return(False)
 
         creat1 = itemList[0]
@@ -1438,8 +1462,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_pawn(self, line):
@@ -1496,8 +1519,7 @@ class GameCmd(cmd.Cmd):
         targetList = self.getObjFromCmd(charObjList, line)
 
         if not targetList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         obj1 = targetList[0]
         obj2 = targetList[1]
@@ -1513,42 +1535,10 @@ class GameCmd(cmd.Cmd):
 
     def do_read(self, line):
         ''' magic - read a scroll to use the spell '''
-        charObj = self.charObj
-        roomObj = charObj.getRoom()
+        if line == '':
+            return(self.missingArgFailure())
 
-        charObjList = charObj.getInventory()
-        roomInv = roomObj.getCharsAndInventory()
-        targetList = self.getObjFromCmd(charObjList + roomInv, line)
-
-        if len(targetList) < 1:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
-
-        scrollObj = targetList[0]
-
-        if not isinstance(scrollObj, Scroll):
-            self.selfMsg("You can't read that.\n")
-            return(False)
-
-        if len(targetList) >= 2:
-            targetObj = targetList[1]
-        else:
-            targetObj = charObj
-
-        # Get the spell object - no chant required for scrolls
-        spellName = scrollObj.getSpell()
-        spellChant = getSpellChant(spellName)
-        spellObj = Spell(charObj, targetObj, spellName, spellChant)
-
-        # Remove item from player's inventory
-        self.selfMsg(scrollObj.describe(article='The') + "disintegrates\n")
-        charObj.removeFromInventory(scrollObj)
-
-        # Apply effects of spell
-        if spellObj.cast(roomObj):
-            pass
-        else:
-            self.selfMsg(spellObj.getFailedReason() + "\n")
+        self.useMagicItem(line)
 
         return(False)
 
@@ -1576,8 +1566,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(playerInventory, line)
 
         if not itemList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         obj1 = itemList[0]
 
@@ -1661,8 +1650,7 @@ class GameCmd(cmd.Cmd):
 
         itemList = self.getObjFromCmd(charObj.getInventory(), line)
         if not itemList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         obj1 = itemList[0]
 
@@ -1714,8 +1702,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomObj.getInventory(), line)
 
         if not itemList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         obj1 = itemList[0]
 
@@ -1767,40 +1754,28 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_study(self, line):
         ''' magic - study a scroll to learn the chant '''
         charObj = self.charObj
-        charObjList = charObj.getInventory()
 
-        targetList = self.getObjFromCmd(charObjList, line)
+        if line == '':
+            return(self.missingArgFailure())
 
-        if len(targetList) < 1:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+        (spellItem, spellName, targetObj) = self.parseSpellArgs(line)
 
-        scrollObj = targetList[0]
-
-        if not isinstance(scrollObj, Scroll):
+        if not spellItem.getType().lower() == 'scroll':
             self.selfMsg("You can't study that.\n")
             return(False)
 
-        # Get the chant
-        spellName = scrollObj.getSpell()
-        spellChant = getSpellChant(spellName)
-        self.selfMsg(scrollObj.describe(article='The') + ' reads, "' +
-                     spellChant + '"\n')
-
-        # Learn the spell
-        if charObj.learnSpell(spellName):
-            self.selfMsg('You learn the "' + spellName + '" spell\n')
+        # Learn the spell and display the chant
+        msg = spellItem.study(charObj)
+        self.selfMsg(msg)
 
         # Remove item from player's inventory
-        self.selfMsg(scrollObj.describe(article='The') + " disintegrates\n")
-        charObj.removeFromInventory(scrollObj)
+        self.gameObj.removeFromPlayerInventory(charObj, spellItem, 'disint')
 
         return(False)
 
@@ -1871,8 +1846,7 @@ class GameCmd(cmd.Cmd):
         if not target:
             return(False)
 
-        self.gameObj.attackCreature(self.charObj, target,
-                                    self.lastcmd.split(" ", 1)[0])
+        self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
     def do_track(self, line):
@@ -1898,8 +1872,7 @@ class GameCmd(cmd.Cmd):
         targetList = self.getObjFromCmd(charObj.getInventory(), line)
 
         if not targetList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
         elif len(targetList) > 0:
             obj1 = targetList[0]
         else:
@@ -1918,8 +1891,7 @@ class GameCmd(cmd.Cmd):
         itemList = self.getObjFromCmd(roomObj.getInventory(), line)
 
         if not itemList[0]:
-            self.selfMsg(self.lastcmd + " what?\n")
-            return(False)
+            return(self.missingArgFailure())
 
         obj1 = itemList[0]
         obj2 = itemList[1]
@@ -1951,29 +1923,40 @@ class GameCmd(cmd.Cmd):
 
     def do_use(self, line):
         ''' equip an item or use a scroll or magic item '''
+
+        if line == '':
+            return(self.missingArgFailure())
+
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
         charObjList = charObj.getInventory()
+        roomObjList = roomObj.getCharsAndInventory()
+        targetList = self.getObjFromCmd(charObjList + roomObjList, line)
 
-        targetList = self.getObjFromCmd(charObjList, line)
+        obj1 = None
 
-        if not targetList[0]:
-            self.selfMsg(self.lastcmd + "what?\n")
-            return(False)
+        # Require at least one arg after command
+        for target in targetList:
+            if not target:
+                continue
+            if not target.isUsable():
+                continue
+            if not obj1:
+                obj1 = target
 
-        obj1 = targetList[0]
-        obj2 = targetList[1]
+        if not obj1:
+            return(self.missingArgFailure())
 
-        if obj1.isEquippable():
-            if charObj.equip(obj1):
-                self.selfMsg("Ok\n")
-            else:
-                self.selfMsg("You can't do that\n")
-        elif isinstance(obj1, Scroll):
-            self.gameObj.use_scroll(charObj, obj1, obj2)
-        elif obj1.isMagicItem():
-            self.gameObj.use_magicitem(charObj, obj1, obj2)
+        type = obj1.getType()
+        if type == 'Character':
+            return(self.missingArgFailure())
+
+        if type == 'Creature':
+            return(self.missingArgFailure())
+
+        if object.isObjectFactoryType(type):
+            self.useObject(self, obj1, line)
 
         if roomObj:  # tmp - remove later if room object is not needed here
             pass     # but there may be spells/items that affect the room.

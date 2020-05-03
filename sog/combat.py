@@ -529,7 +529,7 @@ class Combat():
         charObj.decreaseChargeOfEquippedProtection()
 
         self.applyDamage(charObj, creatureObj, charObj, damage,
-                         attackCmd=attackCmd)
+                         attackCmd='attack')
         return(None)
         # end creatureAttacksPlayer
 

@@ -30,8 +30,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
          '_lastRegenDate', '_spoolOut']
 
     # int attributes
-    intAttributes = ['_expToNextLevel', '_level', '_maxhitpoints',
-                     '_hitpoints', '_maxspellpoints', '_spellpoints',
+    intAttributes = ['_expToNextLevel', '_level', '_maxhp', '_hp',
+                     '_maxmana', '_mana',
                      '_statsearnedlastlevel', '_limitedSpellsLeft',
                      '_broadcastLimit', '_slash', '_bludgeon', '_pierce',
                      '_magic', '_dodge', '_coins', '_ac',
@@ -48,7 +48,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     listAttributes = ['_knownSpells', '_doubleUpStatLevels']
 
     # obsolete attributes (to be removed)
-    obsoleteAtt = ['_money', '_heal']
+    obsoleteAtt = ['_money', '_heal', '_maxspellpoints', '_spellpoints',
+                   '_hitpoints', '_maxhitpoints']
 
     attributeInfo = {
     }
@@ -189,10 +190,10 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
         self._expToNextLevel = (2 ** 9)
         self._level = 1
-        self._maxhitpoints = 10
-        self._maxspellpoints = 10
-        self._hitpoints = 10
-        self._spellpoints = 10
+        self._maxhp = 10
+        self._maxmana = 10
+        self._hp = 10
+        self._mana = 10
         self._statsearnedlastlevel = 0
         self._maxitems = 12
 
@@ -343,8 +344,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             self.randomlyIncrementStat(12)
 
             # set starting points for changing stats that depend on other stats
-            self._hitpoints = self.getMaxHP()
-            self._spellpoints = self._maxspellpoints
+            self._hp = self.getMaxHP()
+            self._mana = self._maxmana
 
             self.resetTmpStats()
         else:
@@ -366,6 +367,23 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             the generic superClass fixAttributes to fix the types and remove
             obsolete vars.  Here, we can also add class specific logic for
             copying values from one attribute to another, etc '''
+
+        try:
+            self._maxmana = self._maxspellpoints
+        except (AttributeError, TypeError):
+            pass
+        try:
+            self._mana = self._spellpoints
+        except (AttributeError, TypeError):
+            pass
+        try:
+            self._hp = self._hitpoints
+        except (AttributeError, TypeError):
+            pass
+        try:
+            self._maxhp = self._maxhitpoints
+        except (AttributeError, TypeError):
+            pass
 
         AttributeHelper.fixAttributes(self)
 
@@ -589,7 +607,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def healthInfo(self):
         hitTxt = str(self.getHitPoints()) + "/" + str(self.getMaxHP())
-        magTxt = str(self.getSpellPoints()) + "/" + str(self._maxspellpoints)
+        magTxt = str(self.getmana()) + "/" + str(self._maxmana)
         buf = ("You have " + hitTxt + " health pts and " +
                magTxt + " magic pts.")
         if self.isDm():
@@ -972,25 +990,25 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         return(None)
 
     def addHP(self, num=0):
-        self._hitpoints = min((self._hitpoints + num), self.getMaxHP())
+        self._hp = min((self._hp + num), self.getMaxHP())
 
     def setMaxHP(self, num=0):
         if num == 0:
             baseHealth = self.classDict[self.getClassKey()]['baseHealth']
             num = baseHealth * self._level
-        self._maxhitpoints = num
+        self._maxhp = num
 
     def getMaxHP(self):
-        return(self._maxhitpoints)
+        return(self._maxhp)
 
     def setMaxSP(self, num=0):
         if num == 0:
             baseMagic = self.classDict[self.getClassKey()]['baseMagic']
             num = (baseMagic * self._level)
-        self._maxspellpoints = num
+        self._maxmana = num
 
     def getMaxSP(self):
-        return(self._maxspellpoints)
+        return(self._maxmana)
 
     def setExpForLevel(self):
         self._expToNextLevel = (2 ** (9 + self._level))
@@ -1022,7 +1040,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
                 # Based on luck, (roughly 20% chance) experience for next level
                 # may be lowered by 10%
                 self._expToNextLevel = int(self._expToNextLevel * .90)
-        # increase max hitpoints/spellpoints
+        # increase max hitpoints/mana
         self.randomlyIncrementStat(self, newpoints)
         self._statsearnedlastlevel = newpoints
         self.reCalculateStats()
@@ -1135,10 +1153,16 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         self._vulnerable = bool(val)
 
     def getHitPoints(self):
-        return(self._hitpoints)
+        return(self._hp)
 
-    def getSpellPoints(self):
-        return(self._spellpoints)
+    def setHitPoints(self, num):
+        self._hp = int(num)
+
+    def getmana(self):
+        return(self._mana)
+
+    def subtractmana(self, num):
+        self._mana -= int(num)
 
     def getClassName(self):
         return(self._classname)
@@ -1154,6 +1178,15 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def removeDm(self):
         self._dm = False
+
+    def isUsable(self):      # True for some objects, but not for characters
+        return(False)
+
+    def isEquippable(self):  # True for some objects, but not for characters
+        return(False)
+
+    def isMagicItem(self):   # True for some objects, but not for characters
+        return(False)
 
     def isInvisible(self):
         return(self._invisible)
@@ -1542,9 +1575,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def takeDamage(self, damage=0, nokill=False):
         ''' Take damage and check for death '''
-        self._hitpoints = self.getHitPoints() - damage
+        self._hp = self.getHitPoints() - damage
         if nokill:
-            self._hitpoints = 1
+            self._hp = 1
         condition = self.condition()
         dLog(self.getName() + " takes " + str(damage) + " damage",
              self._instanceDebug)
@@ -1553,7 +1586,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             if self.isDm():
                 self._spoolOut("You would be dead if you weren't a dm." +
                                "  Resetting hp to maxhp.\n")
-                self._hitpoints = self._maxhitpoints
+                self._hp = self._maxhp
             else:
                 self.processDeath()
         return(condition)
@@ -1579,7 +1612,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             self._levelDownStats()
             self._level = self._level - 1
 
-        self._hitpoints = self.getMaxHP()
+        self._hp = self.getMaxHP()
         self.setPoisoned(False)
         self.setPlagued(False)
 
