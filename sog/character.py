@@ -1200,6 +1200,12 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def reduceLimitedSpellCount(self, num=1):
         self._limitedSpellsLeft -= int(num)
 
+    def getLimitedBroadcastCount(self):
+        return(int(self._broadcastLimit))
+
+    def reduceLimitedBroadcastCount(self, num=1):
+        self._broadcastLimit -= int(num)
+
     def addExp(self, num):
         self._expToNextLevel -= num
 

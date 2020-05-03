@@ -208,11 +208,16 @@ gameCommands = {
         },
         'accept': {
             'alt': '',
-            'shortdesc': 'repair a used item',
-            'detailed': 'repair a used item.  Usage: replair <item>'
+            'shortdesc': 'accept an offer',
+            'detailed': 'accept an offer made by another player'
         }
     },
     'character_interaction': {
+        'action': {
+            'alt': '',
+            'shortdesc': 'Creative in-room communication',
+            'detailed': 'Creative in-room communication.  Usage: action <txt>'
+        },
         'appeal': {
             'alt': '',
             'shortdesc': 'complain to the dm',
@@ -241,7 +246,7 @@ gameCommands = {
         'laugh': {
             'alt': '',
             'shortdesc': 'React amusingly',
-            'detailed': 'React amusingly'
+            'detailed': 'React amusingly.  Add text for fun'
         },
         'teach': {
             'alt': '',

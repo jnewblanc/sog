@@ -659,9 +659,54 @@ class GameCmd(cmd.Cmd):
             spellItem.cast(self.charObj, targetObj)
         return(None)
 
+    def parseIpc(self, line):
+        roomObj = self.charObj.getRoom()
+
+        lastCmd = self.getLastCmd()
+        target = None
+        msg = ''
+
+        # Get recipient, if any
+        possibleRecipients = []
+        if lastCmd == 'whisper':
+            possibleRecipients = roomObj.getCharacterList()
+        elif lastCmd == 'send':
+            possibleRecipients = self.gameObj.getCharacterList()
+        # elif lastCmd in ['say', 'yell', 'shout', 'broadcast']:
+        #     target = None
+
+        if len(possibleRecipients) > 0:
+            targetList = self.getObjFromCmd(possibleRecipients, line)
+            if targetList[0]:
+                target = targetList[0]
+
+                if re.match('[^ ]+ [^ ]+', line):
+                    # todo: fix this if target is more than one word.
+                    #       i.e. Player #1.
+                    junk, msg = line.split(' ', 1)
+
+        if msg == '':
+            msg = self.client.promptForInput(lastCmd + " what? ")
+
+        return(target, msg)
+
     def do_accept(self, line):
         ''' transaction - accept an offer '''
         self.selfMsg(line + " not implemented yet\n")
+
+    def do_action(self, line):
+        ''' communication - fun in-room communication '''
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        if line == '':
+            self.selfMsg("Usage: action <txt>\n")
+            return(False)
+
+        msg = charObj.getName() + " " + line
+        self.gameObj.roomMsg(roomObj, msg + "\n")
+        logger.info(msg)
+        charObj.setHidden(False)
 
     def do_appeal(self, line):
         ''' ask DMs for help '''
@@ -762,8 +807,26 @@ class GameCmd(cmd.Cmd):
         self.charObj.setPromptSize("brief")
 
     def do_broadcast(self, line):
-        ''' communication '''
-        pass
+        ''' communication - send to everyone in the game
+            * players are limited to X broadcasts per day (currently 5)
+            * log broadcasted messages, in case of abuse.  '''
+
+        if not self.charObj.getLimitedBroadcastCount():
+            self.selfMsg("You have used all of your broadcasts for today\n")
+            return(False)
+
+        if line == '':
+            msg = self.client.promptForInput("Enter Input: ")
+        else:
+            msg = line
+
+        if msg != '':
+            fullmsg = self.charObj.getName() + " broadcasted, '" + msg + "'"
+            if self.gameObj.gameMsg(fullmsg + '\n'):
+                logger.info(fullmsg)
+                self.charObj.reduceLimitedBroadcastCount()
+            else:
+                self.selfMsg("Message not received\n")
 
     def do_buy(self, line):
         ''' transaction - buy something from a vendor '''
@@ -1296,8 +1359,12 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        self.gameObj.roomMsg(roomObj, charObj.getName() +
-                             " falls down laughing\n")
+        extramsg = ''
+        if line != '':
+            extramsg = ' ' + line
+
+        self.gameObj.roomMsg(roomObj, charObj.getName() + " laughs" +
+                             extramsg + "\n")
         charObj.setHidden(False)
 
     def do_list(self, line):
@@ -1617,9 +1684,18 @@ class GameCmd(cmd.Cmd):
 
     def do_say(self, line):
         ''' communication within room '''
-        msg = self.client.promptForInput()
-        self.gameObj.roomMsg(self.charObj.roomObj, msg)
-        self.charObj.setHidden(False)
+        if line == '':
+            msg = self.client.promptForInput("Say what? ")
+        else:
+            msg = line
+
+        if msg != '':
+            fullmsg = self.charObj.getName() + " said, '" + msg + "'"
+            if self.gameObj.roomMsg(self.charObj.getRoom(), fullmsg + '\n'):
+                self.charObj.setHidden(False)
+                logger.info(fullmsg)
+            else:
+                self.selfMsg("Message not received\n")
 
     def do_search(self, line):
         ''' attempt to find items, players, or creatures that are hidden '''
@@ -1666,14 +1742,26 @@ class GameCmd(cmd.Cmd):
 
     def do_send(self, line):
         ''' communication - direct message to another player '''
-        msg = self.client.promptForInput()
-        self.gameObj.gameMsg(msg)
+
+        if line == '':
+            self.selfMsg("usage: send <playerName> [msg]\n")
+            return(False)
+
+        target, msg = self.parseIpc(line)
+
+        if msg != '':
+            fullmsg = self.charObj.getName() + " sent, '" + msg + "'"
+            if self.gameObj.directMsg(target, fullmsg + '\n'):
+                self.charObj.setHidden(False)
+                logger.info("To " + target.getName() + ', ' + fullmsg)
+            else:
+                self.selfMsg("Message not received\n")
+
         return(False)
 
     def do_shout(self, line):
-        ''' communication - talk to players in room and adjoining rooms '''
-        msg = self.client.promptForInput()
-        self.yellMsg(self.charObj.roomObj, msg)
+        ''' communication - alias for yell '''
+        return(self.do_yell(line))
 
     def do_skills(self, line):
         ''' info - show character's skills '''
@@ -1979,25 +2067,31 @@ class GameCmd(cmd.Cmd):
 
     def do_whisper(self, line):
         ''' communication - char to char, with chance of being overheard '''
-        cmdargs = line.split(' ')
-        if not cmdargs[0]:
-            self.selfMsg("usage: whisper <playerName>\n")
+        if line == '':
+            self.selfMsg("usage: whisper <playerName> [txt]\n")
             return(False)
-        msg = self.client.promptForInput()
-        self.gameObj.directMsg(cmdargs[0], msg)  # wrong method for this??
-        recieved = False
 
+        target, msg = self.parseIpc(line)
+
+        received = False
+        charName = self.charObj.getName()
         for oneChar in self.charObj.getRoom().getCharacterList():
-            if re.match(cmdargs[0], oneChar.getName()):   # if name matches
-                oneChar.client.spoolOut(msg)            # notify
-                recieved = True
+            if target == oneChar:                           # if is recipient
+                oneChar.client.spoolOut(charName + " whispers, '" +  # notify
+                                        msg + "'\n")
+                received = True
             else:
-                if oneChar.hearsWhispers():
-                    oneChar.client.spoolOut("You overhear " +
-                                            self.charObj.getName() +
-                                            ' whisper ' + msg + '\n')
-                    self.charObj.setHidden(False)
-        return(recieved)
+                if not oneChar.hearsWhispers():
+                    continue
+                oneChar.client.spoolOut("You overhear " + charName +
+                                        ' whisper ' + msg + '\n')
+                self.charObj.setHidden(False)
+        if received:
+            self.selfMsg("ok\n")
+        else:
+            self.selfMsg("Message not received\n")
+
+        return(False)
 
     def do_who(self, line):
         ''' info - show who is playing the game '''
@@ -2007,7 +2101,7 @@ class GameCmd(cmd.Cmd):
             if onechar != charObj:
                 charTxt += onechar.getName() + '\n'
         if charTxt == '':
-            buf = "You are the only one online\n"
+            buf = "You are the only one in the game\n"
         else:
             buf = "Characters in the Game:\n" + charTxt
         self.selfMsg(buf)
@@ -2061,8 +2155,18 @@ class GameCmd(cmd.Cmd):
 
     def do_yell(self, line):
         ''' communication - all in room and adjoining rooms '''
-        msg = self.client.promptForInput()
-        self.yellMsg(self.charObj.roomObj, msg)
+        if line == '':
+            msg = self.client.promptForInput(self.getLastCmd() + " what? ")
+        else:
+            msg = line
+
+        if msg != '':
+            fullmsg = self.charObj.getName() + " yelled, '" + msg + "'"
+            if self.gameObj.yellMsg(self.charObj.getRoom(), fullmsg + '\n'):
+                logger.info(fullmsg)
+                self.charObj.setHidden(False)
+            else:
+                self.selfMsg("Message not received\n")
 
 
 # instanciate the _Game class

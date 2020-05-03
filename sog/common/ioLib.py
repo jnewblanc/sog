@@ -284,15 +284,15 @@ class ServerIo(Spooler):
             if clientdata == common.network.NOOP_STR:  # empty sends
                 clientdata = ""
                 if self._debugServer:
-                    logger.debug("Server recieved NO_OP from client")
+                    logger.debug("Server received NO_OP from client")
             elif clientdata == common.network.TERM_STR:  # client shut down
                 if self._debugServer:
-                    logger.debug("Server recieved TERM_STR from client")
+                    logger.debug("Server received TERM_STR from client")
                 self.terminateClientConnection()
                 return(False)
             elif clientdata == common.network.STOP_STR:  # server shut down
                 if self._debugServer:
-                    logger.debug("Server recieved STOP_STR from client")
+                    logger.debug("Server received STOP_STR from client")
                 self.terminateClientConnection()
                 raise Terminator
                 return(False)

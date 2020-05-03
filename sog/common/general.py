@@ -67,7 +67,7 @@ def secsSinceDate(date1):
         logger.error("secsSinceDate: date was not defined.  Returning 0")
         return(0)
     if date1 == getNeverDate():
-        logger.warning("secsSinceDate: Recieved NeverDate.  Returning 0")
+        logger.warning("secsSinceDate: received NeverDate.  Returning 0")
         return(0)
     return((datetime.now() - date1).total_seconds())
 
@@ -196,7 +196,7 @@ def itemSearch(itemList, name, desiredNum="#1", typeList=[]):  # noqa: C901
     for oneitem in itemList:
         dLog("sea - Checking item name " + oneitem.getName() + "...",
              debugItemSearch)
-        if re.match("^" + name, oneitem.getName()):  # fuzzy name search
+        if re.match("^" + name.lower(), oneitem.getName().lower()):  # fuzzy
             cnt += 1
             dLog("sea - item name " + oneitem.getName() +
                  " matched.  Checking type...", debugItemSearch)

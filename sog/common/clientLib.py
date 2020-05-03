@@ -30,7 +30,7 @@ class Client(AttributeHelper):
         self._debugIO = False
 
         self._running = True
-        self._recievedInput = False  # gets set the first time input is entered
+        self._receivedInput = False  # gets set the first time input is entered
 
     def start(self, args):
         if self.connect():
@@ -112,7 +112,7 @@ class Client(AttributeHelper):
                     self.input = getpass.getpass('')
                 else:
                     self.input = input()
-                    self._recievedInput = True
+                    self._receivedInput = True
 
                 self.preProcessInput()
 
@@ -151,7 +151,7 @@ class Client(AttributeHelper):
         if self.output == TERM_STR:
             self.terminate("Client: termination by server")
             return(False)
-        elif args.username and not self._recievedInput:
+        elif args.username and not self._receivedInput:
             self.input = args.username
             self.sendData()
             time.sleep(1)
