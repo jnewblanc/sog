@@ -4,7 +4,7 @@ import random
 
 from character import Character
 from common.general import dLog
-from magic import SpellList
+from magic import SpellList, getSpellDamageType
 # from common.general import logger
 
 
@@ -207,11 +207,18 @@ class Combat():
         dLog(logPrefix + str(attackCmdAdj) + "% cmd adj",
              self._instanceDebug)
 
-        # weapon bonus/penalty + skill
-        offenseAdj = attackerObj.getEquippedWeaponToHit()
-        hitPercentage += offenseAdj
-        dLog(logPrefix + str(attackCmdAdj) + "% weapon/skill adj",
-             self._instanceDebug)
+        if attackCmd in SpellList:
+            # magic skill
+            offenseAdj = attackerObj.getSkillPercentage("magic")
+            hitPercentage += offenseAdj
+            dLog(logPrefix + str(attackCmdAdj) + "% magic skill adj",
+                 self._instanceDebug)
+        else:
+            # weapon bonus/penalty + skill
+            offenseAdj = attackerObj.getEquippedWeaponToHit()
+            hitPercentage += offenseAdj
+            dLog(logPrefix + str(attackCmdAdj) + "% weapon/skill adj",
+                 self._instanceDebug)
 
         # armor bonus/penalty
         defenceAdj = defenderObj.getCumulativeDodge()
@@ -412,7 +419,7 @@ class Combat():
         self._instanceDebug = True
 
         isSpell = False
-        if attackCmd == 'spell':
+        if attackCmd in SpellList:
             isSpell = True
         elif attackCmd not in self.attackDict.keys():
             attackCmd = 'attack'
@@ -518,6 +525,9 @@ class Combat():
             self.charMsg(charObj, creatureObj.describe() + " misses you!\n")
             # notify other players in the room
             damage = 0
+            # see if we need to bump the dodge percentage
+            if creatureObj.getLevel() >= charObj.getLevel():
+                charObj.rollToBumpSkillForLevel('_dodge', percentChance=3)
         elif creatureObj.fumbles():
             self.charMsg(charObj, creatureObj.describe() + " fumbles!\n")
             damage = 0
@@ -552,7 +562,7 @@ class Combat():
         if isinstance(target, Character):
             self.applyPlayerDamage(charObj, attacker, damage)
         else:
-            self.applyCreatureDamage(charObj, target, damage)
+            self.applyCreatureDamage(charObj, target, damage, attackCmd)
 
     def getattackMsgDict(self, charObj, attacker, target, attackCmd):
         ''' returns a dict of attacker and target strings '''
@@ -598,7 +608,7 @@ class Combat():
 
         return(msg)
 
-    def applyCreatureDamage(self, charObj, target, damage):
+    def applyCreatureDamage(self, charObj, target, damage, attackCmd='attack'):
         ''' applys damage/death to a creature when a player hits it '''
         roomObj = charObj.getRoom()
 
@@ -620,7 +630,10 @@ class Combat():
 
             # determine if skill is increased
             if charObj.getLevel() >= target.getLevel():
-                damageType = charObj.getEquippedWeaponDamageType()
+                if attackCmd in SpellList:
+                    damageType = getSpellDamageType()
+                else:
+                    damageType = charObj.getEquippedWeaponDamageType()
                 charObj.rollToBumpSkillForLevel(damageType)
 
             # update player kill stats

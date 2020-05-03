@@ -1369,6 +1369,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         return(self._equippedNecklace)
 
     def getSkillPercentage(self, skill):
+        if skill[0] != '_':
+            skill = '_' + skill   # Prepend underbar, if needed
         try:
             return(getattr(self, skill))
         except KeyError:

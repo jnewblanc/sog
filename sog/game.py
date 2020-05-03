@@ -19,7 +19,7 @@ from common.general import getRandomItemFromList
 from common.help import enterHelp
 from magic import Spell, SpellList, spellCanTargetSelf
 from room import RoomFactory
-from object import ObjectFactory
+from object import ObjectFactory, isObjectFactoryType
 from creature import Creature
 
 
@@ -630,11 +630,22 @@ class GameCmd(cmd.Cmd):
 
     def useObject(self, obj, line):
         ''' Call method for using object, based on it's type/attributes '''
+        if not obj:
+            logger.error("game.useObject: Could not use a non-existent obj")
+            return(False)
+
+        if not isObjectFactoryType(obj.getType()):
+            logger.error("game.useObject: Could not use a non-obj obj")
+            return(False)
+
+        if not obj.isUsable():
+            self.selfMsg(obj.describe(article='The') + "is not usable\n")
+
         if obj.isEquippable():
             if self.charObj.equip(obj):
                 self.selfMsg("Ok\n")
             else:
-                self.selfMsg("You can't do that\n")
+                self.selfMsg("You can't equip that\n")
         elif obj.isMagicItem():
             self.useMagicItem(line)
 
@@ -851,27 +862,27 @@ class GameCmd(cmd.Cmd):
             return(False)
         catItem = catList[int(cmdargs[0])]
         oType, oNum = catItem.split('/')
-        obj1 = ObjectFactory(oType, oNum)
-        obj1.load()
-        price = self.gameObj.calculateObjectPrice(charObj, obj1)
+        itemObj = ObjectFactory(oType, oNum)
+        itemObj.load()
+        price = self.gameObj.calculateObjectPrice(charObj, itemObj)
 
         # check if player has the funds
         if not charObj.canAffordAmount(price):
             self.selfMsg(roomObj.getCantAffordTxt())
             return(False)
         # check if player can carry the Weight
-        weight = obj1.getWeight()
+        weight = itemObj.getWeight()
         if not charObj.canCarryAdditionalWeight(weight):
             self.selfMsg(roomObj.getCantCarryTxt(weight))
             return(False)
 
         # prompt player for confirmation
         prompt = ("You are about to spend " + str(price) +
-                  " shillings for " + obj1.getArticle() + " " +
-                  obj1.getName() + ".  Proceed?")
+                  " shillings for " + itemObj.getArticle() + " " +
+                  itemObj.getName() + ".  Proceed?")
         successTxt = roomObj.getSuccessTxt()
         abortTxt = roomObj.getAbortedTxt()
-        self.gameObj.buyTransaction(charObj, obj1, price, prompt,
+        self.gameObj.buyTransaction(charObj, itemObj, price, prompt,
                                     successTxt, abortTxt)
 
     def do_cast(self, line):
@@ -927,12 +938,12 @@ class GameCmd(cmd.Cmd):
         itemBuf = ''
         for num, oneitem in enumerate(roomObj.getcatalog()):
             oType, oNum = oneitem.split('/')
-            obj1 = ObjectFactory(oType, oNum)
-            obj1.load()
+            itemObj = ObjectFactory(oType, oNum)
+            itemObj.load()
             # calculate price
-            price = self.gameObj.calculateObjectPrice(charObj, obj1)
+            price = self.gameObj.calculateObjectPrice(charObj, itemObj)
             ROW_FORMAT = "  ({0:2}) {1:<7} {2:<60}\n"
-            itemBuf += ROW_FORMAT.format(num, price, obj1.describe())
+            itemBuf += ROW_FORMAT.format(num, price, itemObj.describe())
         if itemBuf != '':
             self.selfMsg("Catalog of items for sale\n" +
                          ROW_FORMAT.format('#', 'Price', 'Description') +
@@ -1211,21 +1222,21 @@ class GameCmd(cmd.Cmd):
 
         itemList = self.getObjFromCmd(roomObj.getInventory(), line)
 
-        obj1 = itemList[0]
-        obj2 = itemList[1]
+        itemObj = itemList[0]
+        containerObj = itemList[1]
 
-        if not obj1:
+        if not itemObj:
             return(self.missingArgFailure())
 
-        if obj2:
+        if containerObj:
             # todo: check if we're getting item from a chest
             pass
 
-        if not obj1.isCarryable():
-            self.selfMsg(obj1.describe() + " can not be carried.\n")
+        if not itemObj.isCarryable():
+            self.selfMsg(itemObj.describe() + " can not be carried.\n")
             return(False)
 
-        if not charObj.canCarryAdditionalWeight(obj1.getWeight()):
+        if not charObj.canCarryAdditionalWeight(itemObj.getWeight()):
             self.selfMsg("You are not strong enough.\n")
             return(False)
 
@@ -1235,8 +1246,8 @@ class GameCmd(cmd.Cmd):
                          " blocks you from taking that.\n")
             return(False)
 
-        roomObj.removeObject(obj1)
-        charObj.addToInventory(obj1)
+        roomObj.removeObject(itemObj)
+        charObj.addToInventory(itemObj)
         self.selfMsg("Ok\n")
 
     def do_go(self, line):
@@ -1381,16 +1392,16 @@ class GameCmd(cmd.Cmd):
 
         itemList = self.getObjFromCmd(roomObjList, line)
 
-        obj1 = itemList[0]
-        obj2 = itemList[1]
+        itemObj = itemList[0]
+        keyObj = itemList[1]
 
         if not itemList[0]:
             return(self.missingArgFailure())
 
-        if not obj2:
+        if not keyObj:
             self.selfMsg("You can't lock anything without a key\n")
             return(False)
-        if not obj1.isLockable():
+        if not itemObj.isLockable():
             self.selfMsg("This is not lockable!\n")
             return(False)
         self.selfMsg("Not implemented yet.\n")
@@ -1463,18 +1474,18 @@ class GameCmd(cmd.Cmd):
         if not itemList[0]:
             return(self.missingArgFailure())
 
-        obj1 = itemList[0]
+        itemObj = itemList[0]
 
-        if not obj1.isOpenable(charObj):
+        if not itemObj.isOpenable(charObj):
             self.selfMsg("You can't open that.\n")
             return(False)
 
-        if obj1.open(charObj):
+        if itemObj.open(charObj):
             self.selfMsg("It opens.")
             self.othersMsg(roomObj, charObj.getName() + " opens the " +
-                           obj1.getSingular(), charObj.isHidden() + '\n')
-            if obj1.gettype() == "Door":
-                self.gameObj.modifyCorrespondingDoor(obj1)
+                           itemObj.getSingular(), charObj.isHidden() + '\n')
+            if itemObj.gettype() == "Door":
+                self.gameObj.modifyCorrespondingDoor(itemObj)
             return(False)
         else:
             self.selfMsg("You fail to open the door.\n")
@@ -1547,23 +1558,23 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("pick which item with a lock?\n")
             return(False)
 
-        obj1 = itemList[0]
+        itemObj = itemList[0]
 
-        if not obj1.isPickable():
+        if not itemObj.isPickable():
             self.selfMsg("You can't pick that.\n")
             return(False)
 
-        if obj1.pick(charObj):
+        if itemObj.pick(charObj):
             self.selfMsg("You pick the lock.\n")
             self.othersMsg(roomObj, charObj.getName() + " picks the " +
-                           "lock on the " + obj1.getSingular() + '\n',
+                           "lock on the " + itemObj.getSingular() + '\n',
                            charObj.isHidden())
             return(False)
         else:
             self.selfMsg("You fail to pick the lock.\n")
             self.othersMsg(roomObj, charObj.getName() +
                            " fails to pick the lock on the " +
-                           obj1.getSingular() + '\n', charObj.isHidden())
+                           itemObj.getSingular() + '\n', charObj.isHidden())
             return(False)
         return(False)
 
@@ -1588,10 +1599,10 @@ class GameCmd(cmd.Cmd):
         if not targetList[0]:
             return(self.missingArgFailure())
 
-        obj1 = targetList[0]
-        obj2 = targetList[1]
+        itemObj = targetList[0]
+        containerObj = targetList[1]
 
-        if roomObj or obj1 or obj2:  # tmp - delete when implemented
+        if roomObj or itemObj or containerObj:  # tmp - delete when implemented
             pass
 
         self.selfMsg("'put' not implemented yet\n")
@@ -1635,19 +1646,19 @@ class GameCmd(cmd.Cmd):
         if not itemList[0]:
             return(self.missingArgFailure())
 
-        obj1 = itemList[0]
+        itemObj = itemList[0]
 
-        if not obj1.canBeRepaired():
+        if not itemObj.canBeRepaired():
             self.selfMsg("This can't be repaired\n")
             return(False)
 
-        price = self.gameObj.calculateObjectPrice(charObj, obj1) * 100
-        prompt = ("You are about to repair " + obj1.getArticle() + " " +
-                  obj1.getName() + " for " + str(price) +
+        price = self.gameObj.calculateObjectPrice(charObj, itemObj) * 100
+        prompt = ("You are about to repair " + itemObj.getArticle() + " " +
+                  itemObj.getName() + " for " + str(price) +
                   " shillings.  Proceed?")
         if self.client.promptForYN(prompt):
-            obj1.repair()
-            roomObj.recordTransaction(obj1)
+            itemObj.repair()
+            roomObj.recordTransaction(itemObj)
             roomObj.recordTransaction("repair/" + str(price))
             charObj.recordTax(roomObj.getTaxAmount(price))
             self.selfMsg(roomObj.getSuccessTxt())
@@ -1728,15 +1739,15 @@ class GameCmd(cmd.Cmd):
         if not itemList[0]:
             return(self.missingArgFailure())
 
-        obj1 = itemList[0]
+        itemObj = itemList[0]
 
-        price = int(self.gameObj.calculateObjectPrice(charObj, obj1) * .8)
+        price = int(self.gameObj.calculateObjectPrice(charObj, itemObj) * .8)
 
         # prompt player for confirmation
-        prompt = ("You are about to pawn " + obj1.getArticle() +
-                  " " + obj1.getName() + " for " + str(price) +
+        prompt = ("You are about to pawn " + itemObj.getArticle() +
+                  " " + itemObj.getName() + " for " + str(price) +
                   " shillings.  Proceed?")
-        self.gameObj.sellTransaction(charObj, obj1, price, prompt,
+        self.gameObj.sellTransaction(charObj, itemObj, price, prompt,
                                      roomObj.getSuccessTxt(),
                                      roomObj.getAbortedTxt())
 
@@ -1792,32 +1803,32 @@ class GameCmd(cmd.Cmd):
         if not itemList[0]:
             return(self.missingArgFailure())
 
-        obj1 = itemList[0]
+        itemObj = itemList[0]
 
-        if not obj1.isSmashable():
+        if not itemObj.isSmashable():
             self.selfMsg("This is not smashable!\n")
             return(False)
 
-        if obj1.smash(charObj):
+        if itemObj.smash(charObj):
             self.othersMsg(roomObj, charObj.getName() + " smashes the " +
-                           obj1.getSingular() + " open.\n")
+                           itemObj.getSingular() + " open.\n")
             self.selfMsg("You smash it open!\n")
-            otherRoom = self.gameObj.getCorrespondingRoomObj(obj1)
+            otherRoom = self.gameObj.getCorrespondingRoomObj(itemObj)
             if otherRoom:
-                self.gameObj.roomMsg(otherRoom, obj1.getSingular() +
+                self.gameObj.roomMsg(otherRoom, itemObj.getSingular() +
                                      " smashes open\n")
-            if obj1.gettype() == "Door":
-                self.gameObj.modifyCorrespondingDoor(obj1)
+            if itemObj.gettype() == "Door":
+                self.gameObj.modifyCorrespondingDoor(itemObj)
             return(False)
         else:
             self.othersMsg(roomObj, charObj.getName() +
-                           " fails to smash " + obj1.describe() + " open.\n")
+                           " fails to smash " + itemObj.describe() + " open.\n")
             self.selfMsg("Bang! You fail to smash it open!\n")
-            otherRoom = self.gameObj.getCorrespondingRoomObj(obj1)
+            otherRoom = self.gameObj.getCorrespondingRoomObj(itemObj)
             if otherRoom:
                 self.gameObj.roomMsg(otherRoom, "You hear a noise on the " +
                                      "other side of the " +
-                                     obj1.getSingular() + '\n')
+                                     itemObj.getSingular() + '\n')
         return(False)
 
     def do_south(self, line):
@@ -1962,11 +1973,11 @@ class GameCmd(cmd.Cmd):
         if not targetList[0]:
             return(self.missingArgFailure())
         elif len(targetList) > 0:
-            obj1 = targetList[0]
+            itemObj = targetList[0]
         else:
-            obj1 = None
+            itemObj = None
 
-        if charObj.unEquip(obj1):
+        if charObj.unEquip(itemObj):
             self.selfMsg("Ok\n")
         else:
             self.selfMsg("You can't do that\n")
@@ -1981,27 +1992,27 @@ class GameCmd(cmd.Cmd):
         if not itemList[0]:
             return(self.missingArgFailure())
 
-        obj1 = itemList[0]
-        obj2 = itemList[1]
+        itemObj = itemList[0]
+        keyObj = itemList[1]
 
-        if not obj2:
+        if not keyObj:
             self.selfMsg("You need a key before you can unlock anything\n")
-        if not obj1.isUnlockable():
+        if not itemObj.isUnlockable():
             self.selfMsg("You can't unlock that.\n")
             return(False)
         # need to get lock ID and see if the given key matches
         # if keys have charges, we need to modify key
-        if obj1.unlock(charObj):
+        if itemObj.unlock(charObj):
             self.selfMsg("You unlock the lock.\n")
             self.othersMsg(roomObj, charObj.getName() + " unlocks the " +
-                           "lock on the " + obj1.getSingular() + '\n',
+                           "lock on the " + itemObj.getSingular() + '\n',
                            charObj.isHidden())
             return(False)
         else:
             self.selfMsg("You fail to unlock the lock.\n")
             self.othersMsg(roomObj, charObj.getName() + " fails to " +
                            "unlock the lock on the " +
-                           obj1.getSingular() + '\n', charObj.isHidden())
+                           itemObj.getSingular() + '\n', charObj.isHidden())
             return(False)
         return(False)
 
@@ -2022,7 +2033,7 @@ class GameCmd(cmd.Cmd):
         roomObjList = roomObj.getCharsAndInventory()
         targetList = self.getObjFromCmd(charObjList + roomObjList, line)
 
-        obj1 = None
+        itemObj = None
 
         # Require at least one arg after command
         for target in targetList:
@@ -2030,21 +2041,25 @@ class GameCmd(cmd.Cmd):
                 continue
             if not target.isUsable():
                 continue
-            if not obj1:
-                obj1 = target
+            if not itemObj:
+                itemObj = target
 
-        if not obj1:
+        if not itemObj:
             return(self.missingArgFailure())
 
-        type = obj1.getType()
+        type = itemObj.getType()
         if type == 'Character':
             return(self.missingArgFailure())
 
         if type == 'Creature':
             return(self.missingArgFailure())
 
-        if object.isObjectFactoryType(type):
-            self.useObject(self, obj1, line)
+        if isObjectFactoryType(type):
+            self.useObject(itemObj, line)
+            return(False)
+
+        logger.warn('game.do_use: Attempt to use: ' + itemObj.describe() +
+                    ' - with type ' + type)
 
         if roomObj:  # tmp - remove later if room object is not needed here
             pass     # but there may be spells/items that affect the room.

@@ -498,6 +498,11 @@ def spellCanTargetSelf(spellName):
     return(False)
 
 
+def getSpellDamageType():
+    ''' Returns the character attribute corresponding to spells '''
+    return('_magic')
+
+
 class Spell():
     ''' Spell Class '''
     def __init__(self, charObj, targetObj=None, spellName='', chant='',
@@ -571,6 +576,7 @@ class Spell():
         if self._requiresmana:
             self.charObj.subtractmana(self.mana)
 
+    def _postCastTasks(self):
         # record the last attack command
         self.charObj.setLastAttack(cmd=self.spellName)
 
@@ -585,9 +591,16 @@ class Spell():
 
     def cast(self, roomObj):
         ''' Returns true if spell was sucessfully cast '''
-
+        logPrefix = 'magic.cast: '
         # Do everything that comes before the spell's affects
         self._preCastTasks()
+
+        if not self.charObj.canAttack():
+            msg = "You can't attack"
+            self.failedReason += msg + '\n'
+            dLog(logPrefix + self.charObj.getName() + " can't attack",
+                 self._instanceDebug)
+            return(False)
 
         if not self.succeeded:
             self._castFails()
@@ -596,7 +609,7 @@ class Spell():
         self._spoolOut("You cast " + self.spellName + "\n")
 
         if not self.targetObj:
-            logger.warning("magic.cast: targetObj is not defined")
+            logger.warning("logPrefix" + "targetObj is not defined")
 
         if self.spellType == 'health':
             self.targetObj.addHP(self.getHealth())
@@ -616,6 +629,8 @@ class Spell():
         else:
             self._spoolOut("not implemented yet\n")
 
+        self._postCastTasks()
+
         return(True)
 
     def inflictDamage(self):
@@ -626,7 +641,8 @@ class Spell():
                        self.charObj.getName())
         if self.charObj.client:
             self.charObj.client.gameObj.attackCreature(
-                self.charObj, self.targetObj, attackCmd='spell', spellObj=self)
+                self.charObj, self.targetObj, attackCmd=self.spellName,
+                spellObj=self)
         else:
             logger.warning("magic.inflictDamage could not deal damage - " +
                            "charObj.client == None")
@@ -701,11 +717,6 @@ class Spell():
     def _selfCriteriaAreMet(self):
         logPrefix = "magic.selfCriteria: Failed - "
         cName = self.charObj.getName()
-        if not self.charObj.canAttack():
-            msg = "You can't attack"
-            self.failedReason += msg + '\n'
-            dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
-            return(False)
         if self.levelRequired < 1:
             msg = "You can't cast " + self.spellName
             self.failedReason += msg + '\n'

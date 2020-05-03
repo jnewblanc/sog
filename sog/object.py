@@ -416,9 +416,6 @@ class MagicalDevice(Exhaustible):
     def getSpellName(self):
         return(self._spell)
 
-    def isUsable(self):
-        return(True)
-
     def cast(self, charObj, targetObj):
         ''' cast a spell using a device '''
         if self.getCharges() <= 0:
@@ -1098,8 +1095,12 @@ ObjFactoryTypes = ['object', 'portal', 'door', 'armor', 'weapon', 'shield',
                    'teleport', 'coins', 'ring', 'necklace', 'treasure']
 
 
-def isObjectFactoryType(name):
-    ''' Return True if name is a valid object FacotryType '''
+def isObjectFactoryType(item):
+    ''' Return True if item is a valid object FacotryType '''
+    if isinstance(item, str):
+        name = item.lower()
+    else:
+        name = item.getType().lower()
     return(name in ObjFactoryTypes)
 
 
