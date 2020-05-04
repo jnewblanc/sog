@@ -4,11 +4,16 @@ import re
 import unittest
 
 import common.general
+from common.test import TestGameBase
 # from common.general import logger
 import object
 
 
-class TestGeneral(unittest.TestCase):
+class TestGeneral(TestGameBase):
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
+
     def testIsIntStr(self):
         inputs = ['apple',
                   'apple 1',

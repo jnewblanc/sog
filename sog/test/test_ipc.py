@@ -10,7 +10,7 @@ class TestIpc(TestGameBase):
     _testCharName = "testCharIpc"
 
     def setUp(self):
-        super().setUp()
+        super().setUp(__class__.__name__)
         self.getCharObj().setName(self._testCharName)
 
     def testDoesntCrash(self):
@@ -19,12 +19,14 @@ class TestIpc(TestGameBase):
         charObj = self.getCharObj()
         roomObj = self.getRoomObj()
 
-        assert gameObj.directMsg(charObj, 'hello')
-        assert gameObj.charMsg(charObj, 'hello')
-        assert gameObj.roomMsg(roomObj, 'hello')
-        assert gameObj.roomMsg(roomObj, 'hello', allowDupMsgs=False)
-        assert gameObj.othersInRoomMsg(charObj, roomObj, 'hello')
-        assert gameObj.yellMsg(roomObj, 'hello')
+        assert gameObj.directMsg(charObj, 'hello directMsg')
+        assert gameObj.charMsg(charObj, 'hello charMsg')
+        assert gameObj.roomMsg(roomObj, 'hello roomMsg with dups')
+        assert gameObj.roomMsg(roomObj, 'hello roomMsg nodups',
+                               allowDupMsgs=False)
+        assert gameObj.othersInRoomMsg(charObj, roomObj,
+                                       'hello othersInRoomMsg')
+        assert gameObj.yellMsg(roomObj, 'hello yellMsg')
 
 
 if __name__ == '__main__':

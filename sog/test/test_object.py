@@ -1,13 +1,17 @@
 ''' test_object '''
 import unittest
 
+from common.test import TestGameBase
 # from common.general import logger
 import object
 
 
-class TestObject(unittest.TestCase):
+class TestObject(TestGameBase):
 
     testObjNumber = 99999
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
     def testObjectInstanciation(self):
         objObj = object.Door(self.testObjNumber)

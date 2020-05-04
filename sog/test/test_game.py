@@ -1,11 +1,15 @@
 ''' test_game '''
 import unittest
 
+from common.test import TestGameBase
 # from common.general import logger
 import game
 
 
-class TestGame(unittest.TestCase):
+class TestGame(TestGameBase):
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
     def testGameInstanciation(self):
         gameObj = game.Game()
@@ -23,7 +27,10 @@ class TestGame(unittest.TestCase):
         self.assertEqual(gameObj.getInstanceDebug() == startState, True, out)
 
 
-class TestGameCmd(unittest.TestCase):
+class TestGameCmd(TestGameBase):
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
     def testGameCmdInstanciation(self):
         gameCmdObj = game.GameCmd()

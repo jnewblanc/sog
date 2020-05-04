@@ -4,13 +4,14 @@ import unittest
 
 # from common.general import logger
 import character
+from common.test import TestGameBase
 import creature
 import object
 import room
 import magic
 
 
-class TestMagic(unittest.TestCase):
+class TestMagic(TestGameBase):
 
     characterClasses = character.Character.classList
     testCreatureNumber = 99999
@@ -18,6 +19,7 @@ class TestMagic(unittest.TestCase):
     _testAcctName = "sogTest@gadgetshead.com"
 
     def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
         # Create one character of each classtype.
         # Store them in a dict with classname as the keys

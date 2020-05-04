@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import pickle
 import re
+import traceback
 
 from common.paths import DATADIR
 
@@ -110,8 +111,7 @@ class Storage():
                              attName + " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
-        with open(filename, 'wb') as outputfilehandle:
-            pickle.dump(self, outputfilehandle, pickle.DEFAULT_PROTOCOL)
+        self.write(filename)
         # Restore attributes that we temporarily set aside when saving.
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
@@ -119,6 +119,20 @@ class Storage():
             logger.debug(logPrefix + "saved " + logStr + " - " +
                          str(self.getId()))
         return(True)
+
+    def write(self, filename):
+        with open(filename, 'wb') as outputfilehandle:
+            try:
+                pickle.dump(self, outputfilehandle, pickle.DEFAULT_PROTOCOL)
+            except TypeError:
+                logger.debug(self.debug())
+                traceback.print_exc()
+
+    def read(self, filename):
+        with open(filename, 'rb') as inputfilehandle:
+            loadedInst = pickle.load(inputfilehandle)
+            return(loadedInst)
+        return(None)
 
     def load(self, desiredAttributes=[], logStr=''):   # noqa: C901
         ''' load from persistant storage
@@ -145,8 +159,11 @@ class Storage():
             logger.debug(logPrefix + "Loading " + filename + "...")
 
         if self.dataFileExists():
-            with open(filename, 'rb') as inputfilehandle:
-                loadedInst = pickle.load(inputfilehandle)
+            loadedInst = self.read(filename)
+
+            if not loadedInst:
+                logger.error("storage.load - Could not get loaded instance")
+
             instanceAttributes = vars(loadedInst)
 
             # filter out instance attributes that we want to ignore

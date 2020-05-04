@@ -1,13 +1,17 @@
 ''' test_creature '''
 import unittest
 
+from common.test import TestGameBase
 # from common.general import logger
 import creature
 
 
-class TestCreature(unittest.TestCase):
+class TestCreature(TestGameBase):
 
     testCreatureNumber = 99999
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
     def testCreatureInstanciation(self):
         creObj = creature.Creature(self.testCreatureNumber)

@@ -10,9 +10,9 @@ from common.storage import Storage
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
 from common.general import getNeverDate, getRandomItemFromList, secsSinceDate
-from common.general import logger, dLog
+from common.general import dLog
+# from common.general import logger
 from common.inventory import Inventory
-# from common.paths import DATADIR
 from object import ObjectFactory
 
 
@@ -293,8 +293,6 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         self._vulnerable = False     # Target is vulnerable for DD next attack
 
         self._instanceDebug = Creature._instanceDebug
-
-        logger.debug("Creature __init__" + str(self._creatureId))
 
         dLog("Creature init called for " + str(self.getId()),
              self._instanceDebug)

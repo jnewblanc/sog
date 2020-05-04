@@ -2,12 +2,16 @@
 import unittest
 
 import account
+from common.test import TestGameBase
 # from common.general import logger
 
 
-class TestAccount(unittest.TestCase):
+class TestAccount(TestGameBase):
 
     testAccountId = "someone@test.com"
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
     def testAccountInstanciation(self):
         acctObj = account.Account(None)

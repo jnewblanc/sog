@@ -2,14 +2,18 @@
 import unittest
 
 import character
+from common.test import TestGameBase
 # from common.general import logger
 import object
 
 
-class TestCharacter(unittest.TestCase):
+class TestCharacter(TestGameBase):
 
-    testCharName = "test99999"
+    testCharName = "testChar99999"
     testObjNumber = 99999
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
     def testCharAttributes(self):
         charObj = character.Character()

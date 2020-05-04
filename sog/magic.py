@@ -583,6 +583,9 @@ class Spell():
         # record the last attack command
         self.charObj.setLastAttack(cmd=self.spellName)
 
+        if not self.targetObj:
+            logger.warning("logPrefix" + "targetObj is not defined")
+
     def _castFails(self):
         ''' do everything related to failed spells '''
 
@@ -611,9 +614,6 @@ class Spell():
 
         self._spoolOut("You cast " + self.spellName + "\n")
 
-        if not self.targetObj:
-            logger.warning("logPrefix" + "targetObj is not defined")
-
         if self.spellType == 'health':
             self.targetObj.addHP(self.getHealth())
         elif self.spellType == 'room':
@@ -623,10 +623,7 @@ class Spell():
         elif self.spellType == 'alteration':
             self.alterations()
         elif self.spellType == 'info':
-            if self.spellName == 'identify':
-                self.identify()
-            else:
-                self._spoolOut("not implemented yet\n")
+            self.infos()
         elif self.spellType == 'ask':
             self.ask()
         else:
@@ -649,6 +646,12 @@ class Spell():
         else:
             logger.warning("magic.inflictDamage could not deal damage - " +
                            "charObj.client == None")
+
+    def infos(self):
+        if self.spellName == 'identify':
+            self.identify()
+        else:
+            self._spoolOut("not implemented yet\n")
 
     def identify(self):
         ''' Execute actions for identify spell '''

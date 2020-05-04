@@ -5,15 +5,17 @@ import unittest
 
 from common.inventory import Inventory
 from common.general import logger
+from common.test import TestGameBase
 import creature
 import object
 
 
-class TestPlayerInventory1(unittest.TestCase, Inventory):
+class TestPlayerInventory1(TestGameBase, Inventory):
 
     testInventory = ['Armor/1', 'Armor/1', 'Weapon/1', 'Treasure/1']
 
     def setUp(self):
+        self.banner('start', testName=__class__.__name__)
         Inventory.__init__(self)
 
     def populateInventory(self, iList):
@@ -58,11 +60,12 @@ class TestPlayerInventory1(unittest.TestCase, Inventory):
         self.assertEqual(status, True, out)
 
 
-class TestRoomInventory1(unittest.TestCase, Inventory):
+class TestRoomInventory1(TestGameBase, Inventory):
 
     testInventory = ['Creature/1', 'Portal/1', 'Treasure/1']
 
     def setUp(self):
+        self.banner('start', testName=__class__.__name__)
         Inventory.__init__(self)
 
     def populateInventory(self, iList):

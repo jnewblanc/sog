@@ -2047,9 +2047,8 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        charObjList = charObj.getInventory()
-        roomObjList = roomObj.getCharsAndInventory()
-        targetList = self.getObjFromCmd(charObjList + roomObjList, line)
+        objList = charObj.getInventory() + roomObj.getCharsAndInventory()
+        targetList = self.getObjFromCmd(objList, line)
 
         itemObj = None
 
@@ -2066,10 +2065,7 @@ class GameCmd(cmd.Cmd):
             return(self.missingArgFailure())
 
         type = itemObj.getType()
-        if type == 'Character':
-            return(self.missingArgFailure())
-
-        if type == 'Creature':
+        if type == 'Character' or type == 'Creature':
             return(self.missingArgFailure())
 
         if isObjectFactoryType(type):

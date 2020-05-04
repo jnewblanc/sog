@@ -7,13 +7,7 @@ from common.general import logger
 class Ipc():
     ''' interplayer communication '''
 
-    def gameMsg(self, msg):
-        ''' shown to everyone in the game '''
-        received = False
-        for oneChar in self.getCharacterList():
-            if self.directMsg(oneChar, msg):
-                received = True
-        return(received)
+    _instanceDebug = False
 
     def directMsg(self, character, msg):
         ''' show only to specified user '''
@@ -24,18 +18,19 @@ class Ipc():
         if isinstance(character, str):
             for oneChar in self.getCharacterList():         # get chars in game
                 if re.match(character.lower(), oneChar.getName().lower()):
-                    recipient = oneChar
+                    recipientObj = oneChar
                     break
         else:
-            recipient = character
+            recipientObj = character
 
-        if recipient.client:
-            recipient.client.spoolOut(msg)            # notify
+        if recipientObj.client:
+            recipientObj.client.spoolOut(msg)            # notify
             received = True
+            logger.info("directMsg to " + recipientObj.getName() + ": " + msg)
         else:
             logger.warning(
-                "ipc.directMsg: recipient.client doesn't exist for " +
-                recipient.describe() + ".  Skipping directMsg: " + msg)
+                "ipc.directMsg: recipientObj.client doesn't exist for " +
+                recipientObj.describe() + ".  Skipping directMsg: " + msg)
         return(received)
 
     def charMsg(self, charObj, msg, allowDupMsgs=True):
@@ -57,7 +52,16 @@ class Ipc():
             return(True)
 
         charObj.client.spoolOut(msg)
+        logger.info("charMsg to " + charObj.getName() + ": " + msg)
         return(True)
+
+    def gameMsg(self, msg):
+        ''' shown to everyone in the game '''
+        received = False
+        for oneChar in self.getCharacterList():
+            if self.directMsg(oneChar, msg):
+                received = True
+        return(received)
 
     def roomMsg(self, roomObj, msg, allowDupMsgs=True):
         ''' shown to everyone in the room '''
@@ -110,7 +114,8 @@ class Ipc():
         # filter out any non-room room numbers (i.e. roomNum = 0)
         roomNumbList = list(filter(lambda x: x != 0, set(roomNumbList)))
 
-        logger.debug('yellMsg: ajoining rooms' + str(roomNumbList))
+        if self._instanceDebug:
+            logger.debug('yellMsg: ajoining rooms' + str(roomNumbList))
 
         # If any of the rooms are active, display message there.
         for oneRoom in self.getActiveRoomList():    # foreach active room

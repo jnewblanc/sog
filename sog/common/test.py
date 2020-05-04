@@ -4,7 +4,7 @@ import unittest
 import account
 import character
 import common.serverLib
-# from common.general import logger
+from common.general import logger
 import threads
 from game import GameCmd
 
@@ -46,6 +46,12 @@ class TestGameBase(unittest.TestCase):
     def getAsyncThread(self):
         return(self._asyncThread)
 
+    def setTestName(self, name=''):
+        if name == '':
+            self._testName = __class__.__name__
+        else:
+            self._testName = name
+
     def startAsyncThread(self):
         self._asyncThread = common.serverLib.createAndStartAsyncThread()
 
@@ -80,12 +86,22 @@ class TestGameBase(unittest.TestCase):
         assert self._client.gameObj.isValid()
         self._client.gameObj.addToActivePlayerList(self.getCharObj())
         self._gameCmdObj = GameCmd(self._client)
+    #    self._gameCmdObj.postcmd = [lambda *args: None]
 
     def joinRoom(self, roomnum=_testRoomNum):
         self._client.gameObj.joinRoom(roomnum, self.getCharObj())
         assert self.getRoomObj().isValid()
 
-    def setUp(self):
+    def banner(self, status='start', testName=''):
+        if not hasattr(self, "_testName"):
+            self.setTestName(testName)
+        dashes = "-" * 12
+        logger.info(dashes + " " + self._testName + " " + status +
+                    " " + dashes)
+
+    def setUp(self, testName="TestGameBase"):
+        self.setTestName(testName)
+        self.banner('start')
         self._client = self.createClientAndAccount()
         self._client.charObj = self.createCharacter()
         self.joinGame()
@@ -94,6 +110,6 @@ class TestGameBase(unittest.TestCase):
         self.joinRoom()
 
     def tearDown(self):
-        self._client.gameObj.leaveRoom(self.getCharObj())
-        if self.getAsyncThread():
+        if hasattr(self, '_asyncThread'):
             self.stopAsyncThread()
+        self.banner('end')

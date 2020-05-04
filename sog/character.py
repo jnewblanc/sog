@@ -27,7 +27,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     attributesThatShouldntBeSaved = \
         ['client', '_instanceDebug', '_currentlyAttacking', '_vulnerable',
          '_secondsUntilNextAttack', '_lastInputDate', '_lastAttackDate',
-         '_lastRegenDate', '_spoolOut']
+         '_lastRegenDate', '_spoolOut', '_roomObj']
 
     # int attributes
     intAttributes = ['_expToNextLevel', '_level', '_maxhp', '_hp',
@@ -49,7 +49,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     # obsolete attributes (to be removed)
     obsoleteAtt = ['_money', '_heal', '_maxspellpoints', '_spellpoints',
-                   '_hitpoints', '_maxhitpoints']
+                   '_hitpoints', '_maxhitpoints', 'roomObj']
 
     attributeInfo = {
     }
@@ -231,8 +231,6 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         self._invisible = False
         self._nonexistent = False
         self._playtester = False
-
-        self.roomObj = None
 
         self._bankBalance = 0
         self._coins = 100

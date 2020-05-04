@@ -1,13 +1,17 @@
 ''' test_room '''
 import unittest
 
+from common.test import TestGameBase
 # from common.general import logger
 from room import RoomFactory
 
 
-class TestRoom(unittest.TestCase):
+class TestRoom(TestGameBase):
 
     num = 9999999
+
+    def setUp(self):
+        self.banner('start', testName=__class__.__name__)
 
     def testIntAttributes(self):
         roomObj = RoomFactory('room', self.num)
