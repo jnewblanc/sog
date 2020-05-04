@@ -524,7 +524,7 @@ class Spell():
 
         self._requiresmana = requiresmana
 
-        self._instanceDebug = True
+        self._instanceDebug = False
 
         # Set the spell attributes based on the values in SpellDict
         self.setSpellAttributes()
@@ -569,6 +569,9 @@ class Spell():
 
     def debug(self):
         return(pprint.pformat(vars(self)))
+
+    def getMana(self):
+        return(self.mana)
 
     def _preCastTasks(self):
         ''' Handle the pre-cast actions '''
@@ -737,10 +740,10 @@ class Spell():
             dLog(logPrefix + msg + ', ' + cName, self._instanceDebug)
             return(False)
         if ((self._requiresmana and
-             self.charObj.getmana() < self.mana)):
+             self.charObj.getMana() < self.mana)):
             msg = "You don't have enough mana for that"
             self.failedReason += msg + '\n'
-            dLog(logPrefix + msg + '(char=' + str(self.charObj.getmana()) +
+            dLog(logPrefix + msg + '(char=' + str(self.charObj.getMana()) +
                  ' spell=' + str(self.mana) + ')' + ', ' +
                  cName, self._instanceDebug)
             return(False)

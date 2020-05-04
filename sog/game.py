@@ -48,6 +48,14 @@ class _Game(cmd.Cmd, Combat, Ipc):
     def getInstanceDebug(self):
         return(self._instanceDebug)
 
+    def getId(self):
+        return(self.instance)
+
+    def isValid(self):
+        if self.getId() != '' and self._startdate < datetime.now():
+            return(True)
+        return(False)
+
     def asyncTasks(self):
         ''' Tasks that run in a separate thread with ~1 sec intervals '''
         self.asyncNonPlayerActions()
@@ -216,6 +224,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
 
         if isinstance(roomThing, int):
             roomObj = self.roomLoader(roomThing)
+        elif isinstance(roomThing, str) and isIntStr(roomThing):
+            roomObj = self.roomLoader(int(roomThing))
         elif roomThing.getType().lower() == 'room':
             roomObj = roomThing
 
@@ -458,14 +468,22 @@ class GameCmd(cmd.Cmd):
         while not stop:
             if self.client.promptForCommand(self.getCmdPrompt()):  # send/recv
                 line = self.client.getInputStr()
-                self._lastinput = line
-                dLog("GAME cmd = " + line, self._instanceDebug)
-                self.precmd(line)
-                stop = self.onecmd(line)
-                self.postcmd(stop, line)
+                self.runcmd(line)
             else:
                 stop = True
         self.postloop()
+
+    def runcmd(self, cmd):
+        ''' workhorse of cmdloop
+            * runcmd extracted from cmdloop so that tests can call it without
+              prompting for input
+        '''
+        self._lastinput = cmd
+        dLog("GAME cmd = " + cmd, self._instanceDebug)
+        self.precmd(cmd)
+        stop = self.onecmd(cmd)
+        self.postcmd(stop, cmd)
+        return(stop)
 
     def precmd(self, line):
         ''' cmd method override '''
@@ -1821,8 +1839,8 @@ class GameCmd(cmd.Cmd):
                 self.gameObj.modifyCorrespondingDoor(itemObj)
             return(False)
         else:
-            self.othersMsg(roomObj, charObj.getName() +
-                           " fails to smash " + itemObj.describe() + " open.\n")
+            self.othersMsg(roomObj, charObj.getName() + " fails to smash " +
+                           itemObj.describe() + " open.\n")
             self.selfMsg("Bang! You fail to smash it open!\n")
             otherRoom = self.gameObj.getCorrespondingRoomObj(itemObj)
             if otherRoom:

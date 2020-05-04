@@ -344,8 +344,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             self.randomlyIncrementStat(12)
 
             # set starting points for changing stats that depend on other stats
-            self._hp = self.getMaxHP()
-            self._mana = self._maxmana
+            self.setHitPoints(self.getMaxHP())
+            self.setMana(self.getMaxMana())
 
             self.resetTmpStats()
         else:
@@ -451,7 +451,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def getDesc(self, showAlignment=True):
         ''' Returns a string that describes the in-game appearance '''
         buf = (self.getName() + ' is a ' + self.condition() + ', level ' +
-               str(self.getLevel()) + " " + self._gender + " " +
+               str(self.getLevel()) + " " + self.getGender() + " " +
                self.getClassName())
         if showAlignment:
             if self._alignment == 'lawful':
@@ -607,7 +607,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def healthInfo(self):
         hitTxt = str(self.getHitPoints()) + "/" + str(self.getMaxHP())
-        magTxt = str(self.getmana()) + "/" + str(self._maxmana)
+        magTxt = str(self.getMana()) + "/" + str(self._maxmana)
         buf = ("You have " + hitTxt + " health pts and " +
                magTxt + " magic pts.")
         if self.isDm():
@@ -769,7 +769,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         if whosAsking == "me":
             (article, possessive, predicate) = self.getArticle('self')
         else:
-            (article, possessive, predicate) = self.getArticle(self._gender)
+            (article, possessive, predicate) = (
+                self.getArticle(self.getGender()))
 
         if self._following != '':
             buf = predicate + ' following.' + self.following
@@ -780,7 +781,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         if whosAsking == "me":
             (article, possessive, predicate) = self.getArticle('self')
         else:
-            (article, possessive, predicate) = self.getArticle(self._gender)
+            (article, possessive, predicate) = (
+                self.getArticle(self.getGender()))
 
         if self._drunkSecs != '':
             buf = (predicate + ' drunk, and will sober up in ' +
@@ -829,7 +831,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
         # get the index numbers of the named elements to use for dict lookup
         classKey = self.getClassKey()
-        genderKey = self.genderList.index(self._gender)
+        genderKey = self.genderList.index(self.getGender())
 
         self.setMaxHP()
         self.setMaxSP()
@@ -870,7 +872,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         if inNum == -1:
             return(False)
 
-        self._classname = self.classList[inNum]
+        self.setClassName(self.classList[inNum])
         return(True)
 
     def promptForGender(self, ROW_FORMAT):
@@ -883,7 +885,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         if inNum == -1:
             return(False)
 
-        self._gender = self.genderList[int(inNum)]
+        self.setGender(self.genderList[int(inNum)])
         return(True)
 
     def promptForAlignment(self, ROW_FORMAT):
@@ -905,7 +907,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         if inNum == -1:
             return(False)
 
-        self._alignment = self.alignmentList[int(inNum)]
+        self.setAlignment(self.alignmentList[int(inNum)])
         return(True)
 
     def promptForSkills(self, ROW_FORMAT):
@@ -942,9 +944,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             self.promptForSkills(ROW_FORMAT)
             self.promptForDm(ROW_FORMAT)
         else:
-            self._classname = getRandomItemFromList(self.classList)
-            self._gender = getRandomItemFromList(self.genderList)
-            self._alignment = getRandomItemFromList(self.alignmentList)
+            self.setClassName(getRandomItemFromList(self.classList))
+            self.setGender(getRandomItemFromList(self.genderList))
+            self.setAlignment(getRandomItemFromList(self.alignmentList))
             self._dodge = 10
         return(True)
 
@@ -1158,17 +1160,17 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def setHitPoints(self, num):
         self._hp = int(num)
 
-    def getmana(self):
+    def getMana(self):
         return(self._mana)
+
+    def setMana(self, num):
+        self._mana = int(num)
 
     def subtractmana(self, num):
         self._mana -= int(num)
 
-    def getClassName(self):
-        return(self._classname)
-
-    def getAlignment(self):
-        return(self._alignment)
+    def getMaxMana(self):
+        return(self._maxmana)
 
     def isDm(self):
         return(self._dm)
@@ -1244,6 +1246,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def getLevel(self):
         return(self._level)
+
+    def setLevel(self, num):
+        self._level = int(num)
 
     def isCarryable(self):
         return(False)
@@ -1448,8 +1453,35 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def isPermanent(self):
         return(False)
 
-    def setName(self, name):
-        self._name = str(name)
+    def setName(self, _name):
+        self._name = str(_name)
+
+    def getGender(self):
+        return(self._gender)
+
+    def setGender(self, _gender):
+        if _gender in self.genderList:
+            self._gender = str(_gender)
+        else:
+            logger.error('setGender: Attempt to set invalid gender')
+
+    def getClassName(self):
+        return(self._classname)
+
+    def setClassName(self, _classname):
+        if _classname in self.classList:
+            self._classname = str(_classname)
+        else:
+            logger.error('setClassName: Attempt to set invalid gender')
+
+    def getAlignment(self):
+        return(self._alignment)
+
+    def setAlignment(self, _alignment):
+        if _alignment in self.alignmentList:
+            self._alignment = str(_alignment)
+        else:
+            logger.error('setAlignment: Attempt to set invalid gender')
 
     def getId(self):
         return(self._acctName + "/" + str(self.getName()))
@@ -1583,9 +1615,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def takeDamage(self, damage=0, nokill=False):
         ''' Take damage and check for death '''
-        self._hp = self.getHitPoints() - damage
+        self.setHitPoints(self.getHitPoints() - damage)
         if nokill:
-            self._hp = 1
+            self.setHitPoints(1)
         condition = self.condition()
         dLog(self.getName() + " takes " + str(damage) + " damage",
              self._instanceDebug)
@@ -1594,7 +1626,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             if self.isDm():
                 self._spoolOut("You would be dead if you weren't a dm." +
                                "  Resetting hp to maxhp.\n")
-                self._hp = self._maxhp
+                self.setHitPoints(self._maxhp)
             else:
                 self.processDeath()
         return(condition)
@@ -1620,7 +1652,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             self._levelDownStats()
             self._level = self._level - 1
 
-        self._hp = self.getMaxHP()
+        self.setHitPoints(self.getMaxHP())
         self.setPoisoned(False)
         self.setPlagued(False)
 
@@ -1738,7 +1770,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             return(False)
 
         if not re.match(r"^.+@.+\..+/.+$", id):
-            logger.error(logPrefix + "ID is blank while generating filename")
+            logger.error(logPrefix + "ID is blank while generating filename." +
+                         'id=' + id)
             return(False)
 
         self._datafile = os.path.abspath(DATADIR + '/Account/' +

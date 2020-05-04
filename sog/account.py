@@ -18,6 +18,8 @@ class Account(Storage, AttributeHelper):
 
     attributesThatShouldntBeSaved = ['client']
 
+    validEmailRegex = r'^[A-Za-z0-9_\-\.]+@[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+$'
+
     def __init__(self, client=None):
         self.client = client
 
@@ -147,15 +149,17 @@ class Account(Storage, AttributeHelper):
     def getUserEmailAddress(self):
         ''' Prompt user for email address and validate input '''
         prompt = "Enter email address or [enter] to quit: "
-        regex = r'^[A-Za-z0-9_\-\.]+@[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+$'
-        self.email = self.client.promptForInput(prompt, regex,
+        self.email = self.client.promptForInput(prompt, self.validEmailRegex,
                                                 "Invalid Email address\n")
         if self.email != '':
             return(True)
         return(False)
 
     def setUserEmailAddress(self, address=''):
-        self.email = address
+        if re.match(self.validEmailRegex, address):
+            self.email = address
+        else:
+            logger.error("account.setUserEmailAddress: Bad email: " + address)
 
     def postLoad(self):
         self.setLogoutDate()

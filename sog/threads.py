@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ''' threads.py - server side client and async thread classes
     * ClientThread - uses existing (or spins up) lobby/game instance
     * AsyncThread - uses existing (or spins up) game instance
@@ -18,10 +17,10 @@ import game
 import lobby
 
 
-class ServerBase(ServerIo, AttributeHelper):
+class ClientBase(ServerIo, AttributeHelper):
     ''' SuperClass for ClientThread
         * Contains everything the clientThread needs, except for network and
-          threading specific features.  This way, tests can use ServerBase
+          threading specific features.  This way, tests can use ClientBase
           without needing to set up networking and client/server threads
         * Account Login is skipped and account is set to default account, which
           makes testing easier.  This behavior is expected to be overwritten
@@ -191,13 +190,13 @@ class ServerBase(ServerIo, AttributeHelper):
         return(False)
 
 
-class ClientThread(threading.Thread, ServerBase):
+class ClientThread(threading.Thread, ClientBase):
     ''' Main client thread of the server
         * All non network, non-thread features should be part of the
-          ServerBase superClass'''
+          ClientBase superClass'''
     def __init__(self, socket, address, id):
         threading.Thread.__init__(self, daemon=True, target=self.serverLoop)
-        ServerBase.__init__(self)
+        ClientBase.__init__(self)
         self.socket = socket
         self.address = address
         self.id = id

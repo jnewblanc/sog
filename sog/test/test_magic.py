@@ -25,11 +25,11 @@ class TestMagic(unittest.TestCase):
         for oneClass in self.characterClasses:
             charObj = character.Character(acctName=self._testAcctName)
             charObj.setName('test' + oneClass.capitalize())
-            charObj._gender = "male"
-            charObj._classname = oneClass
-            charObj._alignment = 'neutral'
-            charObj._mana = 10000
-            charObj._level = 10
+            charObj.setGender("male")
+            charObj.setClassName(oneClass)
+            charObj.setAlignment('neutral')
+            charObj.setMana(10000)
+            charObj.setLevel(10)
             charObj.intelligence = 20
             self.charDict[oneClass] = charObj
 
@@ -45,7 +45,7 @@ class TestMagic(unittest.TestCase):
         for charClass in self.charDict.keys():
             charObj = self.charDict[charClass]
             for level in [1, 3, 7, 10]:
-                charObj._level = level
+                charObj.setLevel(level)
                 for spellName in spells:
                     chant = magic.getSpellChant(spellName)
                     spellObj = magic.Spell(charObj, target, spellName, chant)
@@ -61,7 +61,7 @@ class TestMagic(unittest.TestCase):
         for charClass in self.charDict.keys():
             charObj = self.charDict[charClass]
             for level in [1, 3, 7, 10]:
-                charObj._level = level
+                charObj.setLevel(level)
                 for spellName in spells:
                     chant = magic.getSpellChant(spellName)
                     spellObj = magic.Spell(charObj, target, spellName, chant)
@@ -77,7 +77,7 @@ class TestMagic(unittest.TestCase):
         for charClass in self.charDict.keys():
             charObj = self.charDict[charClass]
             for level in [1, 3, 7, 10]:
-                charObj._level = level
+                charObj.setLevel(level)
                 for spellName in spells:
                     chant = magic.getSpellChant(spellName)
                     spellObj = magic.Spell(charObj, target, spellName, chant)
@@ -111,28 +111,28 @@ class TestMagic(unittest.TestCase):
         for spellName in spells:
             if spellName == '':
                 continue
-            charObj._mana = goodMana
+            charObj.setMana(goodMana)
             chant = magic.getSpellChant(spellName)
             # cast with plenty of mana - should pass
             spellObj = magic.Spell(charObj, target, spellName, chant)
             msg = ("ManaPass: spell=" + spellName + " - charHas=" +
-                   str(charObj._mana) + " - spellReq: " +
-                   str(spellObj.mana))
+                   str(charObj.getMana()) + " - spellReq: " +
+                   str(spellObj.getMana()))
             assert spellObj.succeeded, msg
 
             # cast with insufficient mana - should fail
-            charObj._mana = badMana
+            charObj.setMana(badMana)
             spellObj = magic.Spell(charObj, target, spellName, chant)
             msg = ("ManaFail: spell=" + spellName + " - charHas=" +
-                   str(charObj._mana) + " - spellReq: " +
-                   str(spellObj.mana))
+                   str(charObj.getMana()) + " - spellReq: " +
+                   str(spellObj.getMana()))
             assert not spellObj.succeeded, msg
 
     def testBadTargets(self):
         spells = ['passdoor', 'enchant']
         badTargets = [self.targetCharObj, self.targetCreaObj]
         charObj = self.charDict.get('mage')
-        charObj._level = 10
+        charObj.setLevel(10)
         for spellName in spells:
             chant = magic.getSpellChant(spellName)
             for target in badTargets:
@@ -182,7 +182,7 @@ class TestMagic(unittest.TestCase):
             for spellName in spells:
                 chant = magic.getSpellChant(spellName)
                 for level in goodLvls[className][spellName]:
-                    charObj._level = level
+                    charObj.setLevel(level)
                     spellObj = magic.Spell(charObj, target, spellName, chant)
                     lvlReq = str(spellObj.levelRequired)
                     assert spellObj.cast(charObj), (
@@ -191,7 +191,7 @@ class TestMagic(unittest.TestCase):
                         spellObj.spellName + " which requires level " +
                         str(lvlReq) + '\n' + spellObj.debug())
                 for level in badLvls[className][spellName]:
-                    charObj._level = level
+                    charObj.setLevel(level)
                     spellObj = magic.Spell(charObj, target, spellName, chant)
                     lvlReq = str(spellObj.levelRequired)
                     assert not spellObj.cast(charObj), (

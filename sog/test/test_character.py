@@ -20,9 +20,9 @@ class TestCharacter(unittest.TestCase):
         ''' Test character instanciation + some basic attribute retrieval '''
         charObj = character.Character()
         charObj.setName(self.testCharName)
-        charObj._gender = "male"
-        charObj._classname = "fighter"
-        charObj._alignment = 'neutral'
+        charObj.setGender("male")
+        charObj.setClassName("fighter")
+        charObj.setAlignment('neutral')
         charObj.setMaxHP(100)
         charObj.setHitPoints(100)
         desc = charObj.getDesc()
@@ -43,7 +43,7 @@ class TestCharacter(unittest.TestCase):
         charObj = character.Character()
         charObj.setName(self.testCharName)
         charObj.strength = 10
-        charObj._level = 1
+        charObj.setLevel(1)
         obj1 = object.Weapon(self.testObjNumber)
         obj1.setName("testGranade")
         charObj.equip(obj1)

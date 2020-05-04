@@ -54,7 +54,7 @@ class Ipc():
 
         if not allowDupMsgs and charObj.client.outputSpoolContains(msg):
             # skip duplicate messages
-            return(False)
+            return(True)
 
         charObj.client.spoolOut(msg)
         return(True)
@@ -76,6 +76,9 @@ class Ipc():
         received = False
         if ignore:             # may get set to True if player is hidden
             return(False)
+
+        if not roomObj:
+            logger.error('ipc.othersInRoomMsg: roomObj not defined.  Skipping')
 
         for oneChar in roomObj.getCharacterList():
             if charObj:

@@ -44,6 +44,10 @@ class Spooler():
                 queue is always small, we don't care.  Maybe someday we'll
                 switch to a better queuing mechanism '''
         found = False
+
+        if self._outputSpool.empty():
+            return(False)
+
         newQueue = queue.Queue()
         while not self._outputSpool.empty():
             data = self._outputSpool.get()
