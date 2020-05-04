@@ -17,6 +17,7 @@ from common.general import logger
 from common.paths import DATADIR
 from common.storage import Storage
 from object import Weapon
+from magic import SpellList
 
 
 class Character(Storage, AttributeHelper, Inventory, EditWizard):
@@ -487,94 +488,6 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
                "your purse.\n")
         return(buf)
 
-    def knowsSpell(self, spell):
-        if spell in self._knownSpells:
-            return(True)
-        return(False)
-
-    def learnSpell(self, spell):
-        if not self.knowsSpell(spell):
-            self._knownSpells.append(spell)
-            return(True)
-        return(False)
-
-    def getBankBalance(self):
-        return(self._bankBalance)
-
-    def setBankBalance(self, num):
-        self._bankBalance = int(num)
-
-    def bankAccountAdd(self, num):
-        self._bankBalance += int(num)
-
-    def bankAccountSubtract(self, num):
-        self._bankBalance -= int(num)
-
-    def bankFeeAdd(self, num):
-        self._bankFeesPaid += int(num)
-
-    def calculateBankFees(self, num, rate):
-        ''' returns the bank fee and the amount remaining '''
-        fee = int((rate / 100) * int(num))
-        remaining = int(num) - fee
-        return (int(fee), int(remaining))
-
-    def bankDeposit(self, num, feeRate=5):
-        ''' deposit funds from character's purse to character's bank account
-            * subtract entire amount from characters's coin purse
-            * subtract bank deposit fees (default 5%)
-            * add resulting amout to character's bank account
-        '''
-        if self.canAffordAmount(int(num)):
-            self.subtractCoins(num)          # character pays the actual value
-            bankfee, remainingCoin = self.calculateBankFees(num, feeRate)
-            self.bankAccountAdd(remainingCoin)
-            self.bankFeeAdd(bankfee)
-            self.save()
-            logger.info("bank - " + self.getName() + " deposited " +
-                        str(remainingCoin) + " and paid " + str(bankfee) +
-                        " in fees")
-            return(True)
-        return(False)
-
-    def bankWithdraw(self, num, feeRate=0):
-        ''' withdraw funds from character's bank account to character's purse
-            * remove entire amount from bank
-            * subtract any bank withdraw fees (default is 0%)
-            * add resulting amount to character's purse
-        '''
-        if self.canWithdraw(int(num)):
-            self.bankAccountSubtract(num)
-            bankfee, remainingCoin = self.calculateBankFees(num, feeRate)
-            self.addCoins(remainingCoin)
-            self.bankFeeAdd(bankfee)
-            self.save()
-            logger.info("bank - " + self.getName() + " withdrew " +
-                        str(remainingCoin) + " and paid " + str(bankfee) +
-                        " in fees")
-            return(True)
-        return(False)
-
-    def canWithdraw(self, num):
-        if self._bankBalance >= int(num):
-            return(True)
-        return(False)
-
-    def recordTax(self, num):
-        ''' Some transactions have a room penalty.  For these, we record
-            them as taxes paid.  Maybe, in the future, we'll have ways for
-            characters to recoup their paid taxes (lottery?)
-             '''
-        self._taxesPaid += max(0, int(num))
-        self.save()
-        return(True)
-
-    def dmTxt(self, msg):
-        ''' return the given msg only if the character is a DM '''
-        if self.isDm():
-            return(msg)
-        return('')
-
     def statsInfo(self):
         ''' Display character stats'''
         buf = "Stats:\n"
@@ -762,6 +675,125 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             predicate = "you are"
         return(article, possessive, predicate)
 
+    def knowsSpell(self, spell):
+        if spell in self._knownSpells:
+            return(True)
+        return(False)
+
+    def learnSpell(self, spell):
+        if spell not in SpellList:
+            return(False)
+
+        if not self.knowsSpell(spell):
+            self._knownSpells.append(spell)
+            return(True)
+        return(False)
+
+    def getCoins(self):
+        return(self._coins)
+
+    def setCoins(self, num):
+        self._coins = int(num)
+
+    def addCoins(self, num):
+        self._coins += int(num)
+        self.save()
+
+    def subtractCoins(self, num):
+        self._coins -= int(num)
+        self.save()
+
+    def canAffordAmount(self, num):
+        if self._coins >= int(num):
+            return(True)
+        return(False)
+
+    def getBankBalance(self):
+        return(self._bankBalance)
+
+    def setBankBalance(self, num):
+        self._bankBalance = int(num)
+
+    def bankAccountAdd(self, num):
+        self._bankBalance += int(num)
+
+    def bankAccountSubtract(self, num):
+        self._bankBalance -= int(num)
+
+    def bankFeeAdd(self, num):
+        self._bankFeesPaid += int(num)
+
+    def getBankFeesPaid(self):
+        return(self._bankFeesPaid)
+
+    def calculateBankFees(self, num, rate):
+        ''' returns the bank fee and the amount remaining '''
+        fee = int((rate / 100) * int(num))
+        remaining = int(num) - fee
+        return (int(fee), int(remaining))
+
+    def bankDeposit(self, num, feeRate=5):
+        ''' deposit funds from character's purse to character's bank account
+            * subtract entire amount from characters's coin purse
+            * subtract bank deposit fees (default 5%)
+            * add resulting amout to character's bank account
+        '''
+        if self.canAffordAmount(int(num)):
+            self.subtractCoins(num)          # character pays the actual value
+            bankfee, remainingCoin = self.calculateBankFees(num, feeRate)
+            self.bankAccountAdd(remainingCoin)
+            self.bankFeeAdd(bankfee)
+            self.save()
+            logger.info("bank - " + self.getName() + " deposited " +
+                        str(remainingCoin) + " and paid " + str(bankfee) +
+                        " in fees")
+            return(True)
+        return(False)
+
+    def bankWithdraw(self, num, feeRate=0):
+        ''' withdraw funds from character's bank account to character's purse
+            * remove entire amount from bank
+            * subtract any bank withdraw fees (default is 0%)
+            * add resulting amount to character's purse
+        '''
+        if self.canWithdraw(int(num)):
+            self.bankAccountSubtract(num)
+            bankfee, remainingCoin = self.calculateBankFees(num, feeRate)
+            self.addCoins(remainingCoin)
+            self.bankFeeAdd(bankfee)
+            self.save()
+            logger.info("bank - " + self.getName() + " withdrew " +
+                        str(remainingCoin) + " and paid " + str(bankfee) +
+                        " in fees")
+            return(True)
+        return(False)
+
+    def canWithdraw(self, num):
+        if self._bankBalance >= int(num):
+            return(True)
+        return(False)
+
+    def recordTax(self, num):
+        ''' Some transactions have a room penalty.  For these, we record
+            them as taxes paid.  Maybe, in the future, we'll have ways for
+            characters to recoup their paid taxes (lottery?)
+             '''
+        self._taxesPaid += max(0, int(num))
+        self.save()
+        return(True)
+
+    def getTax(self):
+        return(self._taxesPaid)
+
+    def setTax(self, num):
+        self._taxesPaid = int(num)
+
+    def dmTxt(self, msg):
+        ''' return the given msg only if the character is a DM '''
+        if self.isDm():
+            return(msg)
+        return('')
+
     def getFollowingInfo(self, whosAsking='me'):
         buf = ''
         if whosAsking == "me":
@@ -804,9 +836,11 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
                     ROW_FORMAT.format('2xStatLvls', dblstatList) +
                     ROW_FORMAT.format('DodgeBonus',
                                       str(self.getDodgeBonus())) +
-                    ROW_FORMAT.format('BankBalance', str(self._bankBalance)) +
-                    ROW_FORMAT.format('TaxesPaid', str(self._taxesPaid)) +
-                    ROW_FORMAT.format('BankFeesPaid', str(self._bankFeesPaid))
+                    ROW_FORMAT.format('BankBalance',
+                                      str(self.getBankBalance())) +
+                    ROW_FORMAT.format('TaxesPaid', str(self.getTax())) +
+                    ROW_FORMAT.format('BankFeesPaid',
+                                      str(self.getBankFeesPaid()))
                     )
             buf += '  Kill Counts:\n'
             ROW_FORMAT = "    {0:16}: {1:<30}\n"
@@ -832,7 +866,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         genderKey = self.genderList.index(self.getGender())
 
         self.setMaxHP()
-        self.setMaxSP()
+        self.setMaxMana()
         # increment the value of the CLASS bonus stats
         for bonusStat in self.classDict[classKey]['bonusStats']:
             self.incrementStat(bonusStat)
@@ -984,7 +1018,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def reCalculateStats(self):
         self.setAc()
         self.setMaxHP()
-        self.setMaxSP()
+        self.setMaxMana()
         self.setExpForLevel()
         self.setMaxWeightForCharacter()
         return(None)
@@ -1001,13 +1035,13 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def getMaxHP(self):
         return(self._maxhp)
 
-    def setMaxSP(self, num=0):
+    def setMaxMana(self, num=0):
         if num == 0:
             baseMagic = self.classDict[self.getClassKey()]['baseMagic']
             num = (baseMagic * self._level)
         self._maxmana = num
 
-    def getMaxSP(self):
+    def getMaxMana(self):
         return(self._maxmana)
 
     def setExpForLevel(self):
@@ -1522,25 +1556,6 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         if self.getClassName().lower() in ["ranger", "rogue"]:
             return(True)
         if random.randint(1, 100) < int(self.getLuck() / 3):
-            return(True)
-        return(False)
-
-    def getCoins(self):
-        return(self._coins)
-
-    def setCoins(self, num):
-        self._coins = int(num)
-
-    def addCoins(self, num):
-        self._coins += int(num)
-        self.save()
-
-    def subtractCoins(self, num):
-        self._coins -= int(num)
-        self.save()
-
-    def canAffordAmount(self, num):
-        if self._coins >= int(num):
             return(True)
         return(False)
 

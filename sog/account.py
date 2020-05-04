@@ -158,8 +158,10 @@ class Account(Storage, AttributeHelper):
     def setUserEmailAddress(self, address=''):
         if re.match(self.validEmailRegex, address):
             self.email = address
+            return(True)
         else:
             logger.error("account.setUserEmailAddress: Bad email: " + address)
+        return(False)
 
     def postLoad(self):
         self.setLogoutDate()

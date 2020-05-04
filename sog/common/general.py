@@ -241,5 +241,6 @@ except NameError:
     logger = getLogger(logname)
     logLocation = LOGDIR + '\\' + logname + '.log'
     print("Log: " + logLocation)
+    logger.info("")
     logger.info("-----------------------------------------------------------")
-    logger.info("Log: " + logLocation)
+    logger.info("Log start: " + logLocation)

@@ -18,7 +18,7 @@ class TestGameBase(unittest.TestCase):
     _testAcctName = "sogTest@gadgetshead.com"
     _testAcctDisplay = "sogTest"
 
-    _testCharName = 'testChar3'
+    _testCharName = 'testCharBase'
     _testCharGender = 'male'
     _testCharClassName = 'fighter'
     _testCharAlignment = 'neutral'
@@ -96,8 +96,8 @@ class TestGameBase(unittest.TestCase):
         if not hasattr(self, "_testName"):
             self.setTestName(testName)
         dashes = "-" * 12
-        logger.info(dashes + " " + self._testName + " " + status +
-                    " " + dashes)
+        logger.info(dashes + " " + self._testName + " " +
+                    str(masterTestNum) + " " + status + " " + dashes)
 
     def setUp(self, testName="TestGameBase"):
         self.setTestName(testName)
@@ -113,3 +113,17 @@ class TestGameBase(unittest.TestCase):
         if hasattr(self, '_asyncThread'):
             self.stopAsyncThread()
         self.banner('end')
+        incrementTestNum()
+
+
+# Set masterTestNum if it's not already set
+global masterTestNum
+try:
+    masterTestNum
+except NameError:
+    masterTestNum = 1
+
+
+def incrementTestNum():
+    global masterTestNum
+    masterTestNum += 1
