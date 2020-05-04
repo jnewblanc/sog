@@ -18,117 +18,94 @@ import game
 import lobby
 
 
-class ClientThread(threading.Thread, ServerIo, AttributeHelper):
-    def __init__(self, socket, address, id, clientThreadInitCallBack=None):
-        threading.Thread.__init__(self, daemon=True, target=self.serverMain)
+class ServerBase(ServerIo, AttributeHelper):
+    ''' SuperClass for ClientThread
+        * Contains everything the clientThread needs, except for network and
+          threading specific features.  This way, tests can use ServerBase
+          without needing to set up networking and client/server threads
+        * Account Login is skipped and account is set to default account, which
+          makes testing easier.  This behavior is expected to be overwritten
+          by subClass, where we want real logins.
+        * Main loop is modified for testing and is expcted to be overwritten
+          by subClass
+    '''
+    def __init__(self):
         ServerIo.__init__(self)
-        self.socket = socket
-        self.address = address
-        self.id = id
-        self._running = True
-
         self.lobbyObj = lobby.Lobby()     # create/use single lobby instance
         self.gameObj = game.Game()        # create/use the single game instance
         self.acctObj = None
         self.charObj = None
-        self.identifier = "CT" + str(id) + str(address)
         self._area = 'server'
 
         self._debugServer = False          # Turn on/off debug logging
         self._startdate = datetime.now()
 
-        # This is a hook that allows tests to set some vars
-        self._test = False
-        if clientThreadInitCallBack:
-            self._testCallback = clientThreadInitCallBack
-            self._test = True
-
         if self._debugServer:
             logger.info(str(self) + " New ClientThread")
 
     def __str__(self):
-        ''' Connection/Thread ID Str - often used as a prefix for logging '''
-        return self.identifier
+        ''' Str - often used as a prefix for logging '''
+        return(__class__.__name__)
 
-    # main program
-    def serverMain(self):
-        ''' This is the main entry point into the app '''
-        logger.info(str(self) + " Client connection established")
+    def getId(self):
+        return(1)
+
+    def setDebug(self, debugBool=True):
+        self._debugServer = bool(debugBool)
+
+    def acctLogin(self):
+        ''' Login - return true if successful
+            * Auto Account Login
+            * intended to be overwritten in subClass
+        '''
+        self.acctObj.email = 'default@example.com'
+        self.password = 'default'
+        self._displayName = 'defaultUser'
+        return(True)
+
+    def mainLoop(self):
+        ''' Main loop of program
+            * intended to be overwritten in subClass
+        '''
+        self.lobbyObj.joinLobby(self, self._test)
+        if (self.acctObj):
+            self.acctObj.logout()
+        self.acctObj = None
+
+    def serverLoop(self):
+        ''' This is the main entry point into the app
+            * intended to be overwritten in subClass
+        '''
+        logger.info(str(self) + " serverLoop started")
         try:
             while True:                             # Server loop
                 self.welcome("Sog Server\n")
                 self.acctObj = account.Account(self)
-                enterLobby = False
-                if self._test:
-                    # This is a hook that allows tests to create the acctObj
-                    self._testCallback(self)
-                    enterLobby = True
-                else:
-                    if self.acctObj.login():
-                        enterLobby = True
-                if enterLobby:
-                    self.lobbyObj.joinLobby(self, self._test)
-                    if (self.acctObj):
-                        self.acctObj.logout()
-                    self.acctObj = None
+                if self.acctLogin():
+                    self.mainLoop()
                 else:
                     logger.warning(str(self) + ' Authentication failed')
                     self.acctObj = None
                     if not self.isRunning():
                         break                # exit loop to terminate
                     time.sleep(1)
-            self.terminateClientConnection()
         finally:
-            self.terminateClientConnection()
+            logger.info(str(self) + "serverLoop complete")
         return(None)
 
-    def isRunning(self):
-        if not self._running:
+        def setArea(self, area):
+            self._area = area
+
+        def getArea(self):
+            if self._area:
+                return(str(self._area))
+            return(None)
+
+        def isArea(self, area=''):
+            if self._area:
+                if self._area == area:
+                    return(True)
             return(False)
-        return(True)
-
-    def getSock(self):
-        return(self.socket)
-
-    def getId(self):
-        return(self.id)
-
-    def terminateClientConnection(self):
-        ''' terminate the connection and clean up loose ends '''
-        if self._running:
-            if self in common.network.connections:
-                logger.info(str(self) + " Client connection terminated")
-                common.network.connections.remove(self)
-                common.network.totalConnections -= 1
-            self._running = False
-            self.lobbyObj = None
-            self.gameObj = None
-            self.acctObj = None
-            self.charObj = None
-
-            try:
-                self.socket.sendall(str.encode(common.network.TERM_STR))
-                self.socket.shutdown(socket.SHUT_RDWR)
-                self.socket.close()
-            except OSError:
-                if self._debugServer:
-                    logger.debug("Server term - Couldn't close " +
-                                 "non-existent socket")
-        return(None)
-
-    def setArea(self, area):
-        self._area = area
-
-    def getArea(self):
-        if self._area:
-            return(str(self._area))
-        return(None)
-
-    def isArea(self, area=''):
-        if self._area:
-            if self._area == area:
-                return(True)
-        return(False)
 
     def getCmdPrompt(self):
         if self.isArea("game"):
@@ -155,6 +132,12 @@ class ClientThread(threading.Thread, ServerIo, AttributeHelper):
             promptStr = sp + self.getArea() + ep + ' '
         return(promptStr)
 
+    def getConnectionList(self):
+        ''' All connections to the game
+            * intended to be overwritten in subClass, which uses client/server
+        '''
+        return([])
+
     def broadcast(self, data, header=None):
         ''' output a message to all users '''
         sentCount = 0
@@ -166,7 +149,7 @@ class ClientThread(threading.Thread, ServerIo, AttributeHelper):
         if not header:
             header = (self.txtBanner('Broadcast message from ' +
                       self.acctObj.getEmail()) + '\n> ')
-        for client in common.network.connections:
+        for client in self.getConnectionList():
             if client.id != self.id:
                 client.spoolOut(header + data)
                 sentCount += 1
@@ -193,7 +176,7 @@ class ClientThread(threading.Thread, ServerIo, AttributeHelper):
             if not header:
                 header = (self.txtBanner('Private message from ' +
                           self.acctObj.getEmail()) + '\n> ')
-            for client in common.network.connections:
+            for client in self.getConnectionList():
                 if client.id == int(who):
                     client.spoolOut(header + data)
                     sentCount += 1
@@ -207,8 +190,104 @@ class ClientThread(threading.Thread, ServerIo, AttributeHelper):
 
         return(False)
 
-    def setDebug(self, debugBool=True):
-        self._debugServer = bool(debugBool)
+
+class ClientThread(threading.Thread, ServerBase):
+    ''' Main client thread of the server
+        * All non network, non-thread features should be part of the
+          ServerBase superClass'''
+    def __init__(self, socket, address, id):
+        threading.Thread.__init__(self, daemon=True, target=self.serverLoop)
+        ServerBase.__init__(self)
+        self.socket = socket
+        self.address = address
+        self.id = id
+        self._running = True
+        self.identifier = "CT" + str(id) + str(address)
+
+    def __str__(self):
+        ''' Connection/Thread ID Str - often used as a prefix for logging '''
+        return self.identifier
+
+    # main program
+    def serverLoop(self):
+        ''' This is the main entry point into the app '''
+        logger.info(str(self) + " Client connection established")
+        try:
+            while True:                             # Server loop
+                self.welcome("Sog Server\n")
+                self.acctObj = account.Account(self)
+                if self.acctLogin():
+                    self.mainLoop()
+                else:
+                    if not self.isRunning():
+                        break                # exit loop to terminate
+                    time.sleep(1)
+            self.terminateClientConnection()
+        finally:
+            self.terminateClientConnection()
+        return(None)
+
+    def acctLogin(self):
+        ''' Login - return true if successful '''
+        loggedIn = False
+        if self.acctObj.login():
+            loggedIn = True
+        else:
+            logger.warning(str(self) + ' Authentication failed')
+            self.acctObj = None
+
+        if loggedIn:
+            return(True)
+        return(False)
+
+    def mainLoop(self):
+        ''' Main loop of program
+            * Launch lobby loop
+            * Logout of account if lobby loop is exited '''
+        self.lobbyObj.joinLobby(self)
+        if (self.acctObj):
+            self.acctObj.logout()
+        self.acctObj = None
+
+    def isRunning(self):
+        if not self._running:
+            return(False)
+        return(True)
+
+    def getSock(self):
+        return(self.socket)
+
+    def getId(self):
+        return(self.id)
+
+    def getConnectionList(self):
+        return(common.network.connections)
+
+    def removeConnectionFromList(self):
+        if self in self.getConnectionList():
+            logger.info(str(self) + " Client connection terminated")
+            common.network.connections.remove(self)
+            common.network.totalConnections -= 1
+
+    def terminateClientConnection(self):
+        ''' terminate the connection and clean up loose ends '''
+        if self._running:
+            self.removeConnectionFromList()
+            self._running = False
+            self.lobbyObj = None
+            self.gameObj = None
+            self.acctObj = None
+            self.charObj = None
+
+            try:
+                self.socket.sendall(str.encode(common.network.TERM_STR))
+                self.socket.shutdown(socket.SHUT_RDWR)
+                self.socket.close()
+            except OSError:
+                if self._debugServer:
+                    logger.debug("Server term - Couldn't close " +
+                                 "non-existent socket")
+        return(None)
 
 
 class AsyncThread(threading.Thread):
