@@ -812,11 +812,23 @@ class Weapon(Equippable, Exhaustible):
     def getMaximumDamage(self):
         return(max(1, self._maximumDamage))
 
+    def setMinimumDamage(self, num=0):
+        self._minimumDamage = int(num)
+
     def setMaximumDamage(self, num=1):
         self._maximumDamage = int(num)
 
     def getToHitBonus(self):
         return(self._toHitBonus)
+
+    def setToHitBonus(self, num=0):
+        self._toHitBonus = int(num)
+
+    def setDamageType(self, skill):
+        if '_' not in skill:
+            skill = "_" + skill
+        if skill in self.validSkills:
+            self._damageType = skill
 
     def getDamageType(self):
         skill = self._damageType

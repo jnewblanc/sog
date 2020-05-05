@@ -762,7 +762,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
 
         return(False)
 
-    def getVulnerable(self):
+    def isVulnerable(self):
         return(self._vulnerable)
 
     def setVulnerable(self, val=True):

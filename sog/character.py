@@ -187,7 +187,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
         # set base status
         for onestat in self.statList:
-            setattr(self, onestat, '8')
+            setattr(self, onestat, 8)
 
         self._expToNextLevel = (2 ** 9)
         self._level = 1
@@ -1010,8 +1010,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def levelUp(self):
         '''Level up a character'''
-        self._level = self._level + 1
-        self._levelUpStats()
+        self._level += 1
+        self.levelUpStats()
         self.reCalculateStats()
         self._achievedSkillForLevel = False
 
@@ -1023,29 +1023,50 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         self.setMaxWeightForCharacter()
         return(None)
 
+    def getHitPoints(self):
+        return(self._hp)
+
+    def setHitPoints(self, num):
+        self._hp = int(num)
+
     def addHP(self, num=0):
         self._hp = min((self._hp + num), self.getMaxHP())
+
+    def subtractHP(self, num=0):
+        self._hp -= max(0, num)
 
     def setMaxHP(self, num=0):
         if num == 0:
             baseHealth = self.classDict[self.getClassKey()]['baseHealth']
-            num = baseHealth * self._level
+            num = baseHealth * self.getLevel()
         self._maxhp = num
 
     def getMaxHP(self):
         return(self._maxhp)
 
+    def getMana(self):
+        return(self._mana)
+
+    def setMana(self, num):
+        self._mana = int(num)
+
+    def addMana(self, num=0):
+        self._mana = min((self._mana + num), self.getMaxMana())
+
     def setMaxMana(self, num=0):
         if num == 0:
             baseMagic = self.classDict[self.getClassKey()]['baseMagic']
-            num = (baseMagic * self._level)
+            num = (baseMagic * self.getLevel())
         self._maxmana = num
 
     def getMaxMana(self):
         return(self._maxmana)
 
+    def subtractMana(self, num):
+        self._mana -= int(num)
+
     def setExpForLevel(self):
-        self._expToNextLevel = (2 ** (9 + self._level))
+        self._expToNextLevel = (2 ** (9 + self.getLevel()))
 
     def setNearDeathExperience(self):
         ''' set stats so that character can recover from a near death exp '''
@@ -1057,26 +1078,28 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         '''Level up a character's stats'''
         newpoints = 1
         # check to see if level is a doubleUp level
-        if self._level in self._doubleUpStatLevels:
+        if self.getLevel() in self._doubleUpStatLevels:
             # Grant extra stat point
             newpoints = newpoints + 1
-        if self._level % 5 == 0:
+        if self.getLevel() % 5 == 0:
             # Grant extra stat point every 5th level
             newpoints = newpoints + 1
-        elif self._level > 10:
-            if random.randint(0, 99) < (self._luck * 3):
+        elif self.getLevel() > 10:
+            if random.randint(0, 99) < (self.luck * 3):
                 # After level 10, its based on luck (roughly 30% chance)
                 # There's a chance of getting an extra point on levels not
                 # divisible by 5
                 newpoints = newpoints + 1
         if newpoints == 1:
-            if random.randint(0, 99) < (self._luck * 2):
+            if random.randint(0, 99) < (self.luck * 2):
                 # Based on luck, (roughly 20% chance) experience for next level
-                # may be lowered by 10%
+                # may be reduced by 10%
+                self.client.spoolOut("Hermes blesses you!  Your next " +
+                                     "level will arrive in haste.")
                 self._expToNextLevel = int(self._expToNextLevel * .90)
-        # increase max hitpoints/mana
-        self.randomlyIncrementStat(self, newpoints)
+        self.randomlyIncrementStat(newpoints)
         self._statsearnedlastlevel = newpoints
+        # increase max hitpoints/mana
         self.reCalculateStats()
         return(None)
 
@@ -1084,15 +1107,15 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         ''' decrease stats - used when someone dies '''
         # Lose the number of stats gained last level
         for numstat in range(1, self._statsearnedlastlevel + 1):
-            self.randomlyDecrementStat(self, 1)
+            self.randomlyDecrementStat(1)
         # Reduce stats an extra time if it's a double stat level.
-        if self._level in self._doubleUpStatLevels:
-            self.randomlyDecrementStat(self, 1)
+        if self.getLevel() in self._doubleUpStatLevels:
+            self.randomlyDecrementStat(1)
         else:
             # random chance of losing one additional stat
             randX = random.randint(1, 100)
             if randX > 50:
-                self.randomlyDecrementStat(self, 1)
+                self.randomlyDecrementStat(1)
         self.reCalculateStats()
         return(None)
 
@@ -1147,10 +1170,10 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         return(self._lastCommand)
 
     def setLastAttackCmd(self, str1):
-        self._lastAttackCommand = str1
+        self._lastAttackCmd = str1
 
     def getLastAttackCmd(self):
-        return(self._lastAttackCommand)
+        return(self._lastAttackCmd)
 
     def setLastAttack(self, cmd="attack"):
         self.setLastAttackCmd(cmd)
@@ -1174,35 +1197,23 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             return(True)
         return(False)
 
-    def setLastRegen(self):
-        self._lastRegenDate = datetime.now()
+    def setLastRegen(self, when='now'):
+        if when == 'never':
+            self._lastRegenDate = getNeverDate()
+        else:
+            self._lastRegenDate = datetime.now()
 
-    def setLastPoison(self):
-        self._lastPoisonDate = datetime.now()
+    def setLastPoison(self, when='now'):
+        if when == 'never':
+            self._lastPoisonDate = getNeverDate()
+        else:
+            self._lastPoisonDate = datetime.now()
 
-    def getVulnerable(self):
+    def isVulnerable(self):
         return(self._vulnerable)
 
     def setVulnerable(self, val=True):
         self._vulnerable = bool(val)
-
-    def getHitPoints(self):
-        return(self._hp)
-
-    def setHitPoints(self, num):
-        self._hp = int(num)
-
-    def getMana(self):
-        return(self._mana)
-
-    def setMana(self, num):
-        self._mana = int(num)
-
-    def subtractmana(self, num):
-        self._mana -= int(num)
-
-    def getMaxMana(self):
-        return(self._maxmana)
 
     def isDm(self):
         return(self._dm)
@@ -1220,6 +1231,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         return(False)
 
     def isMagicItem(self):   # True for some objects, but not for characters
+        return(False)
+
+    def isCarryable(self):   # True for some objects, but not for characters
         return(False)
 
     def isInvisible(self):
@@ -1282,8 +1296,8 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def setLevel(self, num):
         self._level = int(num)
 
-    def isCarryable(self):
-        return(False)
+    def subtractlevel(self, num=1):
+        self._level -= int(num)
 
     def isMagic(self):
         return(False)
@@ -1301,6 +1315,26 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def setCurrentlyAttacking(self, player):
         self._currentlyAttacking = player
 
+    def isAttackingWithFist(self):
+        if self.getEquippedWeapon().getName() == 'fist':
+            return(True)
+        return(False)
+
+    def getEquippedWeapon(self):
+        return(self._equippedWeapon)
+
+    def getEquippedArmor(self):
+        return(self._equippedArmor)
+
+    def getEquippedShield(self):
+        return(self._equippedShield)
+
+    def getEquippedRing(self):
+        return(self._equippedRing)
+
+    def getEquippedNecklace(self):
+        return(self._equippedNecklace)
+
     def getEquippedWeaponDamage(self):
         ''' Given the equipped weapon and attack type, return the damage '''
         damage = self.getFistDamage()
@@ -1313,8 +1347,12 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             return(0)
 
         weapon = self.getEquippedWeapon()
-        damage += random.randint(weapon.getMinimumDamage(),
-                                 weapon.getMaximumDamage())
+        minDamage = weapon.getMinimumDamage()
+        maxDamage = weapon.getMaximumDamage()
+        dLog('character.getEquippedWeaponDamage: weaponMin: ' +
+             str(minDamage) + ' - weaponMax: ' + str(maxDamage),
+             self._instanceDebug)
+        damage += random.randint(minDamage, maxDamage)
         return (damage)
 
     def getEquippedWeaponDamageType(self):
@@ -1356,9 +1394,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
                                " is worse for wear and in need of repair.\n")
 
     def getEquippedWeaponToHit(self):
-        ''' return tohit percentage of armor + shield '''
+        ''' return tohit percentage of weapon '''
         weapon = self.getEquippedWeapon()
-        if weapon.getName() != 'fist':
+        if weapon.getName() == 'fist':
             return(0)
         return(weapon.getToHitBonus())
 
@@ -1384,26 +1422,6 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         dodgePct += attackDict.get('dodge', 0)
         dLog(logPrefix + "totalDodge=" + str(dodgePct), self._instanceDebug)
         return(dodgePct)
-
-    def isAttackingWithFist(self):
-        if self.getEquippedWeapon().getName() == 'fist':
-            return(True)
-        return(False)
-
-    def getEquippedWeapon(self):
-        return(self._equippedWeapon)
-
-    def getEquippedArmor(self):
-        return(self._equippedArmor)
-
-    def getEquippedShield(self):
-        return(self._equippedShield)
-
-    def getEquippedRing(self):
-        return(self._equippedRing)
-
-    def getEquippedNecklace(self):
-        return(self._equippedNecklace)
 
     def getSkillPercentage(self, skill):
         if skill[0] != '_':
@@ -1628,9 +1646,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
 
     def takeDamage(self, damage=0, nokill=False):
         ''' Take damage and check for death '''
-        self.setHitPoints(self.getHitPoints() - damage)
-        if nokill:
-            self.setHitPoints(1)
+        self.subtractHP(damage)
+        if nokill and self.getHitPoints() <= 0:
+            self.setNearDeathExperience()
         condition = self.condition()
         dLog(self.getName() + " takes " + str(damage) + " damage",
              self._instanceDebug)
@@ -1647,12 +1665,12 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def processDeath(self):
         # lose one or two levels
         buf = 'You are Dead'
-        self.client.broadcast(self._displayName + ' has died\n')   # toDo: fix
-        logger.info(self._displayName + ' has died')
+        self.client.broadcast(self.describe() + ' has died\n')   # toDo: fix
+        logger.info(self.describe() + ' has died')
 
         # random chance of losing two levels
         randX = random.randint(1, 100)
-        chanceOfLosingTwoLevels = 50 - self._piety - (self._luck / 2)
+        chanceOfLosingTwoLevels = 50 - self.piety - (self.luck / 2)
         if self.getClassName().lower() in ['cleric', 'paladin']:
             # 10% reduction for clerics and paladins
             chanceOfLosingTwoLevels = chanceOfLosingTwoLevels - 10
@@ -1662,15 +1680,16 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             levelsToLose = 1
 
         for numlvl in range(1, levelsToLose + 1):
-            self._levelDownStats()
-            self._level = self._level - 1
+            self.levelDownStats()
+            if self.getLevel() > 1:
+                self.subtractlevel()
 
         self.setHitPoints(self.getMaxHP())
         self.setPoisoned(False)
         self.setPlagued(False)
 
         # return to starting room or guild
-        self._roomObj = self.client.gameObj.placePlayer(0)
+        self.client.gameObj.joinRoom(1, self)
 
         self.save()
         self._spoolOut(buf)
@@ -1798,7 +1817,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def attemptToHide(self):
         randX = random.randint(0, 99)
 
-        hidechance = self._level * 20 + self.dexterity
+        hidechance = self.getLevel() * 20 + self.dexterity
 
         if self.getClassName().lower() == 'rogue':
             hidechance *= 2  # double the chance of success for rogues
@@ -1877,7 +1896,9 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         ''' At certain intervals, poison and hp regeneration kick in
             * poison should be faster and/or stronger than regen '''
         conAdj = self.getConstitution() - 12
+        intAdj = self.getIntelligence() - 12
         regenHp = max(1, int(self.getMaxHP() / 10) + conAdj)
+        regenMana = max(1, int(self.getMaxMana() / 8) + intAdj)
         poisonHp = max(1, int(self.getLevel() - conAdj))
 
         if not self.isPlagued():       # no regen if plagued
@@ -1892,6 +1913,7 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
                  str(secsSinceDate(self._lastRegenDate)), False)
             if regenSecsRemaining <= 0:
                 self.addHP(regenHp)
+                self.addMana(regenMana)
                 self.setLastRegen()
 
         if self.isPoisoned():          # take damage if poisoned

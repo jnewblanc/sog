@@ -298,7 +298,7 @@ class Combat():
         return(False)
 
     def checkForDD(self, target, ddpercent=6):
-        if target.getVulnerable():
+        if target.isVulnerable():
             target.setVulnerable(False)
             return(True)
         if random.randint(1, 100) <= ddpercent:

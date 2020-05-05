@@ -577,7 +577,7 @@ class Spell():
         ''' Handle the pre-cast actions '''
         # deduct spell points from charObj
         if self._requiresmana:
-            self.charObj.subtractmana(self.mana)
+            self.charObj.subtractMana(self.mana)
 
     def _postCastTasks(self):
         # record the last attack command
