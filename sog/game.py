@@ -180,11 +180,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
         logPrefix = 'game.roomLoader (' + str(roomStr) + ')'
         roomObj = None
         roomType = 'room'
+        roomNum = 0
 
         roomStr = str(roomStr)
         if isIntStr(roomStr):
             roomNum = int(roomStr)
-        else:
+        elif '/' in roomStr:
             # if it's not a number, assume it's in the form: Room/35
             roomType, roomNum = roomStr.split('/')
 
@@ -443,6 +444,15 @@ class GameCmd(cmd.Cmd):
         self._lastinput = ''
         self._instanceDebug = False
 
+    def toggleInstanceDebug(self):
+        self._instanceDebug = not self._instanceDebug
+
+    def setInstanceDebug(self, val):
+        self._instanceDebug = bool(val)
+
+    def getInstanceDebug(self):
+        return(self._instanceDebug)
+
     def getCmdPrompt(self):
         sp = '<'
         ep = '>'
@@ -466,7 +476,7 @@ class GameCmd(cmd.Cmd):
         while not stop:
             if self.client.promptForCommand(self.getCmdPrompt()):  # send/recv
                 line = self.client.getInputStr()
-                self.runcmd(line)
+                stop = self.runcmd(line)
             else:
                 stop = True
         self.postloop()
@@ -609,9 +619,18 @@ class GameCmd(cmd.Cmd):
                 roomObj = self.gameObj.roomLoader(exitDict[direction])
                 if roomObj:
                     if roomObj.canBeJoined(charObj):
-                        self.gameObj.joinRoom(roomObj, charObj)
-                        currentRoom = charObj.getRoom()
-                        moved = True
+                        if self.gameObj.joinRoom(roomObj, charObj):
+                            currentRoom = charObj.getRoom()
+                            moved = True
+                        else:
+                            logger.error("joinRoom Failed\n")
+                    else:
+                        logger.error(roomObj.getId() + " can not be joined.")
+                else:
+                    logger.error("Could not create roomObj " +
+                                 exitDict[direction] + ".")
+            else:
+                self.selfMsg("You can't move in that direction!\n")
         else:
             # handle doors and Portals
             itemList = self.getObjFromCmd(currentRoom.getInventory(), line)
@@ -622,15 +641,24 @@ class GameCmd(cmd.Cmd):
 
             if not itemList[0].canBeEntered(charObj):
                 self.selfMsg("You can go there!\n")
-            return(False)
+                return(False)
+
+            dLog("GAME move through obj = " + itemList[0].describe(),
+                 self._instanceDebug)
 
             roomnum = itemList[0].getToWhere()
             roomObj = self.gameObj.roomLoader(roomnum)
             if roomObj:
                 if roomObj.canBeJoined(charObj):
-                    self.gameObj.joinRoom(roomnum, charObj)
-                    currentRoom = charObj.getRoom()
-                    moved = True
+                    if self.gameObj.joinRoom(roomnum, charObj):
+                        currentRoom = charObj.getRoom()
+                        moved = True
+                    else:
+                        logger.error("joinRoom Failed\n")
+                else:
+                    logger.error(roomnum + " can not be joined")
+            else:
+                logger.error("Could not create roomObj " + roomnum)
 
         if moved:
             dLog("GAME move obj = " + str(roomObj.describe()),
@@ -1940,6 +1968,8 @@ class GameCmd(cmd.Cmd):
                 obj = self.charObj.getRoom()
             elif line.lower() == "game":
                 obj = self.gameObj
+            elif line.lower() == "gamecmd":
+                obj = self
             elif line.lower() == "client":
                 obj = self.client
             else:

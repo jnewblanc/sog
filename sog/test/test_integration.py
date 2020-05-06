@@ -31,8 +31,10 @@ class TestIntegration(TestGameBase):
         # continues
         self.joinRoom(startRoom)
         assert self.getCharObj().getRoom().getId() == startRoom
+        logger.info("Command: s")
         assert not gameCmdObj.runcmd('s')
         assert self.getCharObj().getRoom().getId() == southRoom
+        logger.info("Command: go portal")
         assert not gameCmdObj.runcmd('go portal')
         assert self.getCharObj().getRoom().getId() == portalDestination
 
@@ -46,7 +48,7 @@ class TestIntegration(TestGameBase):
             obj = ObjectFactory(objType, objId)
             name = obj.getName()
             self.getCharObj().addToInventory(obj)
-            logger.info("Equipping " + name)
+            logger.info("Command: use " + name)
             assert not gameCmdObj.runcmd('use ' + name)
 
 
