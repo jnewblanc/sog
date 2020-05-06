@@ -6,9 +6,8 @@ import pprint
 import random
 import re
 
+from common.item import Item
 from common.attributes import AttributeHelper
-from common.editwizard import EditWizard
-from common.storage import Storage
 from common.general import logger
 from magic import getSpellChant, Spell
 
@@ -16,7 +15,7 @@ from magic import getSpellChant, Spell
 #    value=1000,charges=2
 
 
-class Object(Storage, EditWizard):
+class Object(Item):
     ''' object class '''
 
     _instanceDebug = False
@@ -102,14 +101,12 @@ class Object(Storage, EditWizard):
         if self._instanceDebug:
             logger.debug("Object destructor called for " + str(self.getId()))
 
-    def describe(self, count=1, article=''):
+    def describe(self, count=1, article='none'):
         if count > 1:
             return(count + " " + self._pluraldesc)
-        if article == '':
+        if article == 'none':
             article = self._article + ' '
-        elif article == 'none':
-            article == ''
-        else:
+        elif article != '':
             article += ' '
         return(article + self._singledesc)
 
@@ -124,6 +121,12 @@ class Object(Storage, EditWizard):
 
     def setInstanceDebug(self, val):
         self._instanceDebug = bool(val)
+
+    def isValid(self):
+        for att in ["_name", "_article", "_singledesc", "_longdesc"]:
+            if getattr(self, att) == '':
+                return(False)
+        return(True)
 
     def examine(self):
         return(self._longdesc)
@@ -159,9 +162,6 @@ class Object(Storage, EditWizard):
         AttributeHelper.fixAttributes(self)
         return(True)
 
-    def isEquippable(self):
-        return(False)
-
     def isInvisible(self):
         return(self._invisible)
 
@@ -173,9 +173,6 @@ class Object(Storage, EditWizard):
 
     def isPermanent(self):
         return(self._permanent)
-
-    def isUsable(self):
-        return(False)
 
     def isMagic(self):
         return(self._magic)
@@ -236,30 +233,6 @@ class Object(Storage, EditWizard):
         ''' adjust price based on object attributes '''
         return(price)
 
-    def isMagicItem(self):
-        ''' This is meant to be overridden if needed '''
-        return(False)
-
-    def isSmashable(self, obj):
-        ''' This is meant to be overridden if needed '''
-        return(False)
-
-    def isPickable(self, obj):
-        ''' This is meant to be overridden if needed '''
-        return(False)
-
-    def isOpenable(self, obj):
-        ''' This is meant to be overridden if needed '''
-        return(False)
-
-    def isClosable(self, obj):
-        ''' This is meant to be overridden if needed '''
-        return(False)
-
-    def canBeRepaired(self):
-        ''' This is meant to be overridden if needed '''
-        return(False)
-
     def getAc(self):
         ''' This is meant to be overridden if needed '''
         return(0)
@@ -267,10 +240,6 @@ class Object(Storage, EditWizard):
     def getDodgeBonus(self):
         ''' This is meant to be overridden if needed '''
         return(0)
-
-    def canBeEntered(self, charObj):
-        ''' This is meant to be overridden if needed '''
-        return(False)
 
 
 class Exhaustible(Object):

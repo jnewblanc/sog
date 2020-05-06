@@ -8,8 +8,8 @@ import random
 import re
 
 from common.attributes import AttributeHelper
-from common.editwizard import EditWizard
 from common.ioLib import TestIo
+from common.item import Item
 from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
 from common.general import getRandomItemFromList, truncateWithInt
@@ -20,7 +20,7 @@ from object import Weapon
 from magic import SpellList
 
 
-class Character(Storage, AttributeHelper, Inventory, EditWizard):
+class Character(Item):
     """ Character class """
 
     _instanceDebug = False
@@ -435,17 +435,18 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def isValid(self):
         ''' Returns true if the class instance was created properly '''
         # ToDo: determine if a better check is required
-        if hasattr(self, 'client'):
-            return(True)
-        if hasattr(self, '_name'):
-            return(True)
-        if hasattr(self, '_classname'):
-            return(True)
-        if hasattr(self, '_gender'):
-            return(True)
-        if hasattr(self, '_align'):
-            return(True)
-        return(False)
+        for att in ["_name", "_classname", "_gender", "_alignment"]:
+            if getattr(self, att) == '':
+                logger.error("Character.isValid - Attribute " + att +
+                             "is not defined!")
+                return(False)
+
+        if not hasattr(self, 'client'):
+            logger.error("Character.isValid - Character is missing " +
+                         "attribute: client")
+            return(False)
+
+        return(True)
 
     def getDesc(self, showAlignment=True):
         ''' Returns a string that describes the in-game appearance '''
@@ -1224,18 +1225,6 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def removeDm(self):
         self._dm = False
 
-    def isUsable(self):      # True for some objects, but not for characters
-        return(False)
-
-    def isEquippable(self):  # True for some objects, but not for characters
-        return(False)
-
-    def isMagicItem(self):   # True for some objects, but not for characters
-        return(False)
-
-    def isCarryable(self):   # True for some objects, but not for characters
-        return(False)
-
     def isInvisible(self):
         return(self._invisible)
 
@@ -1365,10 +1354,10 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
             weapon.decrementChargeCounter()
             if weapon.isBroken():
                 self._spoolOut("Snap!  Your " +
-                               weapon.describe(article='none') +
+                               weapon.describe(article='') +
                                " breaks\n")
             elif self.getClassName() == 'ranger' and weapon.getCharges() == 10:
-                self._spoolOut("Your " + weapon.describe(article='none') +
+                self._spoolOut("Your " + weapon.describe(article='') +
                                " is worse for wear and in need of repair.\n")
 
     def getEquippedProtection(self):
@@ -1387,10 +1376,10 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
         for obj in self.getEquippedProtection():
             obj.decrementChargeCounter()
             if obj.isBroken():
-                self._spoolOut("Your " + obj.describe(article='none') +
+                self._spoolOut("Your " + obj.describe(article='') +
                                " falls apart\n")
             elif self.getClassName() == 'ranger' and obj.getCharges() == 10:
-                self._spoolOut("Your " + obj.describe(article='none') +
+                self._spoolOut("Your " + obj.describe(article='') +
                                " is worse for wear and in need of repair.\n")
 
     def getEquippedWeaponToHit(self):
@@ -1494,14 +1483,11 @@ class Character(Storage, AttributeHelper, Inventory, EditWizard):
     def getName(self):
         return(self._name)
 
-    def describe(self):
+    def describe(self, count=1, article=''):
         return(self._name)
 
     def getType(self):
         return(self.__class__.__name__)
-
-    def isPermanent(self):
-        return(False)
 
     def setName(self, _name):
         self._name = str(_name)

@@ -203,6 +203,9 @@ class Storage():
             self.postLoad()
             if self.isValid():
                 return(True)
+            else:
+                logger.error(logPrefix + logStr + str(self.getId()) +
+                             " is not valid")
         else:
             logger.warn(logPrefix + " " + logStr +
                         'datafile doesn\'t exist at ' + self._datafile)

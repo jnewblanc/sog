@@ -18,7 +18,7 @@ from common.general import splitTargets, targetSearch
 from common.general import getRandomItemFromList
 from common.help import enterHelp
 from magic import Spell, SpellList, spellCanTargetSelf
-from room import RoomFactory
+from room import RoomFactory, isRoomFactoryType
 from object import ObjectFactory, isObjectFactoryType
 from creature import Creature
 
@@ -221,12 +221,10 @@ class _Game(cmd.Cmd, Combat, Ipc):
             * close spring loaded doors if room is empty
             # roomStr can be a room number or can be in the form Shop/35
         '''
-
-        if isinstance(roomThing, int):
+        roomObj = None
+        if isinstance(roomThing, int) or isinstance(roomThing, str):
             roomObj = self.roomLoader(roomThing)
-        elif isinstance(roomThing, str) and isIntStr(roomThing):
-            roomObj = self.roomLoader(int(roomThing))
-        elif roomThing.getType().lower() == 'room':
+        elif isRoomFactoryType(roomThing.getType()):
             roomObj = roomThing
 
         if not roomObj:
@@ -623,7 +621,8 @@ class GameCmd(cmd.Cmd):
                 return(False)
 
             if not itemList[0].canBeEntered(charObj):
-                return(False)
+                self.selfMsg("You can go there!\n")
+            return(False)
 
             roomnum = itemList[0].getToWhere()
             roomObj = self.gameObj.roomLoader(roomnum)
@@ -754,6 +753,10 @@ class GameCmd(cmd.Cmd):
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
         return(False)
 
+    def do_auction(self, line):
+        ''' alias - sell '''
+        return(self.do_sell(list))
+
     def do_backstab(self, line):
         ''' combat '''
 
@@ -873,7 +876,7 @@ class GameCmd(cmd.Cmd):
         if len(cmdargs) < 1 or not isIntStr(cmdargs[0]):
             self.selfMsg("usage: buy <item> [#]\n")
             return(False)
-        catList = roomObj.getcatalog()
+        catList = roomObj.getCatalog()
         if ((int(cmdargs[0]) < 0 or
              int(cmdargs[0]) > (len(catList)) - 1)):
             self.selfMsg("Bad item number.  Aborted\n")
@@ -954,7 +957,7 @@ class GameCmd(cmd.Cmd):
 
         # display # list by iterating, loading, & displaying objs
         itemBuf = ''
-        for num, oneitem in enumerate(roomObj.getcatalog()):
+        for num, oneitem in enumerate(roomObj.getCatalog()):
             oType, oNum = oneitem.split('/')
             itemObj = ObjectFactory(oType, oNum)
             itemObj.load()
@@ -1747,10 +1750,10 @@ class GameCmd(cmd.Cmd):
         roomObj = charObj.getRoom()
 
         if not roomObj.getType() == 'Shop':
-            self.selfMsg("You can't do that here.  Find a fence\n")
+            self.selfMsg("You can't do that here.  Find a buyer\n")
             return(False)
         if not roomObj.isPawnShop():
-            self.selfMsg("You can't do that here.  Find a fence.\n")
+            self.selfMsg("You can't do that here.  Find a buyer.\n")
             return(False)
 
         itemList = self.getObjFromCmd(charObj.getInventory(), line)

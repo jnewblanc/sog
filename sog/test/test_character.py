@@ -314,7 +314,7 @@ class TestCharacter(TestGameBase):
         postDeathStatTotal = self.getStatTotals(charObj,
                                                 name=('PostDeathLevel ' +
                                                       str(charObj.getLevel())))
-        assert postDeathStatTotal >= origStatTotal
+        assert postDeathStatTotal >= origStatTotal - 3
 
 
 if __name__ == '__main__':

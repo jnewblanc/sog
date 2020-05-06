@@ -20,8 +20,8 @@ from common.general import isIntStr, logger
 # from object import Armor, Weapon, Shield, Container, Key
 # from object import Card, Scroll, Potion, Wand, Teleport, Ring, Necklace
 # from object import Coins, Treasure
-from object import isObjectFactoryType, ObjectFactory
-from room import RoomFactory
+from object import isObjectFactoryType, ObjectFactory, ObjFactoryTypes
+from room import isRoomFactoryType, RoomFactory, RoomFactoryTypes
 
 
 class Editor(LocalIo, AttributeHelper):
@@ -34,6 +34,8 @@ class Editor(LocalIo, AttributeHelper):
         self._customCmdDict = {0: [], 1: [], 2: [], 3: [], 4: [],
                                5: [], 6: [], 7: [], 8: [], 9: []}
 
+        self._cmdHistory = []
+
     def processCommand(self, inputStr):
         ''' Process the editor commands '''
 
@@ -44,13 +46,14 @@ class Editor(LocalIo, AttributeHelper):
             self.stop()
             return(False)
         if cmd == "help":
-            print("room [num] - edit room")
-            print("shop [num] - edit shop")
-            print("<object> [num] - edit <object>")
+            for obj in RoomFactoryTypes + ObjFactoryTypes:
+                print(obj + " [num] - edit " + obj)
             # print("account - edit account")
             print("character - edit character")
             print("creature - edit creature")
+            print('------------------------')
             print("custom - set up custom functions to assist in editing")
+            print("history - view the last 20 commands")
             print("quit - quit editor")
         elif cmd == "account":
             print("Not implemented")
@@ -60,6 +63,8 @@ class Editor(LocalIo, AttributeHelper):
                 self.showList(targetStr, startNum, endNum)
         elif cmd == 'custom':
             self.editCustomFunctions(cmdargs)
+        elif cmd == 'history':
+            print("Command History:\n  " + "\n  ".join(self._cmdHistory))
         else:
             if not self.initAndEdit(cmdargs):
                 print("Command failed")
@@ -102,6 +107,9 @@ class Editor(LocalIo, AttributeHelper):
             endNum = lastUnused
 
         return(targetStr, startNum, endNum)
+
+    def printError(self, msg):
+        print(colorama.Fore.RED + msg + colorama.Fore.RESET)
 
     def initAndEdit(self, cmdargs):
         ''' load the object and kick off the editor '''
@@ -164,7 +172,7 @@ class Editor(LocalIo, AttributeHelper):
 
     def getItemObj(self, itemStr, id1, id2=''):
         ''' given return an existing object, or None if it doesn't exist '''
-        if itemStr == 'room' or itemStr == 'shop':
+        if isRoomFactoryType(itemStr.lower()):
             itemObj = RoomFactory(itemStr, id1)
         elif itemStr.lower() == 'character':
             itemObj = Character(None, id2)
@@ -249,7 +257,7 @@ class Editor(LocalIo, AttributeHelper):
         inList = eval(inStr)
 
         if not isinstance(inList, list):
-            print("Error: custom data is not a list")
+            self.printError("Error: custom data is not a list")
             return([])
 
         return(inList)
@@ -262,7 +270,7 @@ class Editor(LocalIo, AttributeHelper):
         dataList = self.importCustomData(data)
 
         if len(dataList) < 1:
-            print("Error: custom data list is empty")
+            self.printError("Error: custom data list is empty")
             return(False)
 
         try:
@@ -270,7 +278,7 @@ class Editor(LocalIo, AttributeHelper):
             for onekey, oneval in dataList:
                 pass
         except ValueError:
-            print("Error: custom data tuple is not valid")
+            self.printError("Error: custom data tuple is not valid")
             return(False)
 
         return(True)
@@ -289,7 +297,7 @@ class Editor(LocalIo, AttributeHelper):
             prompt += '  * To remove a value, enter \'r\' <value>\n'
             prompt += '  * To clear all values, enter \'clear\'\n'
             prompt += '  * Press [enter] to leave unchanged\n'
-            prompt += '  * Enter \'done\' to stop editing this list\n'
+            prompt += '  * Enter \'q\' to stop editing this list\n'
             prompt += "List command for " + name + ": "
             cmdargs = input(prompt).split(' ', 1)
             if cmdargs[0] == '':
@@ -308,6 +316,11 @@ class Editor(LocalIo, AttributeHelper):
                 if len(attObj) > 0 and isinstance(attObj[0], int):
                     if isIntStr(rVal):
                         rVal = int(rVal)  # handle lists of ints
+                if name == '_permanentList':
+                    if '/' not in rVal:
+                        self.printError("PermanentList must contain a slash." +
+                                        "  Aborting.")
+                        continue
                 attObj.append(rVal)
                 setattr(obj, name, attObj)
                 changed = True
@@ -320,9 +333,10 @@ class Editor(LocalIo, AttributeHelper):
                 if rVal in attObj:
                     attObj.remove(rVal)
                     setattr(obj, name, attObj)
-                changed = True
+                    changed = True
             else:
-                print("List command unsupported")
+                self.printError("List command unsupported")
+            value = getattr(obj, name)
         return(changed)
 
     def promptForNewValue(self, obj, attName, attType, attValue):
@@ -355,11 +369,21 @@ class Editor(LocalIo, AttributeHelper):
             changed = True
         elif (type) == "int":
             newval = self.promptForNewValue(obj, name, type, value)
-            if re.match('^[0-9]+$', str(newval)):
+            if isIntStr(str(newval)):
                 setattr(obj, name, int(newval))
                 changed = True
+            elif (isRoomFactoryType(obj.getType())):
+                setattr(obj, name, newval)
+                changed = True
+                # self.printError("WARN: Non numeric Room IDs are only " +
+                #                 "accessible by doors/portals.  " +
+                #                 "Resetting to 0.")
+                # if getattr(obj, name) != 0:
+                #     setattr(obj, name, 0)
+                #     changed = True
             else:
-                print("Value" + newval + "is not an int.  Skipping...")
+                self.printError("Value" + newval +
+                                "is not an int.  Skipping...")
         elif (type) == "str":
             newval = self.promptForNewValue(obj, name, type, value)
             setattr(obj, name, newval)
@@ -367,8 +391,7 @@ class Editor(LocalIo, AttributeHelper):
         elif (type) == "list":
             changed = self.changeListValue(obj, name, type, value)
         else:
-            print("Editing of", type,
-                  "types is not supported yet.")
+            self.printError("Editing of", type, "types is not supported yet.")
         return(changed)
 
     def setDefaults(self, obj, attName):                        # C901
@@ -406,6 +429,7 @@ class Editor(LocalIo, AttributeHelper):
 
     def wizard(self, objName, obj):
         ''' Prompt for field input '''
+        changedSinceLastSave = False
         wizFields = obj.getWizFields()
         if len(wizFields) > 0:
             print(colorama.Fore.CYAN + '===== ' + objName.capitalize() +
@@ -422,9 +446,9 @@ class Editor(LocalIo, AttributeHelper):
                     attValue = getattr(obj, attName)
                     attType = self.getAttributeType(attValue)
                     if self.changeValue(obj, attName, attType, attValue):
-                        pass
+                        changedSinceLastSave = True
                     self.setDefaults(obj, attName)
-        return(True)
+        return(changedSinceLastSave)
 
     def customSort(self, s):
         ''' returns the key for sorting '''
@@ -493,6 +517,10 @@ class Editor(LocalIo, AttributeHelper):
             if ((inStr == 'q' or inStr == 'sq' or
                  inStr == 'wq' or inStr == '')):
                 # quit
+                objDescription = objName + " " + str(obj.getId())
+                objDesc2 = obj.describe(article='')
+                if objDesc2.lower() != objDescription.lower():
+                    objDescription += ' (' + objDesc2 + ')'
                 if changedSinceLastSave:
                     # warn if user is quitting with unsaved changes
                     verifyStr = input("You have made changes since your " +
@@ -500,10 +528,12 @@ class Editor(LocalIo, AttributeHelper):
                                       "you want to abandon these changes" +
                                       " and quit [y/N]: ")
                     if verifyStr == "y":
-                        print("Changes abandoned")
-                        logger.info(objName + " changes abandoned")
+                        print("Changes to " + objDescription + " abandoned")
+                        logger.info(objName + " changes to " + objDescription +
+                                    " abandoned")
                         break
                 else:
+                    print("Done editing " + objDescription)
                     break
             if inStr == "wizard" or inStr == "wiz":
                 self.wizard(objName, obj)
@@ -522,7 +552,8 @@ class Editor(LocalIo, AttributeHelper):
                     attName = varDict[inNum]['name']
                     attType = varDict[inNum]['type']
                     attValue = varDict[inNum]['value']
-                    self.changeValue(obj, attName, attType, attValue)
+                    if self.changeValue(obj, attName, attType, attValue):
+                        changedSinceLastSave = True
                 except KeyError:
                     print("Invalid number")
             elif re.match('^_[^ ]+$', inStr):    # named entry
@@ -533,7 +564,8 @@ class Editor(LocalIo, AttributeHelper):
                     return(False)
                 attName = inStr
                 attType = self.getAttributeType(attValue)
-                self.changeValue(obj, attName, attType, attValue)
+                if self.changeValue(obj, attName, attType, attValue):
+                    changedSinceLastSave = True
             elif re.match('^custom apply', inStr):
                 if len(cmdargs) == 3 and isIntStr(cmdargs[2]):
                     num = cmdargs[2]
@@ -619,6 +651,9 @@ class Editor(LocalIo, AttributeHelper):
             prompt = "(Editor)"
             inputStr = input(prompt)
             self.processCommand(inputStr)
+            self._cmdHistory.append(inputStr)
+            if len(self._cmdHistory) > 20:
+                self._cmdHistory.pop(0)
 
         colorama.deinit()
 

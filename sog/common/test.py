@@ -24,6 +24,9 @@ class TestGameBase(unittest.TestCase):
     _testCharAlignment = 'neutral'
 
     _testRoomNum = 320
+    _testRoomNum2 = 319
+    _testRoomShop = 318
+    _testRoomGuild = 317
 
     def getClientObj(self):
         return(self._client)

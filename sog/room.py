@@ -9,15 +9,16 @@ import textwrap
 
 from common.storage import Storage
 from common.attributes import AttributeHelper
-from common.editwizard import EditWizard
-from common.general import getNeverDate, differentDay, secsSinceDate
+from common.general import getNeverDate, differentDay, secsSinceDate, dateStr
 from common.general import logger, dLog
 from common.inventory import Inventory
+from common.item import Item
 from common.paths import DATADIR
-from object import ObjectFactory, Door
+from object import ObjectFactory, Door, isObjectFactoryType
+from creature import Creature
 
 
-class Room(Storage, AttributeHelper, Inventory, EditWizard):
+class Room(Item):
 
     _instanceDebug = False
 
@@ -41,14 +42,14 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
     # string attributes
     strAttributes = ['_shortDesc', '_desc']
     # list attributes
-    listAttributes = ['_permanentCreatureList', '_permanentObjectList',
-                      '_inventory', '_characterList']
+    listAttributes = ['_permanentList', '_inventory', '_characterList']
 
     # obsolete attributes (to be removed)
     obsoleteAttributes = ['notifyDM', 'safe', 'antiMagic', 'dark', 'out',
                           'priceBonus', 'encounterTime', 'encounterList',
                           '_objectlist', '_creatureList', 'gameObj',
-                          '_encounterTime']
+                          '_encounterTime', '_permanentCreatureList',
+                          '_permanentObjectList']
 
     attributesThatShouldntBeSaved = ["_creatureList", '_instanceDebug',
                                      '_characterList', '_objectList',
@@ -84,8 +85,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         self._dark = False        # players can't see here
         self._encounterRate = 100  # average seconds between encounters
         self._encounterList = []  # list of creature numbers for encounters
-        self._permanentCreatureList = []  # perm creature instances
-        self._permanentObjectList = []    # perm object instances
+        self._permanentList = []  # perm object instances
         self._timeOfLastEncounter = getNeverDate()
         self._timeOfLastAttack = getNeverDate()
         self._instanceDebug = Room._instanceDebug
@@ -131,16 +131,13 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
     def getInfo(self):
         buf = ''
         ROW_FORMAT = "{0:14}: {1:<30}\n"
-        buf += (ROW_FORMAT.format("RoomNum", self.getRoomNum()) +
+        roomNumName = self.getType() + "Num"
+        buf += (ROW_FORMAT.format(roomNumName, self.getRoomNum()) +
+                ROW_FORMAT.format("type", self.getType()) +
                 ROW_FORMAT.format("desc", self._desc) +
-                ROW_FORMAT.format("shortDesc", self._shortDesc) +
-                ROW_FORMAT.format("encounterRate", self._encounterRate) +
-                ROW_FORMAT.format("notifyDM", self._notifyDM) +
-                ROW_FORMAT.format("safe", self._safe) +
-                ROW_FORMAT.format("antiMagic", self._antiMagic) +
-                ROW_FORMAT.format("dark", self._dark) +
-                ROW_FORMAT.format("priceBonus", self._priceBonus) +
-                ROW_FORMAT.format("n", self.n) +
+                ROW_FORMAT.format("shortDesc", self._shortDesc))
+
+        buf += (ROW_FORMAT.format("n", self.n) +
                 ROW_FORMAT.format("s", self.s) +
                 ROW_FORMAT.format("e", self.e) +
                 ROW_FORMAT.format("w", self.w) +
@@ -148,16 +145,27 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
                 ROW_FORMAT.format("d", self.d) +
                 ROW_FORMAT.format("o", self.o))
 
+        buf += (ROW_FORMAT.format("encounterRate", self._encounterRate) +
+                ROW_FORMAT.format("notifyDM", self._notifyDM) +
+                ROW_FORMAT.format("safe", self._safe) +
+                ROW_FORMAT.format("antiMagic", self._antiMagic) +
+                ROW_FORMAT.format("dark", self._dark))
+
+        if self.getType() == "Shop":
+            buf += self.shopGetInfo()
+
+        if self.getType() == "Guild":
+            buf += self.guildGetInfo()
+
         buf += ("Encounter List:         " +
-                " ".join(self.getEncounterList()) + '\n')
-        buf += ("Perm Creature List:     " +
-                " ".join(self.getPermanentCreatureList()) + '\n')
-        buf += ("Perm Object List:       " +
-                " ".join(self.getPermanentObjectList()) + '\n')
+                ", ".join(self.getEncounterList()) + '\n')
+        buf += ("Permanent List:       " +
+                ", ".join(self.getPermanentList()) + '\n')
         buf += ("Current Inventory:  " +
-                " ".join(self.getInventory()) + '\n')
+                ", ".join([x.describe() for x in self.getInventory()]) + '\n')
         buf += ("Current Character List: " +
-                " ".join(self.getCharacterList()) + '\n')
+                ", ".join([x.describe() for x in self.getCharacterList()]) +
+                '\n')
         return(buf)
 
     def initTmpAttributes(self):
@@ -183,6 +191,10 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             pass
         try:
             self._encounterRate = self._encounterTime
+        except (AttributeError, TypeError):
+            pass
+        try:
+            self._permanentList = self._permanentObjectList
         except (AttributeError, TypeError):
             pass
 
@@ -314,9 +326,9 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         # todo: show other players who are attacking each other
         return(buf)
 
-    def describe(self):
+    def describe(self, count=1, article=''):
         ''' show the room number '''
-        return('Room ' + str(self._roomNum))
+        return(self.getType() + ' ' + str(self._roomNum))
 
     def display(self, charObj):
         ''' show all player visible info about current room '''
@@ -429,31 +441,18 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
         ''' remove object to list of objects in room '''
         self.removeFromInventory(itemObj)
 
-    def getPermanentCreatureList(self):
-        ''' return list of permanentCreature IDs for room '''
-        return self._permanentCreatureList
+    def getPermanentList(self):
+        ''' return list of permanent in room '''
+        return self._permanentList
 
-    def addPermanentCreature(self, creatureId):
-        ''' add creature to list of permanentCreature Ids for room '''
-        self._permanentCreatureList.append(creatureId)
+    def addPermanent(self, itemObj):
+        ''' add object to list of permanents in room '''
+        self._permanentList.append(itemObj)
 
-    def removePermanentCreature(self, creatureId):
-        ''' remove creature from list of permanentCreature IDs for room '''
-        if creatureId in self._permanentCreatureList:
-            self._permanentCreatureList.remove(creatureId)
-
-    def getPermanentObjectList(self):
-        ''' return list of permanentObjects in room '''
-        return self._permanentObjectList
-
-    def addPermanentObject(self, itemObj):
-        ''' add object to list of permanentObjects in room '''
-        self._permanentObjectList.append(itemObj)
-
-    def removePermanentObject(self, itemObj):
-        ''' remove object from list of permanentObjects in room '''
-        if itemObj in self._permanentObjectList:
-            self._permanentObjectList.remove(itemObj)
+    def removePermanent(self, itemObj):
+        ''' remove object from list of permanents in room '''
+        if itemObj in self._permanentList:
+            self._permanentList.remove(itemObj)
 
     def getEncounterList(self):
         ''' return list of creature numbers for room '''
@@ -474,9 +473,8 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
     def loadPermanents(self):
         ''' Load/instanciate permanents, and add them to the tmp lists '''
-        pcl = self.getPermanentCreatureList()
-        pol = self.getPermanentObjectList()
-        for perm in self.getPermanents(pcl) + self.getPermanents(pol):
+        permList = self.getPermanentList()
+        for perm in self.getPermanents(permList):
             if perm not in self.getInventory():
                 self.addToInventory(perm)
         return(True)
@@ -489,18 +487,32 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             if oneObj:
                 objList.append(oneObj)
             else:
-                logger.debug("Could not add permanent " + permId + ' to list')
+                logger.error("Could not add permanent " + permId + ' to list')
         return(objList)
 
     def getPermanent(self, permId):
         ''' Returns an object, given the objectID '''
-        oneObj = None
+        itemObj = None
         (objType, objId) = permId.split('/')
-        oneObj = ObjectFactory(objType, objId)
 
-        if oneObj:
-            if oneObj.load():
-                return(oneObj)
+        if objType.lower() == 'creature':
+            itemObj = Creature(objId)
+        elif isObjectFactoryType(objType.lower()):
+            itemObj = ObjectFactory(objType, objId)
+        else:
+            logger.error("Can not determine object type.")
+            return(None)
+
+        if itemObj:
+            if itemObj.load():
+                return(itemObj)
+            else:
+                logger.error("Could not load object " + permId +
+                             " with type " + itemObj.getType())
+        else:
+            logger.error("Could not instanciate object " + permId +
+                         " with type=" + objType + "and id=" + str(objId))
+
         return(None)
 
     def savePermanents(self):
@@ -510,7 +522,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
                 obj.save()
         return(True)
 
-    def reloadPermanentObject(self, objId):
+    def reloadPermanent(self, objId):
         ''' reload a permanent from disk, replacing the original
             * if a door changes state, we'll need to reload it '''
         for oneObj in self.getInventory():
@@ -573,7 +585,7 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
             * blocking is an attacking creature with blocking attribute set '''
         creatureList = []
         for creatureObj in self.getInventoryByType('Creature'):
-            if creatureObj.getAttacking() == charObj:  # if attacking player
+            if creatureObj.getCurrentlyAttacking() == charObj:
                 if creatureObj.blocksFromLeaving():
                     if random.randint(0, 1):          # 50% chance per creature
                         creatureList.append(creatureObj)
@@ -601,6 +613,12 @@ class Room(Storage, AttributeHelper, Inventory, EditWizard):
 
 
 class Shop(Room):
+
+    wizardAttributes = Room.wizardAttributes + ["_pawnshop", "_bank",
+                                                "_repair", "_priceBonus"]
+
+    S_ROW_FORMAT = "{0:14}: {1:<30}\n"
+
     def __init__(self, roomNum=1):
         super().__init__(roomNum)
         self._pawnshop = False    # can sell items here
@@ -609,6 +627,18 @@ class Shop(Room):
         self._priceBonus = 100    # percent to raise/lower prices
         self._catalog = []        # items that are sold here, if any
 
+        # Set some defaults
+        self._safe = True         # Shops are safe, by default.  Can be changed
+        self._encounterRate = 20  # Super slow encounter rate by default
+
+        # Canned responses can be overwritten, depending on flavor of shopkeep
+        self._successfulTransactionTxt = "Thank you.  Please come again"
+        self._abortedTransactionTxt = "Maybe next time"
+        self._cantAffordTxt = "You have insufficient funds for that"
+        self._cantCarryTxt = ("You would not be able to carry this " +
+                              "additional item")
+
+        # auto generated attributes
         self._lastTransactionDate = getNeverDate()
         self._totalTransactionCount = {}
         self._dailyTransactionCount = {}
@@ -622,20 +652,13 @@ class Shop(Room):
         self._dailyCoinLedger = {'deposit': 0, 'withdraw': 0,
                                  'purchase': 0, 'sale': 0, 'repair': 0}
 
-        # Responses can be overwritten, depending on the flavor of shopkeep
-        self._successfulTransactionTxt = "Thank you.  Please come again"
-        self._abortedTransactionTxt = "Maybe next time"
-        self._cantAffordTxt = "You have insufficient funds for that"
-        self._cantCarryTxt = ("You would not be able to carry this " +
-                              "additional item")
-
     def isVendor(self):
-        if len(self.getcatalog()) > 0:
+        if len(self.getCatalog()) > 0:
             return(True)
         return(False)
 
     def isRepairShop(self):
-        return(self._repairhere)
+        return(self._repair)
 
     def isPawnShop(self):
         return(self._pawnshop)
@@ -643,7 +666,7 @@ class Shop(Room):
     def isBank(self):
         return(self._bank)
 
-    def getcatalog(self):
+    def getCatalog(self):
         return(self._catalog)
 
     def getPriceBonus(self):
@@ -664,6 +687,57 @@ class Shop(Room):
     def getTransactions(self):
         return(self._dailyTransactionCount, self._totalTransactionCount,
                self._dailyCoinLedger, self._totalCoinLedger)
+
+    def shopGetInfo(self):
+        buf = ''
+        shopTypeList = []
+        if len(self.getCatalog()):
+            shopTypeList.append('Shop')
+        if self.isPawnShop():
+            shopTypeList.append('PawnShop')
+        if self.isRepairShop():
+            shopTypeList.append('RepairShop')
+        if self.isBank():
+            shopTypeList.append('Bank')
+
+        buf += (self.S_ROW_FORMAT.format("ShopType",
+                                         ', '.join(shopTypeList)) +
+                self.S_ROW_FORMAT.format("priceBonus",
+                                         str(self.getPriceBonus())) +
+                self.S_ROW_FORMAT.format("LastTrans",
+                                         dateStr(self._lastTransactionDate)) +
+                self.S_ROW_FORMAT.format("TotalTrans",
+                                         str(self._totalTransactionCount)) +
+                self.S_ROW_FORMAT.format("DailyTrans",
+                                         str(self._dailyTransactionCount)))
+
+        buf += self.displayLedger()
+        buf += self.displayTransactions()
+        return(buf)
+
+    def displayTransactions(self):
+        buf = ''
+
+        if len(self.getCatalog()):
+            buf += "Catalog:\n"
+            for itemStr in self._catalog:
+                buf += "  " + self.S_ROW_FORMAT.format(
+                    itemStr, " sold today: " +
+                    str(self._dailyTransactionCount.get(itemStr, 0)) +
+                    " - total sold: " +
+                    str(self._totalTransactionCount.get(itemStr, 0)))
+        return(buf)
+
+    def displayLedger(self):
+        buf = ''
+        if not self.isBank():
+            return('')
+        buf += 'Bank Ledger:\n'
+        for onekey in self._totalCoinLedger.keys():
+            buf += "  " + self.S_ROW_FORMAT.format(
+                onekey, "today: " + str(self._dailyCoinLedger[onekey]) +
+                " - total: " + str(self._totalCoinLedger[onekey]))
+        return(buf)
 
     def getTaxRate(self):
         taxrate = max(0, (100 - self.getPriceBonus()))
@@ -718,6 +792,88 @@ class Shop(Room):
     # End of Shop class
 
 
+class Guild(Shop):
+    ''' Room where players of the proper class can level up by training '''
+    wizardAttributes = Room.wizardAttributes + ["_order", '_possessiveOrder']
+
+    def __init__(self, roomNum=1):
+        super().__init__(roomNum)
+        self._order = 'fighter'      # What class can train here - must match
+        self._guildDues = 100
+
+        # These are auto-generated
+        self._lastTrainDate = getNeverDate()
+        self._lastTrainees = []
+        self._masterLevel = 1     # Highest level players in this guild
+        self._masters = []        # Leaderboard of players at highest level
+
+    def guildGetInfo(self):
+        ROW_FORMAT = "{0:14}: {1:<30}\n"
+        buf = ''
+        buf += (ROW_FORMAT.format("Order", self._order))
+        return(buf)
+
+    def isTrainingGround(self, charObj):
+        if charObj.getClassName() == self.order:
+            return(True)
+        return(False)
+
+    def calculateMasterCoinBonus(self, level):
+        return(int(1000 * (level ** 2)))
+
+    def recordTrainStats(self, charObj):
+        charLevel = charObj.getLevel()
+        self._lastTrainDate = datetime.now()
+        self._lastTrainees.append(charObj.getId())
+        if len(self._lastTrainees) > 5:
+            self._lastTrainees.pop(0)
+        if charLevel == self._masterLevel:
+            self._masters.append(charObj.getId())
+        if charLevel > self._masterLevel:
+            self._masterLevel = charLevel
+            self._masters = [charObj.getId()]
+            coinBonus = self.calculateMasterCoinBonus(charLevel)
+            charObj.addCoins(coinBonus)
+            charObj.client.spoolOut(
+                "As the first " + self._order + " to reach level " +
+                charLevel + ", the guild honors your new rank with a bonus " +
+                "of " + coinBonus + " shillings and hangs a plaque with your" +
+                "name on it on the wall.\n")
+
+    def getLastTrainees(self):
+        return(self._lastTrainees)
+
+    def getLastTrainDate(self):
+        return(self._lastTrainees)
+
+    def getMasterLevel(self):
+        return(self._masterLevel)
+
+    def getMasters(self):
+        return(self._masters)
+
+    def readPlaque(self):
+        msg = ("Our guild honors the following level " +
+               str(self.getMasterLevel) + " masters:\n")
+        for name in self.getMasters()[:10]:  # Show the first 10 names
+            msg += "  " + name + "\n"
+        msg += ("We also honor the following recent advancements:\n")
+        for name in self.getLastTrainees():
+            msg += "  " + name + "\n"
+
+
+RoomFactoryTypes = ['room', 'shop', 'guild']
+
+
+def isRoomFactoryType(item):
+    ''' Return True if item is a valid object FacotryType '''
+    if isinstance(item, str):
+        name = item.lower()
+    else:
+        name = item.getType().lower()
+    return(name in RoomFactoryTypes)
+
+
 def RoomFactory(objType="room", id=0):
     ''' Factory method to return the correct object, depending on the type '''
     obj = None
@@ -726,6 +882,8 @@ def RoomFactory(objType="room", id=0):
         obj = Room(id)
     elif objType.lower() == "shop":
         obj = Shop(id)
+    elif objType.lower() == "guild":
+        obj = Guild(id)
 
     if not obj.getId():
         logger.error("RoomFactory: Could not obtain id for newly" +

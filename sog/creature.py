@@ -6,13 +6,11 @@ import pprint
 import random
 import re
 
-from common.storage import Storage
 from common.attributes import AttributeHelper
-from common.editwizard import EditWizard
 from common.general import getNeverDate, getRandomItemFromList, secsSinceDate
 from common.general import dLog
 # from common.general import logger
-from common.inventory import Inventory
+from common.item import Item
 from object import ObjectFactory
 
 
@@ -32,7 +30,7 @@ from object import ObjectFactory
 '''
 
 
-class Creature(Storage, AttributeHelper, Inventory, EditWizard):
+class Creature(Item):
 
     _instanceDebug = False
 
@@ -314,12 +312,20 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def setInstanceDebug(self, val):
         self._instanceDebug = bool(val)
 
-    def describe(self, count=1, article=''):
+    def describe(self, count=1, article='none'):
         if count > 1:
             return(count + " " + self._pluraldesc)
-        if article == '':
+        if article == 'none':
             article = self._article
-        return(article + " " + self._singledesc)
+        elif article != '':
+            article += ' '
+        return(article + self._singledesc)
+
+    def isValid(self):
+        for att in ["_name", "_article", "_singledesc", "_longdesc", "_level"]:
+            if getattr(self, att) == '':
+                return(False)
+        return(True)
 
     def examine(self):
         return(self._longdesc)
@@ -445,20 +451,15 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
     def isCarryable(self):  # set for objects, not usually useful for Creatures
         return(self._carry)
 
-    def isUsable(self):      # True for some objects, but not for Creatures
-        return(False)
-
-    def isEquippable(self):  # True for some objects, but not for Creatures
-        return(False)
-
-    def isMagicItem(self):   # True for some objects, but not for Creatures
-        return(False)
-
     def getWeight(self):    # set for objects, not usually useful for Creatures
         return(self._weight)
 
     def getValue(self):     # set for objects, not usually useful for Creatures
         return(self._value)
+
+    def canBeEntered(self, charObj):  # set for objects, not for Creatures
+        ''' This is meant to be overridden if needed '''
+        return(False)
 
     def getDamage(self):
         damage = int(self._baseStatDict[self.getLevel()]['_damage'] *
@@ -643,7 +644,7 @@ class Creature(Storage, AttributeHelper, Inventory, EditWizard):
         if not msg:
             buf += self.describe(article='The') + " does not respond"
         elif self._parleyAction.lower() == 'none':
-            # None is special, because it doen's add "says".  This is useful
+            # None is special, because it doesn't add "says".  This is useful
             # for some responses where a different verb is desired.
             buf += self.describe(article='The') + " " + msg
         else:

@@ -2,7 +2,7 @@
 import unittest
 
 from common.test import TestGameBase
-# from common.general import logger
+from common.general import logger
 from room import RoomFactory
 
 
@@ -10,49 +10,61 @@ class TestRoom(TestGameBase):
 
     num = 9999999
 
-    def setUp(self):
-        self.banner('start', testName=__class__.__name__)
-
-    def testIntAttributes(self):
+    def testValidity(self):
         roomObj = RoomFactory('room', self.num)
-        for oneAtt in roomObj.intAttributes:
-            val = getattr(roomObj, oneAtt)
-            self.assertEqual(isinstance(val, int), True, oneAtt + " should be a int")  # noqa: E501
-
-    def testBoolAttributes(self):
-        roomObj = RoomFactory('room', self.num)
-        for oneAtt in roomObj.boolAttributes:
-            val = getattr(roomObj, oneAtt)
-            self.assertEqual(isinstance(val, bool), True, oneAtt + " should be a bool")  # noqa: E501
-
-    def testStrAttributes(self):
-        roomObj = RoomFactory('room', self.num)
-        for oneAtt in roomObj.strAttributes:
-            val = getattr(roomObj, oneAtt)
-            self.assertEqual(isinstance(val, str), True, oneAtt + " should be a str")  # noqa: E501
-
-    def testListAttributes(self):
-        roomObj = RoomFactory('room', self.num)
-        for oneAtt in roomObj.listAttributes:
-            val = getattr(roomObj, oneAtt)
-            self.assertEqual(isinstance(val, list), True, oneAtt + " should be a list")  # noqa: E501
-
-    def testisValidPos(self):
-        roomObj = RoomFactory('room', self.num)
+        assert not roomObj.isValid()
         roomObj._shortDesc = 'test room - short'
         roomObj._desc = 'test room'
-        self.assertEqual(roomObj.isValid(), True, "isValid should return True")  # noqa: E501
+        assert roomObj.isValid()
 
-    def testisValidNeg(self):
-        roomObj = RoomFactory('room', self.num)
-        self.assertEqual(roomObj.isValid(), False, "isValid should return False")  # noqa: E501
+    def displayAndInfo(self, roomObj, loginfo=True):
+        ''' test and log a room's description and info '''
+        roomDisplay = roomObj.display(self.getCharObj())
+        roomInfo = roomObj.getInfo()
+        logger.debug("--- start display ---\n" + roomDisplay)
+        logger.debug("--- end display ---")
+        if loginfo:
+            logger.debug("\n" + roomInfo)
+        assert roomDisplay != ''
+        assert roomInfo != ''
 
-    def loadRoom1(self):
-        ''' load room 1, verify that room to the south is room 2 '''
-        roomObj = RoomFactory('room', self.num)
-        roomObj._roomself.num = 1
+    def testBasics(self):
+        ''' load room , verify that room to the south is room 319.  Test a
+            variety of other basic room functions '''
+        charObj = self.getCharObj()
+        roomObj = RoomFactory('room', self._testRoomNum)
         roomObj.load()
-        self.assertEqual(roomObj.s == 2, False, "isValid should return False")  # noqa: E501
+        assert roomObj.s == self._testRoomNum2
+        roomObj.toggleInstanceDebug()
+        assert roomObj.getInstanceDebug()
+        roomObj.setInstanceDebug(False)
+        assert not roomObj.getInstanceDebug()
+        assert roomObj.getType() != ''
+        self.displayAndInfo(roomObj, loginfo=False)
+        charObj.setPromptSize('brief')
+        self.displayAndInfo(roomObj, loginfo=False)
+        roomObj._dark = True
+        self.displayAndInfo(roomObj, loginfo=False)
+        charObj.setDm()
+        self.displayAndInfo(roomObj, loginfo=True)
+        roomObj._dark = False
+        charObj.removeDm()
+        assert roomObj.displayExits(charObj) != ''
+
+        # This room has items in it
+        roomObj = RoomFactory('room', self._testRoomNum2)
+        roomObj.load()
+        self.displayAndInfo(roomObj)
+
+        # This room is a shop
+        roomObj = RoomFactory('shop', self._testRoomShop)
+        roomObj.load()
+        self.displayAndInfo(roomObj)
+
+        # This room is a guild
+        roomObj = RoomFactory('guild', self._testRoomGuild)
+        roomObj.load()
+        self.displayAndInfo(roomObj)
 
 
 if __name__ == '__main__':
