@@ -628,7 +628,7 @@ class GameCmd(cmd.Cmd):
                         logger.error(roomObj.getId() + " can not be joined.")
                 else:
                     logger.error("Could not create roomObj " +
-                                 exitDict[direction] + ".")
+                                 str(exitDict[direction]) + ".")
             else:
                 self.selfMsg("You can't move in that direction!\n")
         else:

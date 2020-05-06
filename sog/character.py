@@ -14,7 +14,7 @@ from common.inventory import Inventory
 from common.general import getNeverDate, differentDay, dLog, secsSinceDate
 from common.general import getRandomItemFromList, truncateWithInt
 from common.general import logger
-from common.paths import DATADIR
+from common.globals import DATADIR
 from common.storage import Storage
 from object import Weapon
 from magic import SpellList

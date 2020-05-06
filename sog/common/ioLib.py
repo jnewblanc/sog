@@ -2,7 +2,7 @@
 
 # import importlib
 from common.general import Terminator, logger
-import common.network
+import common.globals
 import queue
 import re
 import sys
@@ -270,7 +270,7 @@ class ServerIo(Spooler):
             try:
                 if self._debugServer:
                     logger.debug(str(self) + " REC: Waiting for input")
-                clientdata = self.socket.recv(common.network.BYTES_TO_TRANSFER)
+                clientdata = self.socket.recv(common.globals.BYTES_TO_TRANSFER)
                 if self._debugServer:
                     logger.debug(str(self) + " REC: " +
                                  str(clientdata.decode("utf-8")))
@@ -285,16 +285,16 @@ class ServerIo(Spooler):
 
         if clientdata:
             clientdata = str(clientdata.decode("utf-8"))
-            if clientdata == common.network.NOOP_STR:  # empty sends
+            if clientdata == common.globals.NOOP_STR:  # empty sends
                 clientdata = ""
                 if self._debugServer:
                     logger.debug("Server received NO_OP from client")
-            elif clientdata == common.network.TERM_STR:  # client shut down
+            elif clientdata == common.globals.TERM_STR:  # client shut down
                 if self._debugServer:
                     logger.debug("Server received TERM_STR from client")
                 self.terminateClientConnection()
                 return(False)
-            elif clientdata == common.network.STOP_STR:  # server shut down
+            elif clientdata == common.globals.STOP_STR:  # server shut down
                 if self._debugServer:
                     logger.debug("Server received STOP_STR from client")
                 self.terminateClientConnection()

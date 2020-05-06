@@ -13,7 +13,7 @@ from character import Character
 from creature import Creature
 from common.attributes import AttributeHelper
 from common.ioLib import LocalIo
-from common.paths import LOGDIR
+from common.globals import LOGDIR
 from common.storage import getNextUnusedFileNumber
 from common.general import isIntStr, logger
 # from object import Portal, Door
@@ -110,6 +110,18 @@ class Editor(LocalIo, AttributeHelper):
 
     def printError(self, msg):
         print(colorama.Fore.RED + msg + colorama.Fore.RESET)
+
+    def strYellow(self, msg):
+        return(colorama.Fore.YELLOW + msg + colorama.Fore.RESET)
+
+    def strCyan(self, msg):
+        return(colorama.Fore.CYAN + msg + colorama.Fore.RESET)
+
+    def strBright(self, msg):
+        return(colorama.Style.BRIGHT + msg + colorama.Style.RESET_ALL)
+
+    def strHeader(self, msg):
+        return(self.strCyan('===== ' + msg + ' =====\n'))
 
     def initAndEdit(self, cmdargs):
         ''' load the object and kick off the editor '''
@@ -217,8 +229,7 @@ class Editor(LocalIo, AttributeHelper):
             print("  No custom functions defined")
 
     def editCustomFunctions(self, cmdargs):
-        ccBanner = (colorama.Fore.CYAN + '===== Custom functions =====' +
-                    colorama.Fore.RESET)
+        ccBanner = self.strHeader('Custom functions')
         ccMsg = ("Define one or more custom reusable functions that" +
                  "you can later\napply to multiple objects.\n")
         ccExMsg = ("Each custom function needs to be a list of tuples\n" +
@@ -227,14 +238,14 @@ class Editor(LocalIo, AttributeHelper):
                    "  [('_itemCatalog', ['Weapon/1','Armor/1']), " +
                    "(_numOfItemsCarried, [0,1,2])]\n")
         ccAppMsg = ("Use the the following to apply your custom " +
-                    "function:\n" + colorama.Fore.YELLOW +
-                    "  'custom apply <#>'" + colorama.Fore.RESET)
+                    "function:\n" +
+                    self.strYellow("  'custom apply <#>'"))
         ccListMsg = ("Use the following to view all of the saved custom " +
-                     "functions:\n" + colorama.Fore.YELLOW +
-                     "  'custom list'" + colorama.Fore.RESET)
+                     "functions:\n" +
+                     self.strYellow("  'custom list'"))
         ccDefMsg = ("Use the following to add or replace a custom " +
-                    "function:\n" + colorama.Fore.YELLOW +
-                    "  'custom define <#>'" + colorama.Fore.RESET)
+                    "function:\n" +
+                    self.strYellow("  'custom define <#>'"))
         if len(cmdargs) == 3 and isIntStr(cmdargs[2]):
             print('\n'.join([ccBanner, ccMsg, ccExMsg]))
             num = cmdargs[2]
@@ -345,8 +356,8 @@ class Editor(LocalIo, AttributeHelper):
         if helpStr != '':
             print(attName, "-", helpStr)
         print("  Old Value: " + str(attValue))
-        print("Enter the new " + attType + " value for " + colorama.Fore.CYAN +
-              str(attName) + colorama.Fore.RESET + " or [enter] to leave " +
+        print("Enter the new " + attType + " value for " +
+              self.strCyan(str(attName)) + " or [enter] to leave " +
               "unchanged: ", end='')
         newval = input('')
         if newval == '':
@@ -432,10 +443,9 @@ class Editor(LocalIo, AttributeHelper):
         changedSinceLastSave = False
         wizFields = obj.getWizFields()
         if len(wizFields) > 0:
-            print(colorama.Fore.CYAN + '===== ' + objName.capitalize() +
-                  " Wizard -- Editing " +
-                  objName.capitalize() + " " + str(obj.getId()) + " =====" +
-                  colorama.Fore.RESET)
+            wizName = objName.capitalize() + " Wizard"
+            objName = objName.capitalize() + " " + str(obj.getId())
+            print(self.strHeader(wizName + " -- Editing " + objName))
             if objName.lower() == "door":
                 print("Doors are single objects that have a " +
                       "corresponding door in the room to which they point.  " +
@@ -468,9 +478,8 @@ class Editor(LocalIo, AttributeHelper):
                     obj.describe())
         obj.fixAttributes()
         while True:
-            buf = (colorama.Fore.CYAN + '===== Editing ' +
-                   objName.capitalize() + " " + str(obj.getId()) +
-                   ' =====\n' + colorama.Fore.RESET)
+            objDesc = objName.capitalize() + " " + str(obj.getId())
+            buf = self.strHeader('Editing ' + objDesc)
 
             instanceAttributes = vars(obj)
 
@@ -490,13 +499,12 @@ class Editor(LocalIo, AttributeHelper):
                     varDict[num]['name'] = attName
                     varDict[num]['type'] = attType
                     varDict[num]['value'] = attValue
+                    msg = ROW_FORMAT.format(num, attName, attType, attValue)
                     if bufCount % 5 == 0:
-                        color = colorama.Fore.YELLOW
-                    else:
-                        color = colorama.Fore.RESET
-
-                    buf += (color + ROW_FORMAT.format(num, attName,
-                            attType, attValue))
+                        msg = self.strYellow(msg)
+                    if attName in obj.wizardAttributes:
+                        msg = self.strBright(msg)
+                    buf += msg
                     bufCount += 1
             print(buf)
             print('Commands: [s]ave, [q]uit, [wiz]ard, [cust]om')
@@ -626,14 +634,12 @@ class Editor(LocalIo, AttributeHelper):
         ROW_FORMAT += "\n"
 
         if len(fullList) != 0:
-            print(colorama.Fore.CYAN + ROW_FORMAT.format(*headerList) +
-                  colorama.Fore.RESET)
+            print(self.strCyan(ROW_FORMAT.format(*headerList)))
             for num, dataList in enumerate(fullList):
+                msg = ROW_FORMAT.format(*dataList)
                 if num % 3 == 0:
-                    color = colorama.Fore.YELLOW
-                else:
-                    color = colorama.Fore.RESET
-                print(color + ROW_FORMAT.format(*dataList))
+                    msg = self.strYellow(msg)
+                print(msg)
 
     def isRunning(self):
         if self._running:

@@ -9,7 +9,7 @@ import random
 import re
 import sys
 
-from common.paths import LOGDIR
+from common.globals import LOGDIR
 
 
 class Terminator(Exception):

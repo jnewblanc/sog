@@ -12,7 +12,7 @@ import account
 from common.attributes import AttributeHelper
 from common.ioLib import ServerIo
 from common.general import logger
-import common.network
+import common.globals
 import game
 import lobby
 
@@ -260,13 +260,13 @@ class ClientThread(threading.Thread, ClientBase):
         return(self.id)
 
     def getConnectionList(self):
-        return(common.network.connections)
+        return(common.globals.connections)
 
     def removeConnectionFromList(self):
         if self in self.getConnectionList():
             logger.info(str(self) + " Client connection terminated")
-            common.network.connections.remove(self)
-            common.network.totalConnections -= 1
+            common.globals.connections.remove(self)
+            common.globals.totalConnections -= 1
 
     def terminateClientConnection(self):
         ''' terminate the connection and clean up loose ends '''
@@ -279,7 +279,7 @@ class ClientThread(threading.Thread, ClientBase):
             self.charObj = None
 
             try:
-                self.socket.sendall(str.encode(common.network.TERM_STR))
+                self.socket.sendall(str.encode(common.globals.TERM_STR))
                 self.socket.shutdown(socket.SHUT_RDWR)
                 self.socket.close()
             except OSError:

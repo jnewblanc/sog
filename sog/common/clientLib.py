@@ -16,8 +16,8 @@ import socket
 import traceback
 
 from common.attributes import AttributeHelper
-from common.network import HOST, PORT, BYTES_TO_TRANSFER
-from common.network import NOOP_STR, TERM_STR, STOP_STR
+from common.globals import HOST, PORT, BYTES_TO_TRANSFER
+from common.globals import NOOP_STR, TERM_STR, STOP_STR
 
 
 class Client(AttributeHelper):

@@ -10,7 +10,7 @@ from common.attributes import AttributeHelper
 from common.general import getNeverDate, dateStr
 from common.general import logger
 from common.storage import Storage
-from common.paths import DATADIR
+from common.globals import DATADIR
 
 
 class Account(Storage, AttributeHelper):

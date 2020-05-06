@@ -8,7 +8,7 @@ import pickle
 import re
 import traceback
 
-from common.paths import DATADIR
+from common.globals import DATADIR
 
 
 class Storage():

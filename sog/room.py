@@ -13,7 +13,7 @@ from common.general import getNeverDate, differentDay, secsSinceDate, dateStr
 from common.general import logger, dLog
 from common.inventory import Inventory
 from common.item import Item
-from common.paths import DATADIR
+from common.globals import DATADIR
 from object import ObjectFactory, Door, isObjectFactoryType
 from creature import Creature
 

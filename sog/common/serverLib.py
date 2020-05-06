@@ -9,7 +9,7 @@ import socket
 import sys
 import time
 
-import common.network
+import common.globals
 import common.serverLib
 from common.general import Terminator, logger
 from threads import ClientThread, AsyncThread
@@ -26,7 +26,7 @@ def server(email=''):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverHandle:
 
             serverHandle.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            serverHandle.bind((common.network.HOST, common.network.PORT))
+            serverHandle.bind((common.globals.HOST, common.globals.PORT))
 
             while True:
                 serverHandle.listen(1)
@@ -36,10 +36,10 @@ def server(email=''):
                     clientsock, clientAddress = serverHandle.accept()
 
                     newthread = ClientThread(clientsock, clientAddress,
-                                             common.network.totalConnections)
-                    common.network.connections.append(newthread)
-                    common.network.totalConnections += 1
-                    common.network.connections[newthread.getId()].start()
+                                             common.globals.totalConnections)
+                    common.globals.connections.append(newthread)
+                    common.globals.totalConnections += 1
+                    common.globals.connections[newthread.getId()].start()
                 except OSError:
                     # This seems to happen when timeout occurs, but isn't fatal
                     logger.warning("socket accept() failed - timeout?")
@@ -62,7 +62,7 @@ def haltAsyncThread(gameObj, asyncThread):
 
 
 def haltClientThreads():
-    for num, client in enumerate(common.network.connections):
+    for num, client in enumerate(common.globals.connections):
         logger.info("Halting ClientThread " + str(num))
         client.terminateClientConnection()
         client.join()
