@@ -357,6 +357,41 @@ class _Game(cmd.Cmd, Combat, Ipc):
             self.charMsg(charObj, abortTxt)
             return(False)
 
+    def populateRoomCreatureCache(self, roomObj):
+        ''' Create a creature cache, so that we don't have to load the
+            creatures every time we check for encounters.  These creatures are
+            never actually encountered.  They just exist for reference
+        '''
+        debugPrefix = ('game.populateRoomCreatureCache (' +
+                       str(roomObj.getId()) + '): ')
+        if len(roomObj.getCreatureCache()) == 0:
+            dLog(debugPrefix + 'Populating room creature cache',
+                 self._instanceDebug)
+            # loop through all possible creatures for room and fill cache
+            for ccNum in roomObj.getEncounterList():
+                ccObj = Creature(ccNum)
+                ccObj.load()
+                roomObj.creatureCachePush(ccObj)
+                dLog(debugPrefix + 'Cached ' + ccObj.describe(),
+                     self._instanceDebug)
+
+    def getEligibleCreatureList(self, roomObj):
+        ''' Determine which creatures, from the cache, can be encountered, by
+            comparing their frequency attribute to a random roll.  Fill a
+           eligibleCreatureList with possible creatures for encounter. '''
+        debugPrefix = ('game.getEligibleCreatureList (' +
+                       str(roomObj.getId()) + '): ')
+        eligibleCreatureList = []
+        for ccObj in roomObj.getCreatureCache():
+            if ccObj.getFrequency() >= random.randint(1, 100):
+                # Load creature to be encountered
+                cObj = Creature(ccObj.getId())
+                cObj.load()
+                eligibleCreatureList.append(cObj)
+                dLog(debugPrefix + cObj.describe() + ' is eligible',
+                     self._instanceDebug)
+        return(eligibleCreatureList)
+
     def creatureEncounter(self, roomObj):
         ''' As an encounter, add creature to room
             Chance based on
@@ -374,32 +409,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
                          allowDupMsgs=False)
             return(False)
 
-        # Create a creature cache, so that we don't have to load the
-        # creatures every time we check for encounters.  These creatures are
-        # never actually encountered.  They just exist for reference
-        if len(roomObj.getCreatureCache()) == 0:
-            dLog(debugPrefix + 'Populating room creature cache',
-                 self._instanceDebug)
-            # loop through all possible creatures for room and fill cache
-            for ccNum in roomObj.getEncounterList():
-                ccObj = Creature(ccNum)
-                ccObj.load()
-                roomObj.creatureCachePush(ccObj)
-                dLog(debugPrefix + 'Cached ' + ccObj.describe(),
-                     self._instanceDebug)
-
-        # Determine which creatures, from the cache, can be encountered, by
-        # comparing their frequency attribute to a random roll.  Fill a
-        # eligibleCreatureList with possible creatures for encounter.
-        eligibleCreatureList = []
-        for ccObj in roomObj.getCreatureCache():
-            if ccObj.getFrequency() >= random.randint(1, 100):
-                # Load creature to be encountered
-                cObj = Creature(ccObj.getId())
-                cObj.load()
-                eligibleCreatureList.append(cObj)
-                dLog(debugPrefix + cObj.describe() + ' is eligible',
-                     self._instanceDebug)
+        self.populateRoomCreatureCache(roomObj)
+        eligibleCreatureList = self.getEligibleCreatureList(roomObj)
 
         creatureObj = getRandomItemFromList(eligibleCreatureList)
         if creatureObj:
@@ -708,7 +719,7 @@ class GameCmd(cmd.Cmd):
             return(False)
 
         if spellItem.getType().lower() == 'scroll':
-            spellItem.read(self.charObj, targetObj)
+            spellItem.readScroll(self.charObj, targetObj)
             self.gameObj.removeFromPlayerInventory(self.charObj, spellItem,
                                                    'disint')
         else:
@@ -2005,7 +2016,16 @@ class GameCmd(cmd.Cmd):
 
     def do_train(self, line):
         ''' increase level if exp and location allow '''
-        self.selfMsg(line + " not implemented yet\n")
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        if not roomObj.isTrainingGroundForChar(charObj):
+            self.selfMsg("You can't train here\n")
+
+        if not charObj.hasExpToTrain():
+            self.selfMsg("You don't have enough experience to train\n")
+
+        charObj.levelUp()
 
     def do_turn(self, line):
         ''' magic - chance for clerics/paladins to destroy creatures '''

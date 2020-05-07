@@ -111,7 +111,7 @@ class Storage():
                              attName + " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
-        self.write(filename)
+        self.writeFile(filename)
         # Restore attributes that we temporarily set aside when saving.
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
@@ -120,7 +120,7 @@ class Storage():
                          str(self.getId()))
         return(True)
 
-    def write(self, filename):
+    def writeFile(self, filename):
         with open(filename, 'wb') as outputfilehandle:
             try:
                 pickle.dump(self, outputfilehandle, pickle.DEFAULT_PROTOCOL)
@@ -128,10 +128,10 @@ class Storage():
                 logger.debug(self.debug())
                 traceback.print_exc()
 
-    def read(self, filename):
+    def readFile(self, filename):
         with open(filename, 'rb') as inputfilehandle:
-            loadedInst = pickle.load(inputfilehandle)
-            return(loadedInst)
+            loadedItem = pickle.load(inputfilehandle)
+            return(loadedItem)
         return(None)
 
     def load(self, desiredAttributes=[], logStr=''):   # noqa: C901
@@ -159,7 +159,7 @@ class Storage():
             logger.debug(logPrefix + "Loading " + filename + "...")
 
         if self.dataFileExists():
-            loadedInst = self.read(filename)
+            loadedInst = self.readFile(filename)
 
             if not loadedInst:
                 logger.error("storage.load - Could not get loaded instance")
@@ -197,7 +197,7 @@ class Storage():
 
             if self._debugStorage:
                 logger.debug(logPrefix + " loaded " + logStr +
-                             str(self.getId()))
+                             str(self.getId()) + " - " + self.describe())
             self.initTmpAttributes()
             self.fixAttributes()
             self.postLoad()
@@ -207,8 +207,8 @@ class Storage():
                 logger.error(logPrefix + logStr + str(self.getId()) +
                              " is not valid")
         else:
-            logger.warn(logPrefix + " " + logStr +
-                        'datafile doesn\'t exist at ' + self._datafile)
+            logger.warning(logPrefix + " " + logStr +
+                           'datafile doesn\'t exist at ' + self._datafile)
         return(False)
 
     def delete(self, logStr=''):

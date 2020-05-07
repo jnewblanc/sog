@@ -206,6 +206,21 @@ class Room(Item):
             return(True)
         return(False)
 
+    def isVendor(self):
+        return(False)
+
+    def isRepairShop(self):
+        return(False)
+
+    def isPawnShop(self):
+        return(False)
+
+    def isBank(self):
+        return(False)
+
+    def isTrainingGround(self):
+        return(False)
+
     def creatureCachePush(self, creaObj):
         ''' Populate the creature Cache '''
         self._creatureCache.append(creaObj)
@@ -814,6 +829,11 @@ class Guild(Shop):
         return(buf)
 
     def isTrainingGround(self, charObj):
+        return(True)
+
+    def isTrainingGroundForChar(self, charObj):
+        if not self.isTrainingGround():
+            return(False)
         if charObj.getClassName() == self.order:
             return(True)
         return(False)

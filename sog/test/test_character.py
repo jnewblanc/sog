@@ -255,6 +255,7 @@ class TestCharacter(TestGameBase):
     def testSkillsAndStats(self):
         _levelLoopNumber = 10
         charObj = self.createCharacter()
+        charObj._classname = 'fighter'
         charObj._bludgeon = 10
         charObj._slash = 20
         assert charObj.getSkillPercentage('_bludgeon') == 10
@@ -283,6 +284,41 @@ class TestCharacter(TestGameBase):
                      ' times gaining and losing levels: '
                      + str(firstStatCount) + ' --> ' + str(statTotalPostDown))
         assert firstStatCount >= statTotalPostDown
+
+        charObj._doubleUpStatLevels = [2, 3, 7]
+        charObj.setLevel(1)
+        assert charObj.getStatPoints() == 1, "level 1 - 1 pt"
+        charObj.setLevel(2)
+        assert charObj.getStatPoints() == 2, "level 2 - 2 pts"
+        charObj.setLevel(3)
+        assert charObj.getStatPoints() == 2, "level 3 - 2 pts"
+        charObj.setLevel(4)
+        assert charObj.getStatPoints() == 1, "level 4 - 1 pt"
+        charObj.setLevel(5)
+        assert charObj.getStatPoints() == 2, "level 5 - 2 pts"
+
+    def testLevelUp(self):
+        charObj = self.createCharacter()
+        charObj.setClassName('fighter')
+        charObj.autoCustomize()
+
+        charObj.setLevel(1)
+        charObj._expToNextLevel = 1
+
+        logger.debug(charObj.debug())
+
+        assert not charObj.hasExpToTrain()
+        charObj._expToNextLevel = 0
+        assert charObj.hasExpToTrain()
+        statTotalPre = self.getStatTotals(charObj, name=('Lvl1'))
+        charObj.levelUp()
+        statTotalLvl2 = self.getStatTotals(charObj, name=('Lvl2'))
+        assert charObj.getLevel() == 2
+        logger.debug(charObj.debug())
+        if (charObj.getClassName() == 'fighter' and charObj.getLevel() == 2):
+            logger.debug('testLevelUp: _doubleUpStatLevels=' +
+                         str(charObj._doubleUpStatLevels))
+            assert statTotalLvl2 >= statTotalPre + 2
 
     def testDeath(self):
         _levelLoopNumber = 4

@@ -21,7 +21,7 @@ from magic import SpellList
 
 
 class Character(Item):
-    """ Character class """
+    ''' Character class '''
 
     _instanceDebug = False
 
@@ -44,7 +44,7 @@ class Character(Item):
                       '_evil', '_invisible', '_nonexistent', '_playtester',
                       '_hidden']
     # string attributes
-    strAttributes = ['_name']
+    strAttributes = ['_name', '_classname', '_gender', '_alignment']
     # list attributes
     listAttributes = ['_knownSpells', '_doubleUpStatLevels']
 
@@ -54,6 +54,8 @@ class Character(Item):
 
     attributeInfo = {
     }
+
+    wizardAttributes = ['_name', '_classname', '_gender', '_alignment']
 
     genderDict = {
         0: {
@@ -79,7 +81,7 @@ class Character(Item):
             'desc': 'Master of combat, skilled in weapondry',
             'pros': 'Attack/Defense Bonuses',
             'cons': 'Poor Magic Use',
-            'doubleUpStatLevels': [2, 3, 7],
+            'doubleUpStatLevels': [2, 9],
             'bonusStats': ['strength', 'constitution'],
             'penaltyStats': ['intelligence', 'piety'],
             'baseDamage': 2,
@@ -92,7 +94,7 @@ class Character(Item):
             'desc': 'A scoundrel fluent in stealth and trickery',
             'pros': 'Hiding/Defense Bonuses',
             'cons': 'Poor Attack',
-            'doubleUpStatLevels': [3, 7, 9],
+            'doubleUpStatLevels': [3, 8],
             'bonusStats': ['dexterity', 'charisma'],
             'penaltyStats': ['strength', 'piety'],
             'baseDamage': 1,
@@ -105,7 +107,7 @@ class Character(Item):
             'desc': 'A vulnerable and powerful scholarly spellcaster',
             'pros': 'Spell abilities and Bonuses',
             'cons': 'Can not use metal armor',
-            'doubleUpStatLevels': [2, 6, 8],
+            'doubleUpStatLevels': [2, 8],
             'bonusStats': ['intelligence', 'intelligence'],
             'penaltyStats': ['strength', 'strength'],
             'baseDamage': 0,
@@ -118,7 +120,7 @@ class Character(Item):
             'desc': 'Healer and servant of higher powers',
             'pros': 'Healing Abilities and Bonuses + Undead Turning',
             'cons': 'Can not use bladed weapons',
-            'doubleUpStatLevels': [4, 6, 8],
+            'doubleUpStatLevels': [4, 6],
             'bonusStats': ['piety', 'piety'],
             'penaltyStats': ['strength', 'dexterity'],
             'baseDamage': 0,
@@ -131,7 +133,7 @@ class Character(Item):
             'desc': 'A rough and wild hunter ',
             'pros': 'Minor Defense Bonuses & Spell Abilities',
             'cons': 'Poor Charisma',
-            'doubleUpStatLevels': [2, 4, 9],
+            'doubleUpStatLevels': [4, 7],
             'bonusStats': ['dexterity', 'intelligence'],
             'penaltyStats': ['charisma', 'charisma'],
             'baseDamage': 1,
@@ -144,7 +146,7 @@ class Character(Item):
             'desc': 'A righteous fighter who hunts the forces of evil',
             'pros': 'Minor Attack Bonuses, Healing, and Undead Turning',
             'cons': 'Must be lawful, can not steal',
-            'doubleUpStatLevels': [3, 8, 9],
+            'doubleUpStatLevels': [3, 6],
             'bonusStats': ['charisma', 'piety'],
             'penaltyStats': ['intelligence', 'constitution'],
             'baseDamage': 2,
@@ -262,7 +264,7 @@ class Character(Item):
         return(None)
 
     def __str__(self):
-        return("Character " + self.getName() + " of account " +
+        return('Character ' + self.getName() + ' of account ' +
                str(self._acctName))
 
     def debug(self):
@@ -287,7 +289,7 @@ class Character(Item):
         '''
         buf = ''
         if self.selectCharacter():
-            pStr = __class__.__name__ + ".login: "
+            pStr = __class__.__name__ + '.login: '
             charName = str(self.getName())
             dLog('Attemping login for ' + charName, self._instanceDebug)
             # Import existing character
@@ -297,7 +299,7 @@ class Character(Item):
             else:
                 dLog(pStr + 'Character ' + charName +
                      ' could not be loaded for ' + self._acctName +
-                     " - New character?", self._instanceDebug)
+                     ' - New character?', self._instanceDebug)
                 if self.create(charName):
                     dLog(pStr + 'Character ' + charName + ' created for ' +
                          self._acctName, self._instanceDebug)
@@ -334,24 +336,15 @@ class Character(Item):
         self.setPromptSize('full')
         self.setLoginDate()
 
-        # customize
+        # prompt to customize
         if self.promptForNewCharacter(promptFlag):
             if not self.isValid():
                 return(False)
-
-            self.customizeStats()
-            self.randomlyIncrementStat(12)
-
-            # set starting points for changing stats that depend on other stats
-            self.setHitPoints(self.getMaxHP())
-            self.setMana(self.getMaxMana())
-
-            self.resetTmpStats()
         else:
             self.__init__(self.client, self.client.acctObj.getEmail())
             return(False)
 
-        self.equipFist()
+        self.autoCustomize()
 
         if self.isValid():
             self.save()
@@ -359,6 +352,20 @@ class Character(Item):
             self.__init__(self.client, self.client.acctObj.getEmail())
             return(False)
         return(True)
+
+    def autoCustomize(self):
+        ''' Automatically customize some stats/attributes, based on others '''
+        self.customizeStats()
+        self.setDoubleUpStatLevels()
+        self.randomlyIncrementStat(12)
+
+        # set starting points for changing stats that depend on other stats
+        self.setHitPoints(self.getMaxHP())
+        self.setMana(self.getMaxMana())
+
+        self.resetTmpStats()
+
+        self.equipFist()
 
     def fixAttributes(self):
         ''' Sometimes we change attributes, and need to fix them in rooms
@@ -400,7 +407,7 @@ class Character(Item):
         self._equippedRing = None
         self._equippedNecklace = None
 
-        self._follow = ""
+        self._follow = ''
         self._lastCommand = ''
 
         self.setAc()
@@ -435,15 +442,15 @@ class Character(Item):
     def isValid(self):
         ''' Returns true if the class instance was created properly '''
         # ToDo: determine if a better check is required
-        for att in ["_name", "_classname", "_gender", "_alignment"]:
+        for att in ['_name', '_classname', '_gender', '_alignment']:
             if getattr(self, att) == '':
-                logger.error("Character.isValid - Attribute " + att +
-                             "is not defined!")
+                logger.error('Character.isValid - Attribute ' + att +
+                             'is not defined!')
                 return(False)
 
         if not hasattr(self, 'client'):
-            logger.error("Character.isValid - Character is missing " +
-                         "attribute: client")
+            logger.error('Character.isValid - Character is missing ' +
+                         'attribute: client')
             return(False)
 
         return(True)
@@ -451,14 +458,14 @@ class Character(Item):
     def getDesc(self, showAlignment=True):
         ''' Returns a string that describes the in-game appearance '''
         buf = (self.getName() + ' is a ' + self.condition() + ', level ' +
-               str(self.getLevel()) + " " + self.getGender() + " " +
+               str(self.getLevel()) + ' ' + self.getGender() + ' ' +
                self.getClassName())
         if showAlignment:
             if self._alignment == 'lawful':
-                buf += " who tends to follow the rules"
+                buf += ' who tends to follow the rules'
             elif self._alignment == 'chaotic':
-                buf += " who lives life on the edge"
-        buf += ".\n"
+                buf += ' who lives life on the edge'
+        buf += '.\n'
         return(buf)
 
     def examine(self):
@@ -468,7 +475,7 @@ class Character(Item):
 
     def getInfo(self, dm=0):
         '''Display character'''
-        # ROW_FORMAT = "{0:14}: {1:<30}\n"
+        # ROW_FORMAT = '{0:14}: {1:<30}\n'
         buf = self.getDesc()
         buf += self.healthInfo()
         buf += self.equippedInfo()
@@ -485,22 +492,22 @@ class Character(Item):
         return(buf)
 
     def financialInfo(self):
-        buf = ("You have " + str(self.getCoins()) + " shillings in " +
-               "your purse.\n")
+        buf = ('You have ' + str(self.getCoins()) + ' shillings in ' +
+               'your purse.\n')
         return(buf)
 
     def statsInfo(self):
         ''' Display character stats'''
-        buf = "Stats:\n"
-        ROW_FORMAT = "  {0:14}: {1:<30}\n"
+        buf = 'Stats:\n'
+        ROW_FORMAT = '  {0:14}: {1:<30}\n'
         for onestat in self.statList:
             buf += ROW_FORMAT.format(onestat, str(getattr(self, onestat)))
         return(buf)
 
     def skillsInfo(self):
         ''' Display character skills'''
-        buf = ("Skills:")
-        ROW_FORMAT = "  {0:14}: {1:<30}\n"
+        buf = ('Skills:')
+        ROW_FORMAT = '  {0:14}: {1:<30}\n'
         if self.hasAchievedSkillForLevel():
             buf += ('  Proficiency earned for level ' + str(self.getLevel()) +
                     '\n')
@@ -518,12 +525,12 @@ class Character(Item):
         return(buf)
 
     def healthInfo(self):
-        hitTxt = str(self.getHitPoints()) + "/" + str(self.getMaxHP())
-        magTxt = str(self.getMana()) + "/" + str(self._maxmana)
-        buf = ("You have " + hitTxt + " health pts and " +
-               magTxt + " magic pts.")
+        hitTxt = str(self.getHitPoints()) + '/' + str(self.getMaxHP())
+        magTxt = str(self.getMana()) + '/' + str(self._maxmana)
+        buf = ('You have ' + hitTxt + ' health pts and ' +
+               magTxt + ' magic pts.')
         if self.isDm():
-            buf += "  Your armor class is " + str(self._ac)
+            buf += '  Your armor class is ' + str(self._ac)
         buf += '\n'
 
         if self.isPoisoned():
@@ -535,15 +542,15 @@ class Character(Item):
         return(buf)
 
     def expInfo(self):
-        ROW_FORMAT = "  {0:14}: {1:<30}\n"
-        buf = ("Experience:\n")
-        buf += ROW_FORMAT.format("Level", str(self.getLevel()))
+        ROW_FORMAT = '  {0:14}: {1:<30}\n'
+        buf = ('Experience:\n')
+        buf += ROW_FORMAT.format('Level', str(self.getLevel()))
         if self.getPromptSize() == 'full':
             buf += ('  ' + str(max(0, self._expToNextLevel)) +
-                    " experience needed to get to level " +
+                    ' experience needed to get to level ' +
                     str(int(self.getLevel()) + 1) + '\n')
         else:
-            buf += " - " + str(max(0, self._expToNextLevel)) + " to go."
+            buf += ' - ' + str(max(0, self._expToNextLevel)) + ' to go.'
         return(buf)
 
     def guildInfo(self):
@@ -552,18 +559,18 @@ class Character(Item):
             buf = ('Guilds:\n' +
                    '  You are a member of the ' + self._guild + 'guild.\n' +
                    '  You joined on ' +
-                   self._guildJoinDate.strftime("%Y/%m/%d") +
+                   self._guildJoinDate.strftime('%Y/%m/%d') +
                    '  You have paid ' + self._totalGuildPayments +
                    ' to your guild and your daily dues are ' +
                    self._dailyGuildDues + '\n')
         return(buf)
 
-    def equippedInfo(self, prefix="You are"):
+    def equippedInfo(self, prefix='You are'):
         buf = ''
 
-        buf += (prefix + " carrying " +
-                str(self.getInventoryWeight()) + "/" +
-                str(self.getInventoryMaxWeight()) + " lbs of items.\n")
+        buf += (prefix + ' carrying ' +
+                str(self.getInventoryWeight()) + '/' +
+                str(self.getInventoryMaxWeight()) + ' lbs of items.\n')
 
         equippedList = []
 
@@ -592,7 +599,7 @@ class Character(Item):
 
         if len(equippedList) > 0:
             inf = inflect.engine()            # instanciate a inflect engine
-            buf += prefix + " " + inf.join(equippedList) + ".\n"
+            buf += prefix + ' ' + inf.join(equippedList) + '.\n'
 
         return(buf)
 
@@ -600,7 +607,7 @@ class Character(Item):
         ''' prompt user to select a character to load
             store resulting character name into self._name
             return True/False'''
-        logPrefix = __class__.__name__ + " selectCharacter: "
+        logPrefix = __class__.__name__ + ' selectCharacter: '
         characterList = self.client.acctObj.getCharacterList()
         numOfCharacters = len(characterList)
         openCharacterSlots = (self.client.acctObj.getMaxNumOfCharacters() -
@@ -608,9 +615,9 @@ class Character(Item):
         self.setName('')
 
         while True:
-            prompt = "Select character to play : \n"
+            prompt = 'Select character to play : \n'
             if openCharacterSlots > 0:
-                prompt += "  (0) Create new character\n"
+                prompt += '  (0) Create new character\n'
             if numOfCharacters > 0:
                 prompt += self.client.acctObj.showCharacterList(indent='  ')
             prompt += 'Enter number or press [enter] to exit: '
@@ -621,27 +628,27 @@ class Character(Item):
                 minNameLength = 3
                 maxNameLength = 40
                 prompt = (
-                          "To create a character, you will need to provide " +
+                          'To create a character, you will need to provide ' +
                           "your character's name, class, gender, and " +
-                          "alignment\n")
+                          'alignment\n')
                 prompt += 'Please enter your character\'s name: '
-                errmsg = ("  You may only use alphanumerics, spaces, " +
-                          "underbars, and hyphens.\n  The first letter must" +
-                          " be alphabetic and the name must be between " +
+                errmsg = ('  You may only use alphanumerics, spaces, ' +
+                          'underbars, and hyphens.\n  The first letter must' +
+                          ' be alphabetic and the name must be between ' +
                           str(minNameLength) + ' and ' + str(maxNameLength) +
                           ' characters long.')
                 charName = self.client.promptForInput(prompt, r'^[A-Za-z][A-Za-z0-9_\- ]{2,}$', errmsg)  # noqa: E501
-                if charName == "":
-                    dLog(logPrefix + "name is blank", self._instanceDebug)
+                if charName == '':
+                    dLog(logPrefix + 'name is blank', self._instanceDebug)
                     return(False)
                 elif charName in self.client.acctObj.getCharactersOnDisk():
-                    msg = ("Invalid Character Name.  You already have a " +
-                           "character named " + charName + ".\n")
+                    msg = ('Invalid Character Name.  You already have a ' +
+                           'character named ' + charName + '.\n')
                     self._spoolOut(msg)
                     dLog(logPrefix + msg, self._instanceDebug)
                     continue
                 elif not self.client.acctObj.characterNameIsUnique(charName):
-                    msg = ("Name is already in use.  Please try again\n")
+                    msg = ('Name is already in use.  Please try again\n')
                     self._spoolOut(msg)
                     dLog(logPrefix + msg, self._instanceDebug)
                     continue
@@ -654,26 +661,26 @@ class Character(Item):
         if re.match(r"^.+@.+\..+/.+$", self.getId()):
             return(True)
 
-        logger.error(logPrefix + "Could not generate ID - " + self.getId())
+        logger.error(logPrefix + 'Could not generate ID - ' + self.getId())
         return(False)
 
     def getArticle(gender):
         if gender == 'male':
             article = 'he'
             possessive = 'his'
-            predicate = "he is"
+            predicate = 'he is'
         if gender == 'female':
             article = 'she'
             possessive = 'her'
-            predicate = "she is"
+            predicate = 'she is'
         if gender == 'fluid':
             article = 'they'
             possessive = 'their'
-            predicate = "they are"
+            predicate = 'they are'
         if gender == 'self':
             article = 'you'
             possessive = 'my'
-            predicate = "you are"
+            predicate = 'you are'
         return(article, possessive, predicate)
 
     def knowsSpell(self, spell):
@@ -745,9 +752,9 @@ class Character(Item):
             self.bankAccountAdd(remainingCoin)
             self.bankFeeAdd(bankfee)
             self.save()
-            logger.info("bank - " + self.getName() + " deposited " +
-                        str(remainingCoin) + " and paid " + str(bankfee) +
-                        " in fees")
+            logger.info('bank - ' + self.getName() + ' deposited ' +
+                        str(remainingCoin) + ' and paid ' + str(bankfee) +
+                        ' in fees')
             return(True)
         return(False)
 
@@ -763,9 +770,9 @@ class Character(Item):
             self.addCoins(remainingCoin)
             self.bankFeeAdd(bankfee)
             self.save()
-            logger.info("bank - " + self.getName() + " withdrew " +
-                        str(remainingCoin) + " and paid " + str(bankfee) +
-                        " in fees")
+            logger.info('bank - ' + self.getName() + ' withdrew ' +
+                        str(remainingCoin) + ' and paid ' + str(bankfee) +
+                        ' in fees')
             return(True)
         return(False)
 
@@ -797,7 +804,7 @@ class Character(Item):
 
     def getFollowingInfo(self, whosAsking='me'):
         buf = ''
-        if whosAsking == "me":
+        if whosAsking == 'me':
             (article, possessive, predicate) = self.getArticle('self')
         else:
             (article, possessive, predicate) = (
@@ -809,7 +816,7 @@ class Character(Item):
 
     def getDrunkInfo(self, whosAsking='me'):
         buf = ''
-        if whosAsking == "me":
+        if whosAsking == 'me':
             (article, possessive, predicate) = self.getArticle('self')
         else:
             (article, possessive, predicate) = (
@@ -829,9 +836,9 @@ class Character(Item):
     def dmInfo(self):
         buf = ''
         if self.isDm():
-            dblstatList = ", ".join(str(x) for x in self._doubleUpStatLevels)
-            buf += "DM visible info:\n"
-            ROW_FORMAT = "  {0:16}: {1:<30}\n"
+            dblstatList = ', '.join(str(x) for x in self._doubleUpStatLevels)
+            buf += 'DM visible info:\n'
+            ROW_FORMAT = '  {0:16}: {1:<30}\n'
             buf += (ROW_FORMAT.format('Prompt', self.getPromptSize()) +
                     ROW_FORMAT.format('Hidden', str(self.isHidden())) +
                     ROW_FORMAT.format('2xStatLvls', dblstatList) +
@@ -844,7 +851,7 @@ class Character(Item):
                                       str(self.getBankFeesPaid()))
                     )
             buf += '  Kill Counts:\n'
-            ROW_FORMAT = "    {0:16}: {1:<30}\n"
+            ROW_FORMAT = '    {0:16}: {1:<30}\n'
             buf += (ROW_FORMAT.format('Weenies', str(self._weenykills)) +
                     ROW_FORMAT.format('Matched', str(self._matchedkills)) +
                     ROW_FORMAT.format('Valiant', str(self._valiantkills)) +
@@ -858,6 +865,25 @@ class Character(Item):
         if className == '':
             className = self.getClassName()
         return(self.classList.index(className))
+
+    def setDoubleUpStatLevels(self):
+        ''' set _doubleUpStatLevels based on class and randomness '''
+
+        # There are two double up stat levels per class
+        self._doubleUpStatLevels = (
+            self.classDict[self.getClassKey()]['doubleUpStatLevels'])
+
+        # Randomly select an additional unused double up stat level
+        #   keep selecting a random number until we find an unused one
+        while True:
+            randX = random.randint(2, 11)
+            if randX in self._doubleUpStatLevels:
+                pass
+            elif randX % 5 == 0:
+                pass
+            else:
+                self._doubleUpStatLevels.append(randX)
+                break
 
     def customizeStats(self):
         ''' customize stats based on class, gender, alignment, and random '''
@@ -882,147 +908,6 @@ class Character(Item):
         if self._alignment in ['lawful', 'chaotic']:
             self.incrementStat('luck')
             self.incrementStat('luck')
-        # Randomly select an additional unused double up stat level
-        #   keep selecting a random number until we find an unused one
-        self._doubleUpStatLevels = self.classDict[classKey]['doubleUpStatLevels']  # noqa: E501
-        while True:
-            randX = random.randint(2, 9)
-            if randX in self._doubleUpStatLevels:
-                pass
-            else:
-                self._doubleUpStatLevels.append(randX)
-                break
-
-    def promptForClass(self, ROW_FORMAT):
-        prompt = 'Classes:\n'
-        for oneNum, oneName in enumerate(self.classList):
-            desc = str(oneName) + ' - ' + self.classDict[oneNum]['desc']
-            prompt = (prompt + ROW_FORMAT.format(oneNum, desc))
-        prompt = (prompt + 'Select your character\'s class: ')
-        inNum = self.client.promptForNumberInput(prompt,
-                                                 (len(self.classList) - 1))
-
-        if inNum == -1:
-            return(False)
-
-        self.setClassName(self.classList[inNum])
-        return(True)
-
-    def promptForGender(self, ROW_FORMAT):
-        prompt = 'Genders:\n'
-        for oneNum, oneName in enumerate(self.genderList):
-            prompt += ROW_FORMAT.format(str(oneNum), oneName)
-        prompt += 'Select your character\'s gender: '
-        inNum = self.client.promptForNumberInput(prompt,
-                                                 (len(self.genderList) - 1))
-        if inNum == -1:
-            return(False)
-
-        self.setGender(self.genderList[int(inNum)])
-        return(True)
-
-    def promptForAlignment(self, ROW_FORMAT):
-        prompt = 'Alignment:\n'
-
-        prompt += ROW_FORMAT.format('0', 'Lawful - ' +
-                                    'friend of good, enemy of evil')
-        aNumOptions = 0
-        if self.getClassName() != 'paladin':
-            prompt += ROW_FORMAT.format('1', 'Neutral - ' +
-                                        'Neither lawful, nor chaotic')
-            aNumOptions = aNumOptions + 1
-        if self.getClassName().lower() not in ['cleric', 'paladin']:
-            prompt += ROW_FORMAT.format('2', 'Chaotic - ' +
-                                        'unpredictable and untrustworthy')
-            aNumOptions = aNumOptions + 1
-        prompt += 'Select your character\'s alignment: '
-        inNum = self.client.promptForNumberInput(prompt, aNumOptions)
-        if inNum == -1:
-            return(False)
-
-        self.setAlignment(self.alignmentList[int(inNum)])
-        return(True)
-
-    def promptForSkills(self, ROW_FORMAT):
-        prompt = 'Skills:\n'
-        sList = {}
-        for num, skill in enumerate(self.skillDict):
-            prompt += ROW_FORMAT.format(num, skill.lstrip('_') + ' - ' +
-                                        self.skillDict[skill])
-            sList[num] = skill
-        inNum = self.client.promptForNumberInput(prompt, len(self.skillDict))
-        if inNum == -1:
-            return(False)
-
-        setattr(self, sList[inNum], 10)          # Set skill of choice to 10%
-        return(True)
-
-    def promptForDm(self, ROW_FORMAT):
-        if self.client:                          # not set when testing
-            if self.client.acctObj.isAdmin():
-                prompt = 'Should this Character be a Dungeon Master (admin)?'
-                if self.client.promptForYN(prompt):
-                    self.setDm()
-                    return(True)
-        return(False)
-
-    def promptForNewCharacter(self, promptFlag=True):
-        '''Prompt user to input character info and return the results'''
-
-        if promptFlag:
-            ROW_FORMAT = "  ({0:1}) {1:<30}\n"
-            self.promptForClass(ROW_FORMAT)
-            self.promptForGender(ROW_FORMAT)
-            self.promptForAlignment(ROW_FORMAT)
-            self.promptForSkills(ROW_FORMAT)
-            self.promptForDm(ROW_FORMAT)
-        else:
-            self.setClassName(getRandomItemFromList(self.classList))
-            self.setGender(getRandomItemFromList(self.genderList))
-            self.setAlignment(getRandomItemFromList(self.alignmentList))
-            self._dodge = 10
-        return(True)
-
-    def getRandomStat(self):
-        """Randomly picks a stat and returns the stat name"""
-        randX = random.randint(0, (len(self.statList) - 1))
-        # get the stat name, based on the random number
-        return(self.statList[randX])
-
-    def randomlyIncrementStat(self, points=1):
-        """Randomly assign points to attributes"""
-        for x in range(1, points + 1):
-            self.incrementStat(self.getRandomStat())
-
-    def randomlyDecrementStat(self, points=1):
-        """Randomly assign points to attributes"""
-        for x in range(1, points + 1):
-            self.decrementStat(self.getRandomStat())
-
-    def incrementStat(self, stat):
-        ''' increment a given stat by one '''
-        newvalue = int(getattr(self, stat)) + 1
-        setattr(self, stat, newvalue)
-
-    def decrementStat(self, stat):
-        ''' increment a given stat by one '''
-        newvalue = int(getattr(self, stat)) - 1
-        setattr(self, stat, newvalue)
-
-    def levelUp(self):
-        '''Level up a character'''
-        self._level += 1
-        self.levelUpStats()
-        self.reCalculateStats()
-        self._achievedSkillForLevel = False
-
-    def reCalculateStats(self):
-        self.setAc()
-        self.setMaxHP()
-        self.setMaxMana()
-        self.setExpForLevel()
-        self.setMaxWeightForCharacter()
-        return(None)
 
     def getHitPoints(self):
         return(self._hp)
@@ -1067,39 +952,53 @@ class Character(Item):
         self._mana -= int(num)
 
     def setExpForLevel(self):
+        ''' set the character's exp to the amount required for next level '''
         self._expToNextLevel = (2 ** (9 + self.getLevel()))
 
-    def setNearDeathExperience(self):
-        ''' set stats so that character can recover from a near death exp '''
-        self.setHitPoints(1)
-        self.setPoisoned(False)
-        self.setPlagued(False)
+    def hasExpToTrain(self):
+        ''' return True if character has enough exp to train for next level '''
+        if self._expToNextLevel <= 0:
+            return(True)
+        return(False)
 
-    def levelUpStats(self):
-        '''Level up a character's stats'''
-        newpoints = 1
+    def levelUp(self):
+        '''Level up a character'''
+        self._level += 1
+        self.levelUpStats()
+        self.reCalculateStats()
+        self._achievedSkillForLevel = False
+
+    def getStatPoints(self):
+        statPoints = 1
         # check to see if level is a doubleUp level
         if self.getLevel() in self._doubleUpStatLevels:
             # Grant extra stat point
-            newpoints = newpoints + 1
+            statPoints = statPoints + 1
         if self.getLevel() % 5 == 0:
             # Grant extra stat point every 5th level
-            newpoints = newpoints + 1
+            statPoints = statPoints + 1
         elif self.getLevel() > 10:
             if random.randint(0, 99) < (self.luck * 3):
                 # After level 10, its based on luck (roughly 30% chance)
                 # There's a chance of getting an extra point on levels not
                 # divisible by 5
-                newpoints = newpoints + 1
-        if newpoints == 1:
+                statPoints = statPoints + 1
+        return(statPoints)
+
+    def levelUpStats(self, statPoints=0):
+        '''Level up a character's stats'''
+        if statPoints == 0:
+            statPoints = self.getStatPoints()
+
+        if statPoints == 1:
             if random.randint(0, 99) < (self.luck * 2):
                 # Based on luck, (roughly 20% chance) experience for next level
                 # may be reduced by 10%
-                self.client.spoolOut("Hermes blesses you!  Your next " +
-                                     "level will arrive in haste.")
+                self.client.spoolOut('Hermes blesses you!  Your next ' +
+                                     'level will arrive in haste.')
                 self._expToNextLevel = int(self._expToNextLevel * .90)
-        self.randomlyIncrementStat(newpoints)
-        self._statsearnedlastlevel = newpoints
+        self.randomlyIncrementStat(statPoints)
+        self._statsearnedlastlevel = statPoints
         # increase max hitpoints/mana
         self.reCalculateStats()
         return(None)
@@ -1119,6 +1018,46 @@ class Character(Item):
                 self.randomlyDecrementStat(1)
         self.reCalculateStats()
         return(None)
+
+    def getRandomStat(self):
+        '''Randomly picks a stat and returns the stat name'''
+        randX = random.randint(0, (len(self.statList) - 1))
+        # get the stat name, based on the random number
+        return(self.statList[randX])
+
+    def randomlyIncrementStat(self, points=1):
+        '''Randomly assign points to attributes'''
+        for x in range(1, points + 1):
+            self.incrementStat(self.getRandomStat())
+
+    def randomlyDecrementStat(self, points=1):
+        '''Randomly assign points to attributes'''
+        for x in range(1, points + 1):
+            self.decrementStat(self.getRandomStat())
+
+    def incrementStat(self, stat):
+        ''' increment a given stat by one '''
+        newvalue = int(getattr(self, stat)) + 1
+        setattr(self, stat, newvalue)
+
+    def decrementStat(self, stat):
+        ''' increment a given stat by one '''
+        newvalue = int(getattr(self, stat)) - 1
+        setattr(self, stat, newvalue)
+
+    def reCalculateStats(self):
+        self.setAc()
+        self.setMaxHP()
+        self.setMaxMana()
+        self.setExpForLevel()
+        self.setMaxWeightForCharacter()
+        return(None)
+
+    def setNearDeathExperience(self):
+        ''' set stats so that character can recover from a near death exp '''
+        self.setHitPoints(1)
+        self.setPoisoned(False)
+        self.setPlagued(False)
 
     def setPromptSize(self, size):
         ''' change the prompt verbosity '''
@@ -1176,7 +1115,7 @@ class Character(Item):
     def getLastAttackCmd(self):
         return(self._lastAttackCmd)
 
-    def setLastAttack(self, cmd="attack"):
+    def setLastAttack(self, cmd='attack'):
         self.setLastAttackCmd(cmd)
         self.setLastAttackDate()
 
@@ -1194,7 +1133,7 @@ class Character(Item):
 
     def canAttack(self):
         if self.checkCooldown(self.getSecondsUntilNextAttack(),
-                              "until next attack"):
+                              'until next attack'):
             return(True)
         return(False)
 
@@ -1242,6 +1181,15 @@ class Character(Item):
 
     def reduceLimitedBroadcastCount(self, num=1):
         self._broadcastLimit -= int(num)
+
+    def setRoom(self, roomObj):
+        self._roomObj = roomObj
+
+    def getRoom(self):
+        return(self._roomObj)
+
+    def removeRoom(self):
+        self._roomObj = None
 
     def addExp(self, num):
         self._expToNextLevel -= num
@@ -1291,6 +1239,21 @@ class Character(Item):
     def isMagic(self):
         return(False)
 
+    def getEquippedWeapon(self):
+        return(self._equippedWeapon)
+
+    def getEquippedArmor(self):
+        return(self._equippedArmor)
+
+    def getEquippedShield(self):
+        return(self._equippedShield)
+
+    def getEquippedRing(self):
+        return(self._equippedRing)
+
+    def getEquippedNecklace(self):
+        return(self._equippedNecklace)
+
     def isAttacking(self):
         if self._currentlyAttacking is not None:
             return(True)
@@ -1309,21 +1272,6 @@ class Character(Item):
             return(True)
         return(False)
 
-    def getEquippedWeapon(self):
-        return(self._equippedWeapon)
-
-    def getEquippedArmor(self):
-        return(self._equippedArmor)
-
-    def getEquippedShield(self):
-        return(self._equippedShield)
-
-    def getEquippedRing(self):
-        return(self._equippedRing)
-
-    def getEquippedNecklace(self):
-        return(self._equippedNecklace)
-
     def getEquippedWeaponDamage(self):
         ''' Given the equipped weapon and attack type, return the damage '''
         damage = self.getFistDamage()
@@ -1332,7 +1280,7 @@ class Character(Item):
             return(damage)
 
         if self.getEquippedWeapon().isBroken():
-            self._spoolOut("Your weapon is broken.\n")
+            self._spoolOut('Your weapon is broken.\n')
             return(0)
 
         weapon = self.getEquippedWeapon()
@@ -1353,12 +1301,12 @@ class Character(Item):
         if weapon.getName() != 'fist':
             weapon.decrementChargeCounter()
             if weapon.isBroken():
-                self._spoolOut("Snap!  Your " +
+                self._spoolOut('Snap!  Your ' +
                                weapon.describe(article='') +
-                               " breaks\n")
+                               ' breaks\n')
             elif self.getClassName() == 'ranger' and weapon.getCharges() == 10:
-                self._spoolOut("Your " + weapon.describe(article='') +
-                               " is worse for wear and in need of repair.\n")
+                self._spoolOut('Your ' + weapon.describe(article='') +
+                               ' is worse for wear and in need of repair.\n')
 
     def getEquippedProtection(self):
         ''' returns equipped armor and/or shield, as a list '''
@@ -1376,11 +1324,11 @@ class Character(Item):
         for obj in self.getEquippedProtection():
             obj.decrementChargeCounter()
             if obj.isBroken():
-                self._spoolOut("Your " + obj.describe(article='') +
-                               " falls apart\n")
+                self._spoolOut('Your ' + obj.describe(article='') +
+                               ' falls apart\n')
             elif self.getClassName() == 'ranger' and obj.getCharges() == 10:
-                self._spoolOut("Your " + obj.describe(article='') +
-                               " is worse for wear and in need of repair.\n")
+                self._spoolOut('Your ' + obj.describe(article='') +
+                               ' is worse for wear and in need of repair.\n')
 
     def getEquippedWeaponToHit(self):
         ''' return tohit percentage of weapon '''
@@ -1394,14 +1342,14 @@ class Character(Item):
         logPrefix = 'character.getCumulativeDodge: '
         # Start off with dodge skill
         dodgePct = self._dodge
-        dLog(logPrefix + "dodgeSkill=" + str(dodgePct), self._instanceDebug)
+        dLog(logPrefix + 'dodgeSkill=' + str(dodgePct), self._instanceDebug)
 
         # Add on dodge from armor/shields
         for obj in self.getEquippedProtection():
             if not obj.isBroken():
                 dodgePct += obj.getDodgeBonus()
 
-        dLog(logPrefix + "withGear=" + str(dodgePct), self._instanceDebug)
+        dLog(logPrefix + 'withGear=' + str(dodgePct), self._instanceDebug)
 
         # It's a little bit strange to have to traverse back to the game/combat
         # class to get this data, but it seems to make more sense than trying
@@ -1409,7 +1357,7 @@ class Character(Item):
         fullAttackDict = self.client.gameObj.getAttackDict()
         attackDict = fullAttackDict.get(self.getLastAttackCmd(), {})
         dodgePct += attackDict.get('dodge', 0)
-        dLog(logPrefix + "totalDodge=" + str(dodgePct), self._instanceDebug)
+        dLog(logPrefix + 'totalDodge=' + str(dodgePct), self._instanceDebug)
         return(dodgePct)
 
     def getSkillPercentage(self, skill):
@@ -1472,11 +1420,11 @@ class Character(Item):
         if secsRemaining <= 0:
             return(True)
 
-        buf = ("You are not ready.  " +
-               str(truncateWithInt(secsRemaining, 1)) + " seconds remain")
+        buf = ('You are not ready.  ' +
+               str(truncateWithInt(secsRemaining, 1)) + ' seconds remain')
         if msgStr != '':
             buf += ' ' + msgStr
-        buf += ".\n"
+        buf += '.\n'
         self._spoolOut(buf)
         return(False)
 
@@ -1520,7 +1468,7 @@ class Character(Item):
             logger.error('setAlignment: Attempt to set invalid gender')
 
     def getId(self):
-        return(self._acctName + "/" + str(self.getName()))
+        return(self._acctName + '/' + str(self.getName()))
 
     def getStrength(self):
         return(int(self.strength))
@@ -1557,7 +1505,7 @@ class Character(Item):
     def canSeeHidden(self):
         if self.isDm():
             return(True)
-        if self.getClassName().lower() in ["ranger", "rogue"]:
+        if self.getClassName().lower() in ['ranger', 'rogue']:
             return(True)
         if random.randint(1, 100) < int(self.getLuck() / 3):
             return(True)
@@ -1599,12 +1547,12 @@ class Character(Item):
             * If basePercent is increased, chance of dodging goes down.
             * chances improved by dex, class, dodge skill, and dodgeBonus '''
         randX = random.randint(1, 100)
-        classMult = 2 if self.getClassName().lower() == "rogue" else 1
+        classMult = 2 if self.getClassName().lower() == 'rogue' else 1
         skillMult = self._dodge + self._dodgeBonus
 
         dodgeAdv = (self.getDexterity() * (classMult + skillMult)/10)
         dodgeCalc = (randX + dodgeAdv) * 2
-        dLog("dodge - calc=" + dodgeCalc + " >? basePercent=" +
+        dLog('dodge - calc=' + dodgeCalc + ' >? basePercent=' +
              basePercent, self._instanceDebug)
         if dodgeCalc > basePercent:
             return(True)
@@ -1625,6 +1573,13 @@ class Character(Item):
 
         return(max(0, damage))
 
+    def getCircleSecs(self):
+        ''' Returns the number seconds a creature will wait given a sucessful
+            circle - based on character level/stats'''
+        secsToWait = random.randint(self.getLevel(),
+                                    20 + self.getDexterity())
+        return(secsToWait)
+
     def damageIsLethal(self, num=0):
         if num >= self.getHitPoints():
             return(True)
@@ -1636,7 +1591,7 @@ class Character(Item):
         if nokill and self.getHitPoints() <= 0:
             self.setNearDeathExperience()
         condition = self.condition()
-        dLog(self.getName() + " takes " + str(damage) + " damage",
+        dLog(self.getName() + ' takes ' + str(damage) + ' damage',
              self._instanceDebug)
         self.save()
         if self.getHitPoints() <= 0:
@@ -1648,24 +1603,27 @@ class Character(Item):
                 self.processDeath()
         return(condition)
 
-    def processDeath(self):
-        # lose one or two levels
-        buf = 'You are Dead'
-        self.client.broadcast(self.describe() + ' has died\n')   # toDo: fix
-        logger.info(self.describe() + ' has died')
-
-        # random chance of losing two levels
+    def levelsToLose(self):
         randX = random.randint(1, 100)
         chanceOfLosingTwoLevels = 50 - self.piety - (self.luck / 2)
         if self.getClassName().lower() in ['cleric', 'paladin']:
             # 10% reduction for clerics and paladins
-            chanceOfLosingTwoLevels = chanceOfLosingTwoLevels - 10
+            chanceOfLosingTwoLevels -= 10
         if randX > chanceOfLosingTwoLevels:
             levelsToLose = 2
         else:
             levelsToLose = 1
+        return(levelsToLose)
 
-        for numlvl in range(1, levelsToLose + 1):
+    def obituary(self):
+        ''' Notify/record death '''
+        deathMsg = self.describe() + ' has died'
+        self.client.getGameObj().gameMsg(deathMsg + '\n')
+        logger.info('obituary: ' + deathMsg)
+
+    def processDeath(self):
+        ''' Do all the things related to dying '''
+        for numlvl in range(1, self.levelsToLose() + 1):
             self.levelDownStats()
             if self.getLevel() > 1:
                 self.subtractlevel()
@@ -1678,25 +1636,18 @@ class Character(Item):
         self.client.gameObj.joinRoom(1, self)
 
         self.save()
-        self._spoolOut(buf)
+        self._spoolOut('You are Dead')
+        self.obituary()
+
         return(True)
-
-    def setRoom(self, roomObj):
-        self._roomObj = roomObj
-
-    def getRoom(self):
-        return(self._roomObj)
-
-    def removeRoom(self):
-        self._roomObj = None
 
     def searchSucceeds(self, obj, basePercent=30):
         ''' Returns True if search succeeds
             * chance of success based on dex, level, and luck '''
-        logPrefix = __class__.__name__ + " searchSucceeds: "
+        logPrefix = __class__.__name__ + ' searchSucceeds: '
 
         if self.canSeeHidden():
-            dLog(logPrefix + "Pass - Character can see hidden",
+            dLog(logPrefix + 'Pass - Character can see hidden',
                  self._instanceDebug)
             return(True)
 
@@ -1708,25 +1659,25 @@ class Character(Item):
             percentChance += (self.getLevel() - obj.getLevel()) * 10
 
         if random.randint(1, 20) == 1:  # Always a 5 percent chance of success
-            dLog(logPrefix + "Pass - Always 5% Chance", self._instanceDebug)
+            dLog(logPrefix + 'Pass - Always 5% Chance', self._instanceDebug)
             return(True)
 
         randX = random.randint(1, 100)
         if randX <= percentChance:
-            dLog(logPrefix + "Pass - Roll - " + str(randX) + " < " +
+            dLog(logPrefix + 'Pass - Roll - ' + str(randX) + ' < ' +
                  str(percentChance), self._instanceDebug)
             return(True)
 
-        dLog(logPrefix + "Failed", self._instanceDebug)
+        dLog(logPrefix + 'Failed', self._instanceDebug)
         return(False)
 
     def equipFist(self):
         ''' equip fist, the default weapon - fist is a special weapon that is
             not in any inventory '''
         obj = Weapon()
-        obj.setName("fist")
+        obj.setName('fist')
         obj._article = 'a'
-        obj._singledesc = "fist"
+        obj._singledesc = 'fist'
         obj.setMaximumDamage(self.getFistDamage())
         self.equip(obj)
 
@@ -1768,32 +1719,6 @@ class Character(Item):
 
         if self.getEquippedWeapon() is None:
             self.equipFist()
-
-        return(True)
-
-    def setDataFilename(self, dfStr=''):
-        ''' sets the data file name.  - Override the superclass because we
-            want the account info to be in the account directory. '''
-        logPrefix = __class__.__name__ + " setDataFilename-c: "
-
-        # generate the data file name based on class and id
-        try:
-            id = self.getId()
-        except AttributeError:
-            pass
-
-        if not id:
-            logger.error(logPrefix + "Could not retrieve Id to " +
-                         "generate filename")
-            return(False)
-
-        if not re.match(r"^.+@.+\..+/.+$", id):
-            logger.error(logPrefix + "ID is blank while generating filename." +
-                         'id=' + id)
-            return(False)
-
-        self._datafile = os.path.abspath(DATADIR + '/Account/' +
-                                         str(id) + '.pickle')
 
         return(True)
 
@@ -1894,8 +1819,8 @@ class Character(Item):
             else:
                 regenSecsRemaining = (regenInterval -
                                       secsSinceDate(self._lastRegenDate))
-            dLog("regen counter: " + str(regenSecsRemaining) +
-                 " secs - " + str(self._lastRegenDate) + " - " +
+            dLog('regen counter: ' + str(regenSecsRemaining) +
+                 ' secs - ' + str(self._lastRegenDate) + ' - ' +
                  str(secsSinceDate(self._lastRegenDate)), False)
             if regenSecsRemaining <= 0:
                 self.addHP(regenHp)
@@ -1909,13 +1834,129 @@ class Character(Item):
             else:
                 poisonSecsRemaining = (poisonInterval -
                                        secsSinceDate(self._lastPoisonDate))
-            dLog("poison cntr: " + str(regenSecsRemaining) + " secs", False)
+            dLog('poison cntr: ' + str(regenSecsRemaining) + ' secs', False)
 
             if poisonSecsRemaining <= 0:
-                self.spoolOut("As the poison circulates, you take " +
-                              poisonHp + " damage.\n")
+                self.spoolOut('As the poison circulates, you take ' +
+                              poisonHp + ' damage.\n')
                 self.takeDamage(poisonHp)
                 self.setLastPoison()
+
+    def promptForClass(self, ROW_FORMAT):
+        prompt = 'Classes:\n'
+        for oneNum, oneName in enumerate(self.classList):
+            desc = str(oneName) + ' - ' + self.classDict[oneNum]['desc']
+            prompt = (prompt + ROW_FORMAT.format(oneNum, desc))
+        prompt = (prompt + 'Select your character\'s class: ')
+        inNum = self.client.promptForNumberInput(prompt,
+                                                 (len(self.classList) - 1))
+
+        if inNum == -1:
+            return(False)
+
+        self.setClassName(self.classList[inNum])
+        return(True)
+
+    def promptForGender(self, ROW_FORMAT):
+        prompt = 'Genders:\n'
+        for oneNum, oneName in enumerate(self.genderList):
+            prompt += ROW_FORMAT.format(str(oneNum), oneName)
+        prompt += 'Select your character\'s gender: '
+        inNum = self.client.promptForNumberInput(prompt,
+                                                 (len(self.genderList) - 1))
+        if inNum == -1:
+            return(False)
+
+        self.setGender(self.genderList[int(inNum)])
+        return(True)
+
+    def promptForAlignment(self, ROW_FORMAT):
+        prompt = 'Alignment:\n'
+
+        prompt += ROW_FORMAT.format('0', 'Lawful - ' +
+                                    'friend of good, enemy of evil')
+        aNumOptions = 0
+        if self.getClassName() != 'paladin':
+            prompt += ROW_FORMAT.format('1', 'Neutral - ' +
+                                        'Neither lawful, nor chaotic')
+            aNumOptions = aNumOptions + 1
+        if self.getClassName().lower() not in ['cleric', 'paladin']:
+            prompt += ROW_FORMAT.format('2', 'Chaotic - ' +
+                                        'unpredictable and untrustworthy')
+            aNumOptions = aNumOptions + 1
+        prompt += 'Select your character\'s alignment: '
+        inNum = self.client.promptForNumberInput(prompt, aNumOptions)
+        if inNum == -1:
+            return(False)
+
+        self.setAlignment(self.alignmentList[int(inNum)])
+        return(True)
+
+    def promptForSkills(self, ROW_FORMAT):
+        prompt = 'Skills:\n'
+        sList = {}
+        for num, skill in enumerate(self.skillDict):
+            prompt += ROW_FORMAT.format(num, skill.lstrip('_') + ' - ' +
+                                        self.skillDict[skill])
+            sList[num] = skill
+        inNum = self.client.promptForNumberInput(prompt, len(self.skillDict))
+        if inNum == -1:
+            return(False)
+
+        setattr(self, sList[inNum], 10)          # Set skill of choice to 10%
+        return(True)
+
+    def promptForDm(self, ROW_FORMAT):
+        if self.client:                          # not set when testing
+            if self.client.acctObj.isAdmin():
+                prompt = 'Should this Character be a Dungeon Master (admin)?'
+                if self.client.promptForYN(prompt):
+                    self.setDm()
+                    return(True)
+        return(False)
+
+    def promptForNewCharacter(self, promptFlag=True):
+        '''Prompt user to input character info and return the results'''
+
+        if promptFlag:
+            ROW_FORMAT = '  ({0:1}) {1:<30}\n'
+            self.promptForClass(ROW_FORMAT)
+            self.promptForGender(ROW_FORMAT)
+            self.promptForAlignment(ROW_FORMAT)
+            self.promptForSkills(ROW_FORMAT)
+            self.promptForDm(ROW_FORMAT)
+        else:
+            self.setClassName(getRandomItemFromList(self.classList))
+            self.setGender(getRandomItemFromList(self.genderList))
+            self.setAlignment(getRandomItemFromList(self.alignmentList))
+            self._dodge = 10
+        return(True)
+
+    def setDataFilename(self, dfStr=''):
+        ''' sets the data file name.  - Override the superclass because we
+            want the account info to be in the account directory. '''
+        logPrefix = __class__.__name__ + ' setDataFilename-c: '
+
+        # generate the data file name based on class and id
+        try:
+            id = self.getId()
+        except AttributeError:
+            pass
+
+        if not id:
+            logger.error(logPrefix + 'Could not retrieve Id to ' +
+                         'generate filename')
+            return(False)
+
+        if not re.match(r"^.+@.+\..+/.+$", id):
+            logger.error(logPrefix + 'ID is blank while generating filename.' +
+                         'id=' + id)
+            return(False)
+
+        self._datafile = os.path.abspath(DATADIR + '/Account/' +
+                                         str(id) + '.pickle')
+
+        return(True)
 
     def updateKillCount(self, opponent):
         opponentLevel = opponent.getLevel()
@@ -1933,10 +1974,3 @@ class Character(Item):
 
         if opponent.isPermanent():
             self._epickills += 1
-
-    def getCircleSecs(self):
-        ''' Returns the number seconds a creature will wait given a sucessful
-            circle - based on character level/stats'''
-        secsToWait = random.randint(self.getLevel(),
-                                    20 + self.getDexterity())
-        return(secsToWait)

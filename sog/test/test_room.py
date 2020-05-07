@@ -3,12 +3,13 @@ import unittest
 
 from common.test import TestGameBase
 from common.general import logger
+import creature
 from room import RoomFactory
 
 
 class TestRoom(TestGameBase):
 
-    num = 9999999
+    num = 99999
 
     def testValidity(self):
         roomObj = RoomFactory('room', self.num)
@@ -64,6 +65,23 @@ class TestRoom(TestGameBase):
         # This room is a guild
         roomObj = RoomFactory('guild', self._testRoomGuild)
         roomObj.load()
+        self.displayAndInfo(roomObj)
+
+    def testCreatureInRoom(self):
+        creObj = creature.Creature(99999)
+        creObj._name = 'bug'
+        creObj._article = 'a'
+        creObj._pluraldesc = 'potato bugs'
+        creObj._singledesc = 'potato bug'
+        creObj._longdesc = "potato bugs don't taste like potatoes"
+        creObj._level = '1'
+
+        roomObj = RoomFactory('room', self._testRoomNum)
+        roomObj._shortDesc = "in a test room"
+        roomObj._desc = 'in a long test room'
+        roomObj._encounterList = ['Creature/1']
+        roomObj.postLoad()
+        roomObj.addToInventory(creObj)
         self.displayAndInfo(roomObj)
 
 

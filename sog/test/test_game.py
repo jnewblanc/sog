@@ -3,6 +3,8 @@ import unittest
 
 from common.test import TestGameBase
 # from common.general import logger
+# import room
+# import creature
 
 
 class TestGame(TestGameBase):
@@ -28,6 +30,12 @@ class TestGame(TestGameBase):
         # gameObj.asyncTasks()
         # gameObj.asyncNonPlayerActions()
         # gameObj.asyncCharacterActions()
+
+    def testEncounter(self):
+        self.joinRoom(15)
+        roomObj = self.getRoomObj()
+        gameObj = self.getGameObj()
+        gameObj.creatureEncounter(roomObj)
 
 
 class TestGameCmd(TestGameBase):

@@ -316,7 +316,7 @@ class Creature(Item):
         if count > 1:
             return(count + " " + self._pluraldesc)
         if article == 'none':
-            article = self._article
+            article = self._article + ' '
         elif article != '':
             article += ' '
         return(article + self._singledesc)
@@ -375,34 +375,6 @@ class Creature(Item):
         else:
             self._hp = self.getMaxHP()
 
-    def takeDamage(self, num=0):
-        self._hp -= num
-
-    def flees(self, percentChanceOfFleeing=20):
-        ''' Returns true if creature flees
-            * creature must have _fleeIfAttacked attribute set
-            * creature must be at 10% health or less
-            * after that, 20% (by default) chance of flee '''
-        if not self.fleesIfAttacked():
-            return(False)
-
-        if self.getHitPoints() <= (self.getMaxHP() * .10):
-            if random.randint(1, 100) <= percentChanceOfFleeing:
-                return(True)
-        return(False)
-
-    def getEquippedWeaponToHit(self):
-        ''' creatures don't have weapons, so we just use their _tohit att '''
-        return(self._tohit)
-
-    def attacksBack(self):
-        return(self._defend)
-
-    def damageIsLethal(self, num=0):
-        if num >= self.getHitPoints():
-            return(True)
-        return(False)
-
     def setEnterRoomTime(self):
         self._enterRoomTime = datetime.now()
 
@@ -457,10 +429,6 @@ class Creature(Item):
     def getValue(self):     # set for objects, not usually useful for Creatures
         return(self._value)
 
-    def canBeEntered(self, charObj):  # set for objects, not for Creatures
-        ''' This is meant to be overridden if needed '''
-        return(False)
-
     def getDamage(self):
         damage = int(self._baseStatDict[self.getLevel()]['_damage'] *
                      self._damagePct / 100)
@@ -478,6 +446,34 @@ class Creature(Item):
 
     def setCurrentlyAttacking(self, player):
         self._currentlyAttacking = player
+
+    def takeDamage(self, num=0):
+        self._hp -= num
+
+    def flees(self, percentChanceOfFleeing=20):
+        ''' Returns true if creature flees
+            * creature must have _fleeIfAttacked attribute set
+            * creature must be at 10% health or less
+            * after that, 20% (by default) chance of flee '''
+        if not self.fleesIfAttacked():
+            return(False)
+
+        if self.getHitPoints() <= (self.getMaxHP() * .10):
+            if random.randint(1, 100) <= percentChanceOfFleeing:
+                return(True)
+        return(False)
+
+    def getEquippedWeaponToHit(self):
+        ''' creatures don't have weapons, so we just use their _tohit att '''
+        return(self._tohit)
+
+    def attacksBack(self):
+        return(self._defend)
+
+    def damageIsLethal(self, num=0):
+        if num >= self.getHitPoints():
+            return(True)
+        return(False)
 
     def initiateAttack(self, charObj=None):
         ''' Returns true if creature initiates attack on player '''
@@ -571,6 +567,8 @@ class Creature(Item):
         if not self.getHitPoints():
             self.setHitPoints()  # set hp to the maxHP for this creature
         self.autoPopulateInventory()
+        if self.isPermanent():
+            self.attributesThatShouldntBeSaved += ['_inventory']
 
     def getAttributeCount(self, which='primary'):
         ''' Returns the number of attributes set to True.

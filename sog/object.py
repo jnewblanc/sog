@@ -952,7 +952,7 @@ class Scroll(MagicalDevice):
         self._weight = 1
         return(None)
 
-    def read(self, charObj, targetObj):
+    def readScroll(self, charObj, targetObj):
         ''' cast the spell
             * scroll disintegrates in calling function '''
         # Get the spell object - no chant required for scrolls

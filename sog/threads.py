@@ -49,6 +49,15 @@ class ClientBase(ServerIo, AttributeHelper):
     def getId(self):
         return(1)
 
+    def getGameObj(self):
+        return(self.gameObj)
+
+    def getAccountObj(self):
+        return(self.acctObj)
+
+    def getCharacterObj(self):
+        return(self.charObj)
+
     def setDebug(self, debugBool=True):
         self._debugServer = bool(debugBool)
 
