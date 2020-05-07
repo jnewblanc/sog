@@ -4,7 +4,7 @@ import inflect
 import re
 import textwrap
 
-from common.general import getRandomItemFromList, dLog
+from common.general import getRandomItemFromList, dLog, itemSort
 # from common.general import logger
 
 
@@ -110,24 +110,40 @@ class Inventory():
             buf += "[HID]"
         return(buf)
 
-    def describeInvAsList(self, showDm, showHidden, showInvisible):
+    def unique(self, sequence):
+        ''' Remove duplicates in a set without changing the order.
+            code adapted from https://tinyurl.com/yc6atal8 '''
+        seen = set()
+        return [x for x in sequence if not (x in seen or seen.add(x))]
+
+    def describeInvAsList(self, showDm, showHidden, showInvisible,
+                          sortList=False):
         ''' show inventory items as compact list
             typically used by room object, as player sees it '''
+        logPrefix = 'describeInvAsList: '
         buf = ''
 
-        dLog("describeInvAsList: showDm=" + str(showDm) +
+        dLog(logPrefix + "showDm=" + str(showDm) +
              " showHidden=" + str(showHidden) + " showInvisible=" +
              str(showInvisible), Inventory._instanceDebug)
+
+        if sortList:
+            invList = itemSort(self.getInventory())
+        else:
+            invList = self.getInventory()
+
+        dLog(logPrefix + "Orig    - " + str([x.describe() for x in invList]),
+             Inventory._instanceDebug)
 
         # create a list of items in inventory and a dict of related DM info
         dmDict = {}
         itemList = []
-        for oneitem in self.getInventory():
+        for oneitem in invList:
             itemStr = ''
             if (((oneitem.isInvisible() and not showInvisible)
                  or (oneitem.isHidden() and not showHidden) and
                  not showDm)):
-                dLog("describeInvAsList HID/INV: " + str(oneitem),
+                dLog(logPrefix + "HID/INV: " + str(oneitem),
                      Inventory._instanceDebug)
                 pass
             else:
@@ -143,8 +159,15 @@ class Inventory():
         # instanciate inflect to help with grammar and punctuation
         inf = inflect.engine()
 
+        dLog(logPrefix + "preSet  - " + str(itemList),
+             Inventory._instanceDebug)
+
         # create a list of unique items
-        uniqueItemNames = set(itemList)
+        # uniqueItemNames = set(itemList)   # set was messing up the order
+        uniqueItemNames = self.unique(itemList)
+
+        dLog(logPrefix + "postSet - " + str(uniqueItemNames),
+             Inventory._instanceDebug)
 
         # create a list of items with their counts
         countedList = []
@@ -162,6 +185,9 @@ class Inventory():
                 itemStr += dmDict[name]
             countedList.append(itemStr)
 
+        dLog(logPrefix + "counted - " + str(uniqueItemNames),
+             Inventory._instanceDebug)
+
         # join our list with commas and 'and'
         sightList = inf.join(countedList)
 
@@ -169,7 +195,7 @@ class Inventory():
         if sightList != '':
             buf = textwrap.fill(sightList, width=80) + '\n'
 
-        dLog("inv descAsList: " + buf, Inventory._instanceDebug)
+        dLog(logPrefix + buf, Inventory._instanceDebug)
 
         return(buf)
 

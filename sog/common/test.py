@@ -3,6 +3,8 @@ import unittest
 
 import account
 import character
+import creature
+from object import ObjectFactory
 import common.serverLib
 from common.general import logger
 import threads
@@ -84,6 +86,32 @@ class TestGameBase(unittest.TestCase):
         charObj.setAlignment(align)
         assert charObj.isValid()
         return(charObj)
+
+    def createObject(self, num=99999, type='Portal', name='portal'):
+        obj = ObjectFactory(type, num)
+        obj._name = name
+        obj._article = 'a'
+        obj._singledesc = name
+        obj._longdesc = "A long " + name
+        obj._weight = 5
+        obj._value = 100
+        return(obj)
+
+    def createCreature(self, num=99999, name="bug"):
+        creObj = creature.Creature(num)
+        creObj._name = name
+        creObj._article = 'a'
+        creObj._singledesc = name
+        creObj._pluraldesc = name + 's'
+        creObj._longdesc = "It's a long " + name
+        creObj._level = '1'
+        creObj._hostile = False
+        creObj._itemCatalog = ['Armor/1', 'Weapon/1']
+        creObj._numOfItemsCarried = [1, 2]
+        creObj.setHitPoints(20)
+        creObj.autoPopulateInventory()
+        assert creObj.isValid()
+        return(creObj)
 
     def joinGame(self):
         assert self._client.gameObj.isValid()

@@ -14,7 +14,7 @@ import re
 from combat import Combat
 from common.ipc import Ipc
 from common.general import isIntStr, dateStr, logger, dLog
-from common.general import splitTargets, targetSearch
+from common.general import splitTargets, targetSearch, itemSort
 from common.general import getRandomItemFromList
 from common.help import enterHelp
 from magic import Spell, SpellList, spellCanTargetSelf
@@ -1473,7 +1473,16 @@ class GameCmd(cmd.Cmd):
         '''
         roomObj = self.charObj.getRoom()
 
-        allItems = roomObj.getCharsAndInventory() + self.charObj.getInventory()
+        # Experimenting with sorting.  Not sure if we want this, so we have a
+        # Flag for now
+        sortList = False
+        if sortList:
+            allItems = (itemSort(roomObj.getCharsAndInventory()) +
+                        itemSort(self.charObj.getInventory()))
+        else:
+            allItems = (roomObj.getCharsAndInventory() +
+                        self.charObj.getInventory())
+
         itemList = self.getObjFromCmd(allItems, line)
 
         if line == '':  # display the room

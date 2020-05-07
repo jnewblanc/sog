@@ -116,6 +116,16 @@ def isCountStr(numstr):
     return(False)
 
 
+def sortItemFunc(s):
+    ''' Sort function '''
+    return(s.describe())
+
+
+def itemSort(itemList):
+    newItemList = sorted(itemList, key=sortItemFunc)
+    return(newItemList)
+
+
 def getRandomItemFromList(list1):
     ''' Given a list, returns random element '''
     if len(list1) == 0:
@@ -176,55 +186,62 @@ def targetSearch(itemList, targetStr):
     return(targetObj)
 
 
-def itemSearch(itemList, name, desiredNum="#1", typeList=[]):  # noqa: C901
+def itemSearch(itemList, name, desiredNum="#1", typeList=[],
+               sortList=False):  # noqa: C901
     ''' Often we need a fuzzy search lookup of items in a list (of class
         instances).  Given a list, return an item that matches the name,
         number, and type.
         * Requires that instances have getName and getType methods
         * can be used for objects in room, items in inventory, etc
     '''
+    logPrefix = "sea: "
     myitem = None
-    debugItemSearch = False
+    debugItemSearch = True
 
     # strip out anything that's not a digit (i.e. number signs)
     desiredNum = int(re.sub('[^0-9]', '', str(desiredNum)))
 
-    dLog("sea - Trying to search for item " + name + " #" + str(desiredNum),
-         debugItemSearch)
+    if sortList:
+        itemList = itemSort(itemList)
+
+    dLog(logPrefix + "Trying to search for item " + name + " #"
+         + str(desiredNum) + ' in ' +
+         str([x.describe() for x in itemList]), debugItemSearch)
 
     cnt = 0
     for oneitem in itemList:
-        dLog("sea - Checking item name " + oneitem.getName() + "...",
+        dLog(logPrefix + "Checking item name " + oneitem.getName() + "...",
              debugItemSearch)
         if re.match("^" + name.lower(), oneitem.getName().lower()):  # fuzzy
             cnt += 1
-            dLog("sea - item name " + oneitem.getName() +
+            dLog(logPrefix + "item name " + oneitem.getName() +
                  " matched.  Checking type...", debugItemSearch)
             if len(typeList) > 0:
                 if oneitem.getType().lower() not in typeList:
-                    dLog("sea - skipping item " + oneitem.getName() +
+                    dLog(logPrefix + "skipping item " + oneitem.getName() +
                          " because it doesn't match type " + str(typeList),
                          debugItemSearch)
                     continue                # skip if not the desired type
             else:
-                dLog("sea - skipping typecheck for item " + oneitem.getName(),
-                     debugItemSearch)
-            dLog("sea - Checking number for item name " + oneitem.getName() +
-                 " .  Looking for #" + str(desiredNum), debugItemSearch)
+                dLog(logPrefix + "skipping typecheck for item " +
+                     oneitem.getName(), debugItemSearch)
+            dLog(logPrefix + "Checking number for item name " +
+                 oneitem.getName() + " .  Looking for #" +
+                 str(desiredNum), debugItemSearch)
             if cnt == desiredNum:  # skip if not desired number
-                dLog("sea - Found item " + oneitem.getName() +
+                dLog(logPrefix + "Found item " + oneitem.getName() +
                      " matching number " + str(cnt), debugItemSearch)
                 myitem = oneitem
                 break
             else:
-                dLog("sea - Could not find " + oneitem.getName() +
+                dLog(logPrefix + "Could not find " + oneitem.getName() +
                      " with matching number " + str(desiredNum),
                      debugItemSearch)
         else:
-            dLog("sea - Item " + oneitem.getName() + " did not match.",
+            dLog(logPrefix + "Item " + oneitem.getName() + " did not match.",
                  debugItemSearch)
     if myitem:
-        dLog("sea - Found item " + myitem.getName(), debugItemSearch)
+        dLog(logPrefix + "Found item " + myitem.getName(), debugItemSearch)
 
     return(myitem)
 

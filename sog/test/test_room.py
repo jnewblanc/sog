@@ -2,7 +2,7 @@
 import unittest
 
 from common.test import TestGameBase
-from common.general import logger
+from common.general import logger, targetSearch
 import creature
 from room import RoomFactory
 
@@ -68,13 +68,7 @@ class TestRoom(TestGameBase):
         self.displayAndInfo(roomObj)
 
     def testCreatureInRoom(self):
-        creObj = creature.Creature(99999)
-        creObj._name = 'bug'
-        creObj._article = 'a'
-        creObj._pluraldesc = 'potato bugs'
-        creObj._singledesc = 'potato bug'
-        creObj._longdesc = "potato bugs don't taste like potatoes"
-        creObj._level = '1'
+        creObj = self.createCreature()
 
         roomObj = RoomFactory('room', self._testRoomNum)
         roomObj._shortDesc = "in a test room"
@@ -83,6 +77,61 @@ class TestRoom(TestGameBase):
         roomObj.postLoad()
         roomObj.addToInventory(creObj)
         self.displayAndInfo(roomObj)
+
+    def testRoomVsTarget(self):
+        ''' Verify that the target order (i.e. the when interacting with
+            objects) is the same as the order of objects in a room '''
+
+        # Create a room
+        roomObj = RoomFactory('room', self._testRoomNum)
+        roomObj._shortDesc = "in a test room"
+        roomObj._desc = 'in a long test room'
+
+        # Create a few portals and add them to room
+        for num in range(1, 4):
+            obj = self.createObject(num=99990 + num,
+                                    type='Portal',
+                                    name='portal' + str(num))
+            roomObj.addToInventory(obj)
+
+        disp = roomObj.displayItems(self.getCharObj())
+        logger.debug("disp: " + str(disp))
+
+        iList = roomObj.getInventory()
+        logger.debug("inv: " +
+                     str([str(x) + " " + x.describe() for x in iList]))
+
+        tList = [targetSearch(iList, "por #1"),
+                 targetSearch(iList, "por #2"),
+                 targetSearch(iList, "por #3")]
+        logger.debug("tList: " +
+                     str([str(x) + " " + x.describe() for x in tList]))
+
+        assert iList == tList
+
+    def testRoomItemSquashing(self):
+        ''' Test that identically named items are consolidated when displayed
+        '''
+        # Create a room
+        roomObj = RoomFactory('room', self._testRoomNum)
+        roomObj._shortDesc = "in a test room"
+        roomObj._desc = 'in a long test room'
+
+        # Create a few similar items and add them to room
+        for num in range(1, 4):
+            obj = self.createObject(num=99999,
+                                    type='Weapon',
+                                    name='toothpick')
+            roomObj.addToInventory(obj)
+        # Create a few similar items and add them to room
+        for num in range(1, 3):
+            cre = self.createCreature(num=99999,
+                                      name='bug')
+            roomObj.addToInventory(cre)
+
+        disp = roomObj.displayItems(self.getCharObj())
+        logger.debug("disp: " + str(disp))
+        assert disp == 'You see three toothpicks and two bugs\n'
 
 
 if __name__ == '__main__':

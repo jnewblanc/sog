@@ -289,7 +289,8 @@ class Room(Item):
         ''' show items in current room '''
         buf = self.describeInvAsList(showDm=charObj.isDm(),
                                      showHidden=charObj.canSeeHidden(),
-                                     showInvisible=charObj.canSeeInvisible())
+                                     showInvisible=charObj.canSeeInvisible(),
+                                     sortList=False)
         dLog("displayItems:" + buf, False)
         if buf != '':
             buf = "You see " + buf
