@@ -1268,6 +1268,8 @@ class Character(Item):
         self._currentlyAttacking = player
 
     def isAttackingWithFist(self):
+        if self.getLastAttackCmd() in SpellList:
+            return(False)
         if self.getEquippedWeapon().getName() == 'fist':
             return(True)
         return(False)

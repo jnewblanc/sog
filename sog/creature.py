@@ -452,6 +452,9 @@ class Creature(Item):
     def isUndead(self):
         return(self._undead)
 
+    def isVulnerable(self):
+        return(self._vulnerable)
+
     def kidnaps(self):
         return(self._kidnap)
 
@@ -486,6 +489,9 @@ class Creature(Item):
 
     def takeDamage(self, num=0):
         self._hp -= num
+
+    def setVulnerable(self, val=True):
+        self._vulnerable = bool(val)
 
     def flees(self, percentChanceOfFleeing=20):
         ''' Returns true if creature flees
@@ -718,7 +724,7 @@ class Creature(Item):
     def setSecondsUntilNextAttack(self, secs=10):
         self._secondsUntilNextAttack = int(secs)
 
-    def canAttack(self):
+    def canAttack(self, allowOptOut=True):
         ''' returns true if the creature is ready for an attack '''
         debugPrefix = "Creature.canAttack (" + str(self.getId()) + "): "
 
@@ -738,12 +744,13 @@ class Creature(Item):
             return(False)
 
         # % chance that creature does not attack
-        randX = random.randint(1, 10)
-        if randX == 1:
-            self.setLastAttackDate()
-            dLog(debugPrefix + "Creature randomly chose not to attack (" +
-                 str(randX) + ' = 1)', self._instanceDebug)
-            return(False)
+        if allowOptOut:
+            randX = random.randint(1, 10)
+            if randX == 1:
+                self.setLastAttackDate()
+                dLog(debugPrefix + "Creature randomly chose not to attack (" +
+                     str(randX) + ' = 1)', self._instanceDebug)
+                return(False)
 
         dLog(debugPrefix + "Creature is ready for attack", self._instanceDebug)
         return(True)
@@ -798,12 +805,6 @@ class Creature(Item):
             charObj.client.spoolOut(closeTxt + offerTxt)
 
         return(False)
-
-    def isVulnerable(self):
-        return(self._vulnerable)
-
-    def setVulnerable(self, val=True):
-        self._vulnerable = bool(val)
 
     def fixAttributes(self):
         ''' Sometimes we change attributes, and need to fix them in rooms

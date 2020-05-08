@@ -506,7 +506,7 @@ def getSpellDamageType():
 class Spell():
     ''' Spell Class '''
     def __init__(self, charObj, targetObj=None, spellName='', chant='',
-                 requiresmana=True):
+                 requiresmana=True, useSelfCriteria=True):
         self.charObj = charObj
         self.targetObj = targetObj
         self.givenChant = chant   # Enables us to pass in chants for testing
@@ -523,6 +523,7 @@ class Spell():
         self.spellName = spellName
 
         self._requiresmana = requiresmana
+        self._useSelfCriteria = useSelfCriteria
 
         self._instanceDebug = False
 
@@ -690,8 +691,9 @@ class Spell():
 
     def _checkIfSucceeds(self):
         ''' Returns true if spell is sucessful '''
-        if not self._selfCriteriaAreMet():
-            return(False)
+        if self._useSelfCriteria:
+            if not self._selfCriteriaAreMet():
+                return(False)
         if not self._targetCriteriaAreMet():
             return(False)
         if not self._promptForChant():

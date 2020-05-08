@@ -1,7 +1,7 @@
 ''' Object Class '''   # noqa
 
 import bisect
-import datetime
+from datetime import datetime
 import pprint
 import random
 import re
@@ -134,15 +134,12 @@ class Object(Item):
     def setName(self, name):
         self._name = str(name)
 
-    def use(self):
-        return(False)
-
     def identify(self):
         ROW_FORMAT = "{0:9}: {1:<30}\n"
         buf = ''
         for attName in vars(self):
             attValue = getattr(self, attName)
-            buf += ROW_FORMAT.format(attName, attValue)
+            buf += ROW_FORMAT.format(attName, str(attValue))
         return(buf)
 
     def getId(self):
@@ -162,14 +159,17 @@ class Object(Item):
         AttributeHelper.fixAttributes(self)
         return(True)
 
-    def isInvisible(self):
-        return(self._invisible)
+    def isCarryable(self):
+        return(self._carry)
+
+    def isCursed(self):
+        return(self._cursed)
 
     def isHidden(self):
         return(self._hidden)
 
-    def isCarryable(self):
-        return(self._carry)
+    def isInvisible(self):
+        return(self._invisible)
 
     def isPermanent(self):
         return(self._permanent)
@@ -177,8 +177,28 @@ class Object(Item):
     def isMagic(self):
         return(self._magic)
 
-    def isCursed(self):
-        return(self._cursed)
+    def getAc(self):
+        ''' This is meant to be overridden if needed '''
+        return(0)
+
+    def getArticle(self):
+        return(self._article)
+
+    def getDodgeBonus(self):
+        ''' This is meant to be overridden if needed '''
+        return(0)
+
+    def getPlural(self):
+        return(self._pluraldesc)
+
+    def getName(self):
+        return(self._name)
+
+    def getSingular(self):
+        return(self._singledesc)
+
+    def getType(self):
+        return(self.__class__.__name__)
 
     def getValue(self):
         value = self._value
@@ -189,26 +209,15 @@ class Object(Item):
     def getWeight(self):
         return(max(0, self._weight))
 
-    def getName(self):
-        return(self._name)
-
-    def getType(self):
-        return(self.__class__.__name__)
-
-    def getArticle(self):
-        return(self._article)
-
-    def getSingular(self):
-        return(self._singledesc)
-
-    def getPlural(self):
-        return(self._pluraldesc)
+    def adjustPrice(self, price):
+        ''' adjust price based on object attributes '''
+        return(price)
 
     def limitationsAreSatisfied(self, charObj):
         ''' Return True if an items limitations are met '''
         if ((self._classesAllowed and
-             charObj.getClass() not in self._classesAllowed)):
-            charObj.client.spoolOut(charObj.getClass().capitalize() +
+             charObj.getClassName() not in self._classesAllowed)):
+            charObj.client.spoolOut(charObj.getClassName().capitalize() +
                                     "s are not permitted.\n")
             return(False)
         if ((self._alignmentsAllowed and
@@ -228,18 +237,6 @@ class Object(Item):
             charObj.client.spoolOut("You are over experienced.\n")
             return(False)
         return(True)
-
-    def adjustPrice(self, price):
-        ''' adjust price based on object attributes '''
-        return(price)
-
-    def getAc(self):
-        ''' This is meant to be overridden if needed '''
-        return(0)
-
-    def getDodgeBonus(self):
-        ''' This is meant to be overridden if needed '''
-        return(0)
 
 
 class Exhaustible(Object):
@@ -278,7 +275,7 @@ class Exhaustible(Object):
 
     def canBeRepaired(self):
         ''' Return True if an item can be repaired '''
-        if self._broken or self.charges == 0:
+        if self._broken or self._charges == 0:
             return(False)                 # broken items can not be repaired
         if self._maxCharges > 10 and self.percentOfChargesRemaining() > 20:
             return(False)                 # 20%+ charged items can be repaired
@@ -322,7 +319,7 @@ class Exhaustible(Object):
         return(self._broken)
 
     def isDepleated(self):
-        if self._charges > 0:
+        if self._charges <= 0:
             return(True)
         return(False)
 
@@ -388,10 +385,15 @@ class MagicalDevice(Exhaustible):
     def cast(self, charObj, targetObj):
         ''' cast a spell using a device '''
         if self.getCharges() <= 0:
-            self.charObj.client.spoolOut("This item has no charges left\n")
+            charObj.client.spoolOut("This item has no charges left\n")
             return(False)
         if self.getCharges() == 1:
-            self.charObj.client.spoolOut(self.getName() + "fizzles\n")
+            if self.getType() == 'Scroll':
+                charObj.client.spoolOut(self.describe(article='The') +
+                                        " disintegrates\n")
+            else:
+                charObj.client.spoolOut(self.describe(article='The') +
+                                        " fizzles\n")
 
         spellName = self.getSpellName()
         # With devices, spellChant is not required, so we get it and pass it in
@@ -399,13 +401,13 @@ class MagicalDevice(Exhaustible):
 
         # create the spell object, which determines if it succeeds
         spellObj = Spell(charObj, targetObj, spellName, chant=spellChant,
-                         requiresmana=False)
+                         requiresmana=False, useSelfCriteria=False)
 
         # Apply effects of spell
         if spellObj.cast(charObj.getRoom()):
             pass
         else:
-            self.selfMsg(spellObj.getFailedReason() + "\n")
+            charObj.client.spoolOut(spellObj.getFailedReason() + "\n")
 
         self.decrementChargeCounter()
 
@@ -746,11 +748,6 @@ class Armor(Equippable, Exhaustible):
     def getDodgeBonus(self):
         return(self._dodgeBonus)
 
-    def use(self):
-        if self.wear():
-            return(True)
-        return(False)
-
 
 class Weapon(Equippable, Exhaustible):
     ''' Weapon Object -
@@ -929,16 +926,6 @@ class Key(Exhaustible):
         return(None)
 
 
-class Card(Object):
-    ''' special magical device used by DMs that allows the user to teleport
-        to any place in the game. It’s not intended for use by players.
-          It is activated using:
-            use card on PLAYER'''
-    def __init__(self, objId=0):
-        super().__init__(objId)
-        return(None)
-
-
 class Scroll(MagicalDevice):
     ''' Can study it to see the chant and learn the spell
         Scroll minimums for intelligence and level are -2
@@ -1072,7 +1059,7 @@ class Treasure(Object):
 
 
 ObjFactoryTypes = ['object', 'portal', 'door', 'armor', 'weapon', 'shield',
-                   'container', 'key', 'card', 'scroll', 'potion', 'staff',
+                   'container', 'key', 'scroll', 'potion', 'staff',
                    'teleport', 'coins', 'ring', 'necklace', 'treasure']
 
 
@@ -1089,7 +1076,9 @@ def ObjectFactory(objType, id=0):       # noqa: C901
     ''' Factory method to return the correct object, depending on the type '''
     obj = None
 
-    if objType.lower() == "portal":
+    if objType.lower() == "object":
+        obj = Portal(id)
+    elif objType.lower() == "portal":
         obj = Portal(id)
     elif objType.lower() == "door":
         obj = Door(id)
@@ -1103,8 +1092,6 @@ def ObjectFactory(objType, id=0):       # noqa: C901
         obj = Container(id)
     elif objType.lower() == "key":
         obj = Key(id)
-    elif objType.lower() == "card":
-        obj = Card(id)
     elif objType.lower() == "scroll":
         obj = Scroll(id)
     elif objType.lower() == "potion":

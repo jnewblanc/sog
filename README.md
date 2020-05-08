@@ -41,17 +41,25 @@ python client.py
    2. communication is series of send/receives
    3. server output is spooled
    4. client prompts user for input and displays output from server
-2. User enters authentication loop
+   5. Single instance of game is spun up in the background
+   6. aSync thread, for non-user activity, is spun up in the background
+2. User enters 'serverLoop' which prompts for authentication
    1. email/password for auth
    2. Account has login/logout stats and several character "slots"
-3. User enters the main loop
-   1. main loop has two "areas".  The "lobby" and the "game"
-4. In the main loop, user is dumped into the lobby
+3. User enters the main "lobby" loop
   1. lobby has a "help" command
+  3. lobby has a "play" command, which launches the game loop
+  4. lobby has some inter-user communication
   2. lobby has some "admin" commands, if admin.txt exists in account directory
-  3. lobby has a "play" command, in addition to some inter-user communication
-5. In the main loop, user can enter the game area
-  1. Select character or create new one
-  2. game area has a "help" command
-6.  User plays the game.  The game contains
-  1. Rooms, Objects, Characters, Spells, Creatures, etc
+  5. exiting the lobby unauthenticates and dumps you back to the serverLoop
+5. When user enters the gameLoop
+  1. Game contains Rooms, Objects, Characters, Spells, Creatures, etc
+  2. User selects character or can create a new one.  Character is saved
+  3. User is placed in the starting room
+  4. Game area has a "help" command, some features of the game are only learned through interation
+  5. Characters are saved with every command
+  6. User can 'quit' to go back to the lobby
+
+### Developer Info ###
+* Run pytest to test
+* While designed to be a centralized server, at present, everything is run locally and content is checked in via github.  This means that you can run your own server, make your own changes and make modifications without fear of breaking everything/anyone else.  Contributions can be made via pull requests.

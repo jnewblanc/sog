@@ -52,8 +52,15 @@ class TestCreature(TestGameBase):
         assert not creObj.isMagic()
         assert not creObj.isPermanent()
         assert not creObj.isUndead()
+        assert not creObj.isVulnerable()
         assert not creObj.kidnaps()
         assert not creObj.sendsToJail()
+
+        creObj.setVulnerable()
+        assert creObj.isVulnerable()
+        creObj.setEnterRoomTime()
+        creObj.setLastAttack()
+        creObj.setLastAttackDate()
 
     def testCreatureParams(self):
         creObj = self.createCreature(num=self.testCreatureNumber, name="bug")
@@ -90,6 +97,18 @@ class TestCreature(TestGameBase):
         assert creObj.fumbles(basePercent=500, secsToWait=20)
         assert creObj.getSecondsUntilNextAttack() > 10
         assert not creObj.fumbles(basePercent=0)
+
+        creObj._attackRate = 100
+        creObj.setSecondsUntilNextAttack(300)
+        assert not creObj.canAttack(allowOptOut=False)
+        creObj.setSecondsUntilNextAttack(0)
+        assert creObj.canAttack(allowOptOut=False)
+        creObj._attackRate = 0
+        creObj.setInstanceDebug(True)
+        assert not creObj.canAttack(allowOptOut=False)
+        creObj.setInstanceDebug(False)
+
+        assert creObj.flees() is True or creObj.flees() is False
 
     def testCreatureParley(self):
         creObj = self.createCreature(num=self.testCreatureNumber, name="bug")

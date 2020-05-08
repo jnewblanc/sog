@@ -720,8 +720,9 @@ class GameCmd(cmd.Cmd):
 
         if spellItem.getType().lower() == 'scroll':
             spellItem.readScroll(self.charObj, targetObj)
-            self.gameObj.removeFromPlayerInventory(self.charObj, spellItem,
-                                                   'disint')
+            # Note: A read scroll will already display the distintegrates
+            # message via the item's cast method.  Don't add it here.
+            self.gameObj.removeFromPlayerInventory(self.charObj, spellItem)
         else:
             spellItem.cast(self.charObj, targetObj)
         return(None)
