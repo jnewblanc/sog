@@ -325,6 +325,7 @@ class TestCharacter(TestGameBase):
 
     def testDeath(self):
         _levelLoopNumber = 4
+        _deathRoom = 58
         charObj = self.createCharacter()
         origStatTotal = self.getStatTotals(charObj,
                                            name=('level ' +
@@ -346,7 +347,7 @@ class TestCharacter(TestGameBase):
         assert charObj.damageIsLethal(30)
         charObj.takeDamage(30, nokill=True)
         charObj.takeDamage(30)
-        assert charObj.getRoom().getId() == 1
+        assert charObj.getRoom().getId() == _deathRoom
         assert charObj.getHitPoints() == charObj.getMaxHP()
         assert not charObj.isPoisoned()
         assert not charObj.isPlagued()
