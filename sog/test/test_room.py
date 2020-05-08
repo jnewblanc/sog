@@ -3,13 +3,15 @@ import unittest
 
 from common.test import TestGameBase
 from common.general import logger, targetSearch
-import creature
 from room import RoomFactory
 
 
 class TestRoom(TestGameBase):
 
     num = 99999
+
+    def setTestName(self, name=''):
+        self._testName = __class__.__name__
 
     def testValidity(self):
         roomObj = RoomFactory('room', self.num)

@@ -196,7 +196,7 @@ def itemSearch(itemList, name, desiredNum="#1", typeList=[],
     '''
     logPrefix = "sea: "
     myitem = None
-    debugItemSearch = True
+    debugItemSearch = False
 
     # strip out anything that's not a digit (i.e. number signs)
     desiredNum = int(re.sub('[^0-9]', '', str(desiredNum)))

@@ -9,6 +9,9 @@ from common.test import TestGameBase
 
 class TestGame(TestGameBase):
 
+    def setTestName(self, name=''):
+        self._testName = __class__.__name__
+
     def testGameInstanciation(self):
         gameObj = self.getGameObj()
         assert gameObj.isValid()

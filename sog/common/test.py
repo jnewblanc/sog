@@ -1,4 +1,5 @@
 ''' common test finctions and classes '''
+import doctest
 import unittest
 
 import account
@@ -104,12 +105,13 @@ class TestGameBase(unittest.TestCase):
         creObj._singledesc = name
         creObj._pluraldesc = name + 's'
         creObj._longdesc = "It's a long " + name
-        creObj._level = '1'
+        creObj._level = 1
         creObj._hostile = False
         creObj._itemCatalog = ['Armor/1', 'Weapon/1']
         creObj._numOfItemsCarried = [1, 2]
         creObj.setHitPoints(20)
         creObj.autoPopulateInventory()
+        creObj.setEnterRoomTime()
         assert creObj.isValid()
         return(creObj)
 

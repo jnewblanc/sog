@@ -10,6 +10,9 @@ class TestObject(TestGameBase):
 
     testObjNumber = 99999
 
+    def setTestName(self, name=''):
+        self._testName = __class__.__name__
+
     def setUp(self):
         self.banner('start', testName=__class__.__name__)
 

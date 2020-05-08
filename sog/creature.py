@@ -69,6 +69,13 @@ class Creature(Item):
                       '_itemCatalog', '_numOfItemsCarried', '_parleyTxt',
                       '_parleyTeleportRooms']
 
+    primaryAttributes = ['_blockFromLeaving', '_follow', '_guardTreasure',
+                         '_hostile', '_attackLastAttacker', '_fleeIfAttacked',
+                         '_undead', '_rust', '_steal']
+    secondaryAttributes = ['_magicImmunity', '_antiMagic',
+                           '_hidden', '_regenerate', '_steal', '_drain',
+                           '_poison', '_kidnap', '_invisible', '_sendToJail']
+
     _levelDefaultsDict = {
         1: {
             '_exp': 10,
@@ -336,20 +343,114 @@ class Creature(Item):
     def getId(self):
         return(self._creatureId)
 
-    def getType(self):
-        return(self.__class__.__name__)
+    def addHP(self, num=0):
+        self._hp = min((self._hp + num), self.getMaxHP())
+
+    def attacksBack(self):
+        return(self._defend)
+
+    def blocksFromLeaving(self):
+        return(self._blockFromLeaving)
+
+    def damageIsLethal(self, num=0):
+        ''' return True if given damage would be enough to kill creature '''
+        if num >= self.getHitPoints():
+            return(True)
+        return(False)
+
+    def fleesIfAttacked(self):
+        return(self._fleeIfAttacked)
+
+    def getAc(self):
+        return(self._ac)
+
+    def getAlignment(self):
+        return(self._alignment)
 
     def getArticle(self):
         return(self._article)
 
-    def getSingular(self):
-        return(self._singledesc)
+    def getAttackRate(self):
+        return(self._attackRate)
+
+    def getCumulativeDodge(self):
+        ''' return percentage to avoid a hit '''
+        return(self._dodge)
+
+    def getCurrentlyAttacking(self):
+        ''' return player that creature is attacking, if any '''
+        if self.isAttacking():
+            return(self._currentlyAttacking)
+        return(None)
+
+    def getExp(self):
+        return(self._exp)
+
+    def getFrequency(self):
+        return(self._frequency)
+
+    def getHitPoints(self):
+        return(self._hp)
+
+    def getLastAttackDate(self):
+        return(self._lastAttackDate)
+
+    def getLevel(self):
+        return(self._level)
+
+    def getMaxHP(self):
+        return(self._maxhp)
+
+    def getName(self):
+        return(self._name)
 
     def getPlural(self):
         return(self._pluraldesc)
 
-    def getLevel(self):
-        return(self._level)
+    def getSecondsUntilNextAttack(self):
+        return(self._secondsUntilNextAttack)
+
+    def getSingular(self):
+        return(self._singledesc)
+
+    def getToHit(self):
+        return(self._tohit)
+
+    def getType(self):
+        return(self.__class__.__name__)
+
+    def getWeight(self):    # set for objects, not usually useful for Creatures
+        return(self._weight)
+
+    def getValue(self):     # set for objects, not usually useful for Creatures
+        return(self._value)
+
+    def guardsTreasure(self):
+        return(self._guardTreasure)
+
+    def isAntiMagic(self):
+        return(self._antiMagic)
+
+    def isCarryable(self):  # set for objects, not usually useful for Creatures
+        return(self._carry)
+
+    def isHidden(self):
+        return(self._hidden)
+
+    def isHostile(self):
+        return(self._hostile)
+
+    def isInvisible(self):
+        return(self._invisible)
+
+    def isMagic(self):
+        return(self._magicImmunity)
+
+    def isPermanent(self):
+        return(self._permanent)
+
+    def isUndead(self):
+        return(self._undead)
 
     def kidnaps(self):
         return(self._kidnap)
@@ -357,17 +458,14 @@ class Creature(Item):
     def sendsToJail(self):
         return(self._sendToJail)
 
-    def blocksFromLeaving(self):
-        return(self._blockFromLeaving)
+    def getDamage(self, level=0):
+        ''' returns the damage dealt by a creature '''
+        if not level:
+            level = self.getLevel()
 
-    def guardsTreasure(self):
-        return(self._guardTreasure)
-
-    def getExp(self):
-        return(self._exp)
-
-    def getHitPoints(self):
-        return(self._hp)
+        damage = int(self._baseStatDict[level]['_damage'] *
+                     self._damagePct / 100)
+        return(damage)
 
     def setHitPoints(self, num=0):
         if num:
@@ -378,71 +476,10 @@ class Creature(Item):
     def setEnterRoomTime(self):
         self._enterRoomTime = datetime.now()
 
-    def addHP(self, num=0):
-        self._hp = min((self._hp + num), self.getMaxHP())
-
-    def getMaxHP(self):
-        return(self._maxhp)
-
-    def getName(self):
-        return(self._name)
-
-    def getAc(self):
-        return(self._ac)
-
-    def getFrequency(self):
-        return(self._frequency)
-
-    def getAlignment(self):
-        return(self._alignment)
-
-    def fleesIfAttacked(self):
-        return(self._fleeIfAttacked)
-
-    def isInvisible(self):
-        return(self._invisible)
-
-    def isHidden(self):
-        return(self._hidden)
-
-    def isHostile(self):
-        return(self._hostile)
-
-    def isPermanent(self):
-        return(self._permanent)
-
-    def isMagic(self):
-        return(self._magicImmunity)
-
-    def isAntiMagic(self):
-        return(self._antiMagic)
-
-    def isUndead(self):
-        return(self._undead)
-
-    def isCarryable(self):  # set for objects, not usually useful for Creatures
-        return(self._carry)
-
-    def getWeight(self):    # set for objects, not usually useful for Creatures
-        return(self._weight)
-
-    def getValue(self):     # set for objects, not usually useful for Creatures
-        return(self._value)
-
-    def getDamage(self):
-        damage = int(self._baseStatDict[self.getLevel()]['_damage'] *
-                     self._damagePct / 100)
-        return(damage)
-
     def isAttacking(self):
         if self._currentlyAttacking is not None:
             return(True)
         return(False)
-
-    def getCurrentlyAttacking(self):
-        if self.isAttacking():
-            return(self._currentlyAttacking)
-        return(None)
 
     def setCurrentlyAttacking(self, player):
         self._currentlyAttacking = player
@@ -464,18 +501,13 @@ class Creature(Item):
         return(False)
 
     def getEquippedWeaponToHit(self):
-        ''' creatures don't have weapons, so we just use their _tohit att '''
-        return(self._tohit)
+        ''' wrapper for getToHit.  Returns _tohit value
+            * creatures don't have weapons, but this method allows us to treat
+              them like characters when calculateing toHit values.
+        '''
+        return(self.getToHit())
 
-    def attacksBack(self):
-        return(self._defend)
-
-    def damageIsLethal(self, num=0):
-        if num >= self.getHitPoints():
-            return(True)
-        return(False)
-
-    def initiateAttack(self, charObj=None):
+    def initiateAttack(self, charObj=None, alwaysNotices=False):
         ''' Returns true if creature initiates attack on player '''
         if not charObj:
             charObj = self.getCurrentlyAttacking()
@@ -483,8 +515,9 @@ class Creature(Item):
         if not charObj:
             return(False)
 
-        if not self.notices(charObj):
-            return(False)
+        if not alwaysNotices:
+            if self.doesntNotice(charObj):
+                return(False)
 
         if charObj != self.getCurrentlyAttacking():
             self.setCurrentlyAttacking(charObj)        # initiate attack
@@ -492,12 +525,12 @@ class Creature(Item):
 
         return(False)
 
-    def getEquippedWeaponDamage(self, percentSwing=15):
+    def getEquippedWeaponDamage(self, fluctuationPercent=15):
         ''' calculate creature 'weapon' damage
             * creatures don't have weapons equipped.  Instead, we treat their
               damage attribute as a weapon with some random fluctuation '''
         damage = self.getDamage()
-        damageAdj = int(damage * percentSwing / 100)
+        damageAdj = int(damage * fluctuationPercent / 100)
         damage += random.randint(-(damageAdj), damageAdj)
         return(damage)
 
@@ -506,10 +539,6 @@ class Creature(Item):
         acReduction = int(damage * (.05 * self.getAc()))
         damage -= acReduction
         return(max(0, damage))
-
-    def getCumulativeDodge(self):
-        ''' return percentage to avoid a hit '''
-        return(self._dodge)
 
     def hitsCharacter(self, charObj):
         ''' return true if creature hits the character '''
@@ -574,16 +603,10 @@ class Creature(Item):
         ''' Returns the number of attributes set to True.
             Distinguishes between primary and secondary attribute types '''
         count = 0
-        primaryAtts = ['_blockFromLeaving', '_follow', '_guardTreasure',
-                       '_hostile', '_attackLastAttacker', '_fleeIfAttacked',
-                       '_undead', '_rust', '_steal']
-        secondaryAtts = ['_magicImmunity', '_antiMagic',
-                         '_hidden', '_regenerate', '_steal', '_drain',
-                         '_poison', '_kidnap', '_invisible', '_sendToJail']
         if which == 'primary':
-            mylist = primaryAtts
+            mylist = self.primaryAttributes
         else:
-            mylist = secondaryAtts
+            mylist = self.secondaryAttributes
             if len(self._offensiveSpells) > 0:
                 count += 1
 
@@ -658,7 +681,18 @@ class Creature(Item):
         if charObj.isHidden() or charObj.isInvisible():
             return(False)
 
-        # todo: add rand/luck?
+        # class/luck/alignment customization
+        percentChanceOfBeingIgnored = charObj.getLuck() - 5
+        if charObj.getClass() == 'ranger':
+            percentChanceOfBeingIgnored *= 2
+
+        if ((self.getAlignment() != 'neutral' and
+             self.getAlignment() == charObj.getAlignment())):
+            percentChanceOfBeingIgnored *= 2
+
+        if random.randint(1, 100) <= percentChanceOfBeingIgnored:
+            self.setEnterRoomTime()    # Reset this to delay attack
+            return(False)
 
         if self._enterRoomTime == getNeverDate():
             self.setEnterRoomTime()
@@ -671,8 +705,9 @@ class Creature(Item):
 
         return(True)
 
-    def getAttackRate(self):
-        return(self._attackRate)
+    def doesntNotice(self, charObj):
+        ''' wrapper around negated 'notices' method '''
+        return(not self.notices(charObj))
 
     def setLastAttack(self):
         self.setLastAttackDate()
@@ -680,14 +715,8 @@ class Creature(Item):
     def setLastAttackDate(self):
         self._lastAttackDate = datetime.now()
 
-    def getLastAttackDate(self):
-        return(self._lastAttackDate)
-
     def setSecondsUntilNextAttack(self, secs=10):
         self._secondsUntilNextAttack = int(secs)
-
-    def getSecondsUntilNextAttack(self):
-        return(self._secondsUntilNextAttack)
 
     def canAttack(self):
         ''' returns true if the creature is ready for an attack '''
@@ -719,15 +748,24 @@ class Creature(Item):
         dLog(debugPrefix + "Creature is ready for attack", self._instanceDebug)
         return(True)
 
+    def getDesiredBribe(self, charObj):
+        ''' calculate the amount of money it would take to bribe creature '''
+        charLvl = charObj.getLevel()
+        charChr = charObj.getCharisma()
+
+        bribeAmt = self._baseStatDict[self.getLevel()]['_bribeAmt']
+        bribeAmt -= int((charChr - 12) * (100 * charLvl))
+        bribeAmt = max(0, bribeAmt)
+
+        return(bribeAmt)
+
     def acceptsBribe(self, charObj, amount):
         ''' subtracts coins and returns true if bribe is accepted
             * caller will need to remove instance from room
             * negative reponses are displayed.  Positive is left to the caller
         '''
-        amountDesired = self._baseStatDict[self.getLevel()]['_bribeAmt']
-        amountDesired -= int((charObj.getCharisma() - 12) *
-                             (100 * charObj.getLevel()))
-        amountDesired = max(0, amountDesired)
+
+        amountDesired = self.getDesiredBribe(charObj)
 
         rudeTxt = (str(amount) + " shillings?  That's an insult!  I'll take " +
                    "your petty coins just for wasting my time.\n")
@@ -752,7 +790,7 @@ class Creature(Item):
             charObj.subtractCoins(amount)
             charObj.client.spoolOut(rudeTxt)
         elif amount < amountDesired * .30:
-            # if offer is less than X%, then take money an negotiate
+            # if offer is less than X%, then take money and negotiate
             charObj.subtractCoins(amount)
             charObj.client.spoolOut(rudeTxt + offerTxt)
         else:
