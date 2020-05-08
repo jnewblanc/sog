@@ -689,7 +689,7 @@ class Creature(Item):
 
         # class/luck/alignment customization
         percentChanceOfBeingIgnored = charObj.getLuck() - 5
-        if charObj.getClass() == 'ranger':
+        if charObj.getClassName() == 'ranger':
             percentChanceOfBeingIgnored *= 2
 
         if ((self.getAlignment() != 'neutral' and

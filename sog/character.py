@@ -1621,7 +1621,7 @@ class Character(Item):
         ''' Notify/record death '''
         deathMsg = self.describe() + ' has died'
         self.client.getGameObj().gameMsg(deathMsg + '\n')
-        logger.info('obituary: ' + deathMsg)
+        logger.info(self.client.txtBanner('obituary: ' + deathMsg))
 
     def processDeath(self):
         ''' Do all the things related to dying '''
@@ -1635,10 +1635,10 @@ class Character(Item):
         self.setPlagued(False)
 
         # return to starting room or guild
-        self.client.gameObj.joinRoom(1, self)
+        self.client.gameObj.joinRoom(58, self)
 
         self.save()
-        self._spoolOut('You are Dead')
+        self._spoolOut('You are dead!\n')
         self.obituary()
 
         return(True)

@@ -1,5 +1,5 @@
 ''' common test finctions and classes '''
-import doctest
+# import doctest
 import unittest
 
 import account
