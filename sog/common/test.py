@@ -1,4 +1,9 @@
-''' common test finctions and classes '''
+''' test harness - common test functions and classes
+      * TestGameBase - superClass from which all tests classes should inherit
+                       from
+      * masterTestNum & incrementTestNum - globals for tracking/incrementing
+                       the test numbers
+'''
 # import doctest
 import unittest
 
@@ -16,7 +21,13 @@ class TestGameBase(unittest.TestCase):
     ''' Base class for testing game
         * Sets up commonly used parts of the game so that each test subClass
           doesn't need to do the same thing.
-        * Set up Account, Character, Game, Room with defaults
+        * Make it easy to create and get handles for the following major class
+          types, which start with default values and can then be customized:
+          - Client/Account/Game
+          - Character
+          - Room
+          - Creature
+          - Objects
     '''
     _testAcctName = "sogTest@gadgetshead.com"
     _testAcctDisplay = "sogTest"

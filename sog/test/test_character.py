@@ -1,7 +1,8 @@
 ''' test character '''
+from collections import Counter
 import unittest
 
-from character import Character
+# from character import Character
 from common.test import TestGameBase
 from common.general import logger
 import object
@@ -19,18 +20,23 @@ class TestCharacter(TestGameBase):
         self.banner('start', testName=__class__.__name__)
         self._client = self.createClientAndAccount()
 
-    def getStatTotals(self, charObj, name=''):
+    def getStatTotals(self, charObj, name='', silent=False):
         ''' reusable method for getting stat totals.  Useful for
             comparing/testing level up/down and death '''
         statTotal = 0
         statStr = ''
-        for stat in Character.statList:
+        for stat in charObj.statList:
             val = getattr(charObj, stat)
             statTotal += val
-            statStr += stat + '+' + str(val) + ' '
-        logger.debug('getStatTotals ' + name + '(' + str(statTotal) + '): ' +
-                     str(statStr))
+            statStr += stat + '=' + str(val) + ' '
+        if not silent:
+            logger.debug('{0:29}'.format('getStatTotals ' + name +
+                         '(' + str(statTotal) + '): ') + str(statStr))
         return(statTotal)
+
+    def setStats(self, charObj, statValues):
+        for statName, statValue in zip(charObj.statList, statValues):
+            setattr(charObj, statName, statValue)
 
     def testCharAttributes(self):
         charObj = self.createCharacter()
@@ -267,6 +273,7 @@ class TestCharacter(TestGameBase):
         logger.debug("Looping " + str(_levelLoopNumber) +
                      " times - raise and lower level")
         firstStatCount = 0
+        # level up and then level down x times
         for i in range(0, _levelLoopNumber):
             statTotalPre = self.getStatTotals(charObj, name=('Pre' + str(i)))
             if not firstStatCount:
@@ -286,19 +293,21 @@ class TestCharacter(TestGameBase):
                      str(_levelLoopNumber) +
                      ' times gaining and losing levels: '
                      + str(firstStatCount) + ' --> ' + str(statTotalPostDown))
-        assert firstStatCount >= statTotalPostDown
+        # after level up and then level down x times, postDown should
+        # generally be lower, but extremely lucky cases may improve stats
+        assert firstStatCount + 2 >= statTotalPostDown
 
         charObj._doubleUpStatLevels = [2, 3, 7]
         charObj.setLevel(1)
-        assert charObj.getStatPoints() == 1, "level 1 - 1 pt"
+        assert charObj.getStatPoints(luckPoint=False) == 1, "level 1 - 1 pt"
         charObj.setLevel(2)
-        assert charObj.getStatPoints() == 2, "level 2 - 2 pts"
+        assert charObj.getStatPoints(luckPoint=False) == 2, "level 2 - 2 pts"
         charObj.setLevel(3)
-        assert charObj.getStatPoints() == 2, "level 3 - 2 pts"
+        assert charObj.getStatPoints(luckPoint=False) == 2, "level 3 - 2 pts"
         charObj.setLevel(4)
-        assert charObj.getStatPoints() == 1, "level 4 - 1 pt"
+        assert charObj.getStatPoints(luckPoint=False) == 1, "level 4 - 1 pt"
         charObj.setLevel(5)
-        assert charObj.getStatPoints() == 2, "level 5 - 2 pts"
+        assert charObj.getStatPoints(luckPoint=False) == 2, "level 5 - 2 pts"
 
     def testLevelUp(self):
         charObj = self.createCharacter()
@@ -322,6 +331,10 @@ class TestCharacter(TestGameBase):
             logger.debug('testLevelUp: _doubleUpStatLevels=' +
                          str(charObj._doubleUpStatLevels))
             assert statTotalLvl2 >= statTotalPre + 2
+
+        charObj._expToNextLevel = 10000
+        charObj.expBonus(percent=10)
+        assert charObj.getExp() == 9000
 
     def testDeath(self):
         _levelLoopNumber = 4
@@ -355,6 +368,60 @@ class TestCharacter(TestGameBase):
                                                 name=('PostDeathLevel ' +
                                                       str(charObj.getLevel())))
         assert postDeathStatTotal >= origStatTotal - 3
+
+    def testDeathLevels(self):
+        _levelLoopNumber = 100
+        _startingLevel = 5
+        _baseStats = [10, 10, 10, 10, 10, 10, 10]
+        _pietyLuckCombos = [(8, 8), (10, 10), (12, 12), (14, 14), (16, 16),
+                            (18, 18), (20, 20), (22, 22)]
+        charObj = self.createCharacter()
+        charObj.setName('player1')
+        logger.debug('Testing the same death ' + str(_levelLoopNumber) +
+                     ' times for ' + str(len(_pietyLuckCombos)) +
+                     ' piety levels - for visual comparison')
+        statSummary = ''
+        lvlSummary = ''
+        logger.debug(
+            'baseStats: ' +
+            ', '.join(
+                ['{0:3.3}'.format(str(x)) + '=' + str(y) for x, y in zip(
+                    charObj.statList, _baseStats)]))
+        for piety, luck in _pietyLuckCombos:
+            statDiffs = []
+            levelDiffs = []
+            for i in range(0, _levelLoopNumber):
+                charObj.setLevel(_startingLevel)
+                self.setStats(charObj, _baseStats)
+                charObj.luck = luck
+                charObj.piety = piety
+                origStatTotal = self.getStatTotals(charObj, name=('lvl ' +
+                                                   str(charObj.getLevel())),
+                                                   silent=True)
+                charObj.processDeath(calculateLevelsToLose=True, silent=True)
+#                charObj.processDeath(calculateLevelsToLose=False, silent=True)
+                newStatTotal = self.getStatTotals(charObj, name=('lvl ' +
+                                                  str(charObj.getLevel())),
+                                                  silent=True)
+                statDiffs.append(origStatTotal - newStatTotal)
+                levelDiffs.append(_startingLevel - charObj.getLevel())
+            countList = []
+            for key, val in zip(Counter(statDiffs).keys(),
+                                Counter(statDiffs).values()):
+                countList.append(str(key) + ":" + str(val))
+            statSummary += (
+                'StatsLostCount: piety={0:2} luck={1:2}'.format(str(piety),
+                                                                str(luck)) +
+                " " + ", ".join(sorted(countList)) + '\n')
+            countList = []
+            for key, val in zip(Counter(levelDiffs).keys(),
+                                Counter(levelDiffs).values()):
+                countList.append(str(key) + ":" + str(val))
+            lvlSummary += (
+                'LevelsLostCount: piety={0:2} luck={1:2}'.format(str(piety),
+                                                                 str(luck)) +
+                " " + ", ".join(sorted(countList)) + '\n')
+        logger.debug('\n' + statSummary + '\n' + lvlSummary)
 
 
 if __name__ == '__main__':

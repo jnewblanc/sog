@@ -32,8 +32,7 @@ class Character(Item):
 
     # int attributes
     intAttributes = ['_expToNextLevel', '_level', '_maxhp', '_hp',
-                     '_maxmana', '_mana',
-                     '_statsearnedlastlevel', '_limitedSpellsLeft',
+                     '_maxmana', '_mana', '_limitedSpellsLeft',
                      '_broadcastLimit', '_slash', '_bludgeon', '_pierce',
                      '_magic', '_dodge', '_coins', '_ac',
                      '_weenykills', '_matchedkills', '_valiantkills',
@@ -50,7 +49,8 @@ class Character(Item):
 
     # obsolete attributes (to be removed)
     obsoleteAtt = ['_money', '_heal', '_maxspellpoints', '_spellpoints',
-                   '_hitpoints', '_maxhitpoints', 'roomObj']
+                   '_hitpoints', '_maxhitpoints', 'roomObj',
+                   '_statsearnedlastlevel']
 
     attributeInfo = {
     }
@@ -197,7 +197,6 @@ class Character(Item):
         self._maxmana = 10
         self._hp = 10
         self._mana = 10
-        self._statsearnedlastlevel = 0
         self._maxitems = 12
 
         self._classname = 'fighter'
@@ -357,7 +356,7 @@ class Character(Item):
         ''' Automatically customize some stats/attributes, based on others '''
         self.customizeStats()
         self.setDoubleUpStatLevels()
-        self.randomlyIncrementStat(12)
+        self.randomlyIncrementStats(12)
 
         # set starting points for changing stats that depend on other stats
         self.setHitPoints(self.getMaxHP())
@@ -968,22 +967,78 @@ class Character(Item):
         self.reCalculateStats()
         self._achievedSkillForLevel = False
 
-    def getStatPoints(self):
+    def getDistribution(self, startR=15, endR=90, shifter=0, influence=12):
+        ''' Some reusable math to tweak number range distributions
+            I'm not a math wizard, but I was able to create this formula that,
+            along with tweaking the inputs, allows us to get the desired
+            distributions.
+            Beware: Tweaking this requires lots of (manual/visual) testing of
+            stats/lvls when leveling up and level down.  See testDeathLevels:
+                pytest .\test\test_character.py -k testDeathLevels
+        '''
+        distMult = (100 - startR) / (endR - startR)
+        percentChance = shifter + ((influence - startR) * distMult)
+        return(percentChance)
+
+    def getStatPoints(self, reverse=False, distShifter=90,
+                      luckPoint=True):
+        ''' determine how many stat points are gained/lost when leveling
+            up/down.
+            * dist shifter allows us to tweak the resulting distributions
+              which want to change for leveling up vs leveling down
+        '''
         statPoints = 1
         # check to see if level is a doubleUp level
         if self.getLevel() in self._doubleUpStatLevels:
             # Grant extra stat point
-            statPoints = statPoints + 1
+            statPoints += 1
         if self.getLevel() % 5 == 0:
             # Grant extra stat point every 5th level
-            statPoints = statPoints + 1
+            statPoints += 1
         elif self.getLevel() > 10:
-            if random.randint(0, 99) < (self.luck * 3):
-                # After level 10, its based on luck (roughly 30% chance)
-                # There's a chance of getting an extra point on levels not
-                # divisible by 5
-                statPoints = statPoints + 1
+            # After level 10, chance of getting an extra point on levels not
+            # divisible by 5 goes up significantly
+            distShifter + 20
+
+        if luckPoint:
+            # A luck based role to to determine if an extra point is added.
+            percentChance = self.getDistribution(startR=11, endR=90,
+                                                 shifter=distShifter,
+                                                 influence=self.luck)
+            if reverse:
+                percentChance = 100 - percentChance
+
+            if percentChance > random.randint(1, 100):
+                statPoints += 1
+
         return(statPoints)
+
+    def levelsToLose(self):
+        ''' How many levels are lost (when dying) '''
+        chanceOfOnlyLosingOneLevel = 60
+        pietyScaler = 1.3
+        luckScaler = 1.1
+        influencer = (self.piety * pietyScaler) + (self.luck * luckScaler)
+        chanceOfOnlyLosingOneLevel = self.getDistribution(startR=5, endR=150,
+                                                          shifter=75,
+                                                          influence=influencer)
+        if self.getClassName().lower() in ['cleric', 'paladin']:
+            # 10% reduction for clerics and paladins
+            chanceOfOnlyLosingOneLevel += 10
+
+        percentChance = int(chanceOfOnlyLosingOneLevel)
+        if percentChance > random.randint(1, 100):
+            levelsToLose = 1
+        else:
+            levelsToLose = 2
+        return(levelsToLose)
+
+    def expBonus(self, percent=10):
+        ''' deduct a certain percentage of experience for next level '''
+        self.client.spoolOut('Hermes blesses you!  Your next ' +
+                             'level will arrive in haste.')
+        multPercent = (100 - percent) / 100
+        self._expToNextLevel = int(self._expToNextLevel * multPercent)
 
     def levelUpStats(self, statPoints=0):
         '''Level up a character's stats'''
@@ -992,30 +1047,19 @@ class Character(Item):
 
         if statPoints == 1:
             if random.randint(0, 99) < (self.luck * 2):
-                # Based on luck, (roughly 20% chance) experience for next level
-                # may be reduced by 10%
-                self.client.spoolOut('Hermes blesses you!  Your next ' +
-                                     'level will arrive in haste.')
-                self._expToNextLevel = int(self._expToNextLevel * .90)
-        self.randomlyIncrementStat(statPoints)
-        self._statsearnedlastlevel = statPoints
+                # Based on luck, (roughly 20% chance) exp may be reduced
+                self.expBonus()
+        self.randomlyIncrementStats(statPoints)
         # increase max hitpoints/mana
         self.reCalculateStats()
         return(None)
 
-    def levelDownStats(self):
+    def levelDownStats(self, statPoints=0):
         ''' decrease stats - used when someone dies '''
-        # Lose the number of stats gained last level
-        for numstat in range(1, self._statsearnedlastlevel + 1):
-            self.randomlyDecrementStat(1)
-        # Reduce stats an extra time if it's a double stat level.
-        if self.getLevel() in self._doubleUpStatLevels:
-            self.randomlyDecrementStat(1)
-        else:
-            # random chance of losing one additional stat
-            randX = random.randint(1, 100)
-            if randX > 50:
-                self.randomlyDecrementStat(1)
+        if statPoints == 0:
+            statPoints = self.getStatPoints(distShifter=20, reverse=True)
+
+        self.randomlyDecrementStats(statPoints)
         self.reCalculateStats()
         return(None)
 
@@ -1025,12 +1069,12 @@ class Character(Item):
         # get the stat name, based on the random number
         return(self.statList[randX])
 
-    def randomlyIncrementStat(self, points=1):
+    def randomlyIncrementStats(self, points=1):
         '''Randomly assign points to attributes'''
         for x in range(1, points + 1):
             self.incrementStat(self.getRandomStat())
 
-    def randomlyDecrementStat(self, points=1):
+    def randomlyDecrementStats(self, points=1):
         '''Randomly assign points to attributes'''
         for x in range(1, points + 1):
             self.decrementStat(self.getRandomStat())
@@ -1253,6 +1297,9 @@ class Character(Item):
 
     def getEquippedNecklace(self):
         return(self._equippedNecklace)
+
+    def getExp(self):
+        return(self._expToNextLevel)
 
     def isAttacking(self):
         if self._currentlyAttacking is not None:
@@ -1605,27 +1652,20 @@ class Character(Item):
                 self.processDeath()
         return(condition)
 
-    def levelsToLose(self):
-        randX = random.randint(1, 100)
-        chanceOfLosingTwoLevels = 50 - self.piety - (self.luck / 2)
-        if self.getClassName().lower() in ['cleric', 'paladin']:
-            # 10% reduction for clerics and paladins
-            chanceOfLosingTwoLevels -= 10
-        if randX > chanceOfLosingTwoLevels:
-            levelsToLose = 2
-        else:
-            levelsToLose = 1
-        return(levelsToLose)
-
     def obituary(self):
         ''' Notify/record death '''
         deathMsg = self.describe() + ' has died'
-        self.client.getGameObj().gameMsg(deathMsg + '\n')
-        logger.info(self.client.txtBanner('obituary: ' + deathMsg))
+        self.client.getGameObj().gameMsg(self.client.txtBanner(deathMsg) +
+                                         '\n')
+        logger.info('obituary: ' + deathMsg)
 
-    def processDeath(self):
+    def processDeath(self, calculateLevelsToLose=True, silent=False):
         ''' Do all the things related to dying '''
-        for numlvl in range(1, self.levelsToLose() + 1):
+        levelsToLose = 1
+        if calculateLevelsToLose:
+            levelsToLose = self.levelsToLose()
+
+        for numlvl in range(1, levelsToLose + 1):
             self.levelDownStats()
             if self.getLevel() > 1:
                 self.subtractlevel()
@@ -1638,8 +1678,9 @@ class Character(Item):
         self.client.gameObj.joinRoom(58, self)
 
         self.save()
-        self._spoolOut('You are dead!\n')
-        self.obituary()
+        if not silent:   # primarily used for testing hundreds of deaths
+            self._spoolOut('You are dead!\n')
+            self.obituary()
 
         return(True)
 

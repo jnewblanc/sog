@@ -111,7 +111,7 @@ class Storage():
                              attName + " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
-        self.writeFile(filename)
+        self.writePickleFile(filename)
         # Restore attributes that we temporarily set aside when saving.
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
@@ -120,7 +120,7 @@ class Storage():
                          str(self.getId()))
         return(True)
 
-    def writeFile(self, filename):
+    def writePickleFile(self, filename):
         with open(filename, 'wb') as outputfilehandle:
             try:
                 pickle.dump(self, outputfilehandle, pickle.DEFAULT_PROTOCOL)
@@ -128,7 +128,7 @@ class Storage():
                 logger.debug(self.debug())
                 traceback.print_exc()
 
-    def readFile(self, filename):
+    def readPickleFile(self, filename):
         with open(filename, 'rb') as inputfilehandle:
             loadedItem = pickle.load(inputfilehandle)
             return(loadedItem)
@@ -159,7 +159,7 @@ class Storage():
             logger.debug(logPrefix + "Loading " + filename + "...")
 
         if self.dataFileExists():
-            loadedInst = self.readFile(filename)
+            loadedInst = self.readPickleFile(filename)
 
             if not loadedInst:
                 logger.error("storage.load - Could not get loaded instance")
