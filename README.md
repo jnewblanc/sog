@@ -16,12 +16,15 @@ While I'm hoping to have a playable game in the end, my primary goal is to obtai
 3. Install python modules in requirement.txt
 
 ### To play ###
-1. Open two command windows / shells
-2. In a command shell 1:
+1. Run the server
+   1. Run the server script in sog/bin OR
+   2. Open a command shell and run:
 ```cd to sog/sog
 python server.py
 ```
-3. In command shell #2:
+2. Run the client
+   1. Run the client script in sob/bin OR
+   2. Open a command shell and run:
 ```cd sog/sog
 python client.py
 ```
@@ -29,7 +32,7 @@ python client.py
 ### Admin/DM Info ###
 * At present, all persistent storage is on disk in the sog/.data directory.
   - All account/character info only exists locally (ignored via .gitignore)
-* logs are in sog/.logs
+* logs are in sog/.logs .  Some windows logfile tailing scripts are in sog/bin
 * town map is at: https://docs.google.com/drawings/d/1SDAjL62DRsWta3vgfGLerKsn49e5wzywlQregGmKTbk/edit
 * Game balance spreadsheets: https://docs.google.com/spreadsheets/d/1A9xDUhb6tH_dD-rPEm43a6ojthbCDpA9_RNiBZouvTg/edit#gid=214718106
 * To become an admin, create an account and then create an empty isAdmin.txt file in the directory: sog\sog\.data\Account\<your_email>
