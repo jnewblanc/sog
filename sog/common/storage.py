@@ -1,13 +1,15 @@
 ''' common functions '''
 
 import glob
-from common.general import logger
+import json
+import jsonpickle
 import os
 from pathlib import Path
 import pickle
 import re
 import traceback
 
+from common.general import logger
 from common.globals import DATADIR
 
 
@@ -134,7 +136,68 @@ class Storage():
             return(loadedItem)
         return(None)
 
-    def load(self, desiredAttributes=[], logStr=''):   # noqa: C901
+    def writeJSonFile(self, filename):
+        jsonObject = self.toJSON()
+        with open(filename, 'w') as outputfilehandle:
+            try:
+                json.dump(self, outputfilehandle)
+            except TypeError:
+                logger.debug(self.debug())
+                traceback.print_exc()
+
+    def readJsonFile(self, filename):
+        with open(filename, 'rb') as inputfilehandle:
+            loadedItem = json.load(inputfilehandle)
+            return(loadedItem)
+        return(None)
+
+    def toJSON(self):
+        ''' Do whatever is needed to serialize self object to json
+            * is this different per object?  '''
+        pass
+        # return json.dumps(self, default=lambda o: o.__dict__,
+        #                   sort_keys=True, indent=4)
+        #     return json.JSONEncoder.default(self, object)
+
+    def filterAttributes(self, instanceAttributes,
+                         desiredAttributes=[], logStr=''):
+        ''' filter out instance attributes that we don't want in the object '''
+        logPrefix = 'filterAttributes: '
+
+        # filter our any attributes listed in attributesThatShouldntBeSaved
+        for onevar in self.attributesThatShouldntBeSaved:
+            if self._debugStorage:
+                logger.debug(logPrefix + " ignoring " +
+                             logStr + "attribute " +
+                             onevar + " during import")
+            instanceAttributes = list(filter((onevar).__ne__,
+                                             instanceAttributes))
+
+        # If we specified a list of desired attributes, revise our
+        # attribute list to only contain the desired names.  Skip over
+        # names that don't exist
+        if len(desiredAttributes) > 0:
+            newAttList = []
+            for onevar in desiredAttributes:
+                if onevar in instanceAttributes:
+                    newAttList.append(onevar)
+            instanceAttributes = newAttList
+        return(instanceAttributes)
+
+    def addAttributesToObject(self, instanceAttributes, loadedInst, logStr=''):
+        # Add attributes to current class object
+        logPrefix = 'addAttributesToObject: '
+        for onevar in instanceAttributes:
+            setattr(self, onevar, getattr(loadedInst, onevar))
+            buf = "imported " + logStr + "attribute " + onevar
+            value = getattr(self, onevar)
+            if ((isinstance(value, str) or isinstance(value, int) or
+                 isinstance(value, list))):
+                buf += '=' + str(value)
+            if self._debugStorage:
+                logger.debug(logPrefix + " " + buf + '\n')
+
+    def load(self, desiredAttributes=[], logStr='', fileType='pickle'):
         ''' load from persistant storage
               - load data into tmp object
               - iterate through the attributes assigning all, except the
@@ -166,34 +229,12 @@ class Storage():
 
             instanceAttributes = vars(loadedInst)
 
-            # filter out instance attributes that we want to ignore
-            for onevar in self.attributesThatShouldntBeSaved:
-                if self._debugStorage:
-                    logger.debug(logPrefix + " ignoring " +
-                                 logStr + "attribute " +
-                                 onevar + " during import")
-                instanceAttributes = list(filter((onevar).__ne__,
-                                                 instanceAttributes))
+            # Filter out any attributes we want to ignore
+            self.filterAttributes(instanceAttributes, desiredAttributes,
+                                  logStr)
 
-            # If we specified a list of desired attributes, revise our
-            # attribute list to only contain the desired names.  Skip over
-            # names that don't exist
-            if len(desiredAttributes) > 0:
-                newAttList = []
-                for onevar in desiredAttributes:
-                    if onevar in instanceAttributes:
-                        newAttList.append(onevar)
-                instanceAttributes = newAttList
-
-            for onevar in instanceAttributes:
-                setattr(self, onevar, getattr(loadedInst, onevar))
-                buf = "imported " + logStr + "attribute " + onevar
-                value = getattr(self, onevar)
-                if ((isinstance(value, str) or isinstance(value, int) or
-                     isinstance(value, list))):
-                    buf += '=' + str(value)
-                if self._debugStorage:
-                    logger.debug(logPrefix + " " + buf + '\n')
+            # Add attributes to current class object
+            self.addAttributesToObject(instanceAttributes, loadedInst, logStr)
 
             if self._debugStorage:
                 logger.debug(logPrefix + " loaded " + logStr +
