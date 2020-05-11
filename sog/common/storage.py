@@ -113,7 +113,13 @@ class Storage():
                              attName + " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
-        self.writePickleFile(filename)
+
+        # persist content
+        if re.match('.json', filename):
+            self.writeJSonFile(filename)
+        else:
+            self.writePickleFile(filename)
+
         # Restore attributes that we temporarily set aside when saving.
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
@@ -137,27 +143,23 @@ class Storage():
         return(None)
 
     def writeJSonFile(self, filename):
-        jsonObject = self.toJSON()
-        with open(filename, 'w') as outputfilehandle:
+        jsonpickle.set_encoder_options('json', sort_keys=True, indent=4,
+                                       ensure_ascii=False)
+        frozen = jsonpickle.encode(self)
+        with open(filename, 'w') as filehandle:
             try:
-                json.dump(self, outputfilehandle)
+                filehandle.write(frozen)
+                # json.dump(frozen, filehandle)
             except TypeError:
                 logger.debug(self.debug())
                 traceback.print_exc()
 
     def readJsonFile(self, filename):
-        with open(filename, 'rb') as inputfilehandle:
-            loadedItem = json.load(inputfilehandle)
-            return(loadedItem)
+        with open(filename, 'rb') as filehandle:
+            loadedItem = filehandle.read()
+            thawed = jsonpickle.decode(loadedItem)
+            return(thawed)
         return(None)
-
-    def toJSON(self):
-        ''' Do whatever is needed to serialize self object to json
-            * is this different per object?  '''
-        pass
-        # return json.dumps(self, default=lambda o: o.__dict__,
-        #                   sort_keys=True, indent=4)
-        #     return json.JSONEncoder.default(self, object)
 
     def filterAttributes(self, instanceAttributes,
                          desiredAttributes=[], logStr=''):
@@ -222,7 +224,11 @@ class Storage():
             logger.debug(logPrefix + "Loading " + filename + "...")
 
         if self.dataFileExists():
-            loadedInst = self.readPickleFile(filename)
+            # read the persisted content
+            if re.match('.json', filename):
+                loadedInst = self.readJsonFile(filename)
+            else:
+                loadedInst = self.readPickleFile(filename)
 
             if not loadedInst:
                 logger.error("storage.load - Could not get loaded instance")
