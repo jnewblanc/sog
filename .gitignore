@@ -131,4 +131,4 @@ dmypy.json
 # Local Data
 sog/.data/account
 sog/.logs
-sog/tmptest.py
+sog/tmp
