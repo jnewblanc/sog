@@ -1,7 +1,6 @@
 ''' common functions '''
 
 import glob
-import json
 import jsonpickle
 import os
 from pathlib import Path
@@ -73,6 +72,66 @@ class Storage():
     def getId(self):
         ''' available for override '''
         return(None)
+
+    def load(self, desiredAttributes=[], logStr='', fileType='pickle'):
+        ''' load from persistant storage
+              - load data into tmp object
+              - iterate through the attributes assigning all, except the
+                 ones that we specificly exclude, to the current object
+              - values of excluded objects are not overwritten '''
+        if logStr != '':
+            logStr += ' '   # append a space for easy logging
+
+        self.setDataFilename()
+        # We may muck with the object data.  Before we do, store
+        # the datafile info as a local variable so that there is no conflict.
+        filename = self._datafile
+
+        logPrefix = self.__class__.__name__ + " load: "
+
+        if filename == "":
+            logger.error(logPrefix + " Could not determine " +
+                         "filename for loading " + logStr)
+            return(False)
+
+        if self._debugStorage:
+            logger.debug(logPrefix + "Loading " + filename + "...")
+
+        if self.dataFileExists():
+            # read the persisted content
+            if re.match('.json', filename):
+                loadedInst = self.readJsonFile(filename)
+            else:
+                loadedInst = self.readPickleFile(filename)
+
+            if not loadedInst:
+                logger.error("storage.load - Could not get loaded instance")
+
+            loadedAttributes = vars(loadedInst)
+
+            # Filter out any attributes we want to ignore
+            instanceAttributes = self.filterAttributes(loadedAttributes,
+                                                       desiredAttributes,
+                                                       logStr)
+
+            # Add attributes to current class object
+            self.addAttributesToObject(instanceAttributes, loadedInst, logStr)
+
+            if self._debugStorage:
+                logger.debug(logPrefix + " loaded " + logStr +
+                             str(self.getId()) + " - " + self.describe())
+            self.initTmpAttributes()
+            self.fixAttributes()
+            self.postLoad()
+            if self.isValid():
+                return(True)
+            else:
+                logger.error(logPrefix + logStr + str(self.getId()) +
+                             " is not valid")
+        else:
+            logger.warning(logPrefix + " " + logStr +
+                           'datafile doesn\'t exist at ' + self._datafile)
+        return(False)
 
     def save(self, logStr=''):
         ''' save to persistant storage '''
@@ -198,65 +257,6 @@ class Storage():
                 buf += '=' + str(value)
             if self._debugStorage:
                 logger.debug(logPrefix + " " + buf + '\n')
-
-    def load(self, desiredAttributes=[], logStr='', fileType='pickle'):
-        ''' load from persistant storage
-              - load data into tmp object
-              - iterate through the attributes assigning all, except the
-                 ones that we specificly exclude, to the current object
-              - values of excluded objects are not overwritten '''
-        if logStr != '':
-            logStr += ' '   # append a space for easy logging
-
-        self.setDataFilename()
-        # We may muck with the object data.  Before we do, store
-        # the datafile info as a local variable so that there is no conflict.
-        filename = self._datafile
-
-        logPrefix = self.__class__.__name__ + " load: "
-
-        if filename == "":
-            logger.error(logPrefix + " Could not determine " +
-                         "filename for loading " + logStr)
-            return(False)
-
-        if self._debugStorage:
-            logger.debug(logPrefix + "Loading " + filename + "...")
-
-        if self.dataFileExists():
-            # read the persisted content
-            if re.match('.json', filename):
-                loadedInst = self.readJsonFile(filename)
-            else:
-                loadedInst = self.readPickleFile(filename)
-
-            if not loadedInst:
-                logger.error("storage.load - Could not get loaded instance")
-
-            instanceAttributes = vars(loadedInst)
-
-            # Filter out any attributes we want to ignore
-            self.filterAttributes(instanceAttributes, desiredAttributes,
-                                  logStr)
-
-            # Add attributes to current class object
-            self.addAttributesToObject(instanceAttributes, loadedInst, logStr)
-
-            if self._debugStorage:
-                logger.debug(logPrefix + " loaded " + logStr +
-                             str(self.getId()) + " - " + self.describe())
-            self.initTmpAttributes()
-            self.fixAttributes()
-            self.postLoad()
-            if self.isValid():
-                return(True)
-            else:
-                logger.error(logPrefix + logStr + str(self.getId()) +
-                             " is not valid")
-        else:
-            logger.warning(logPrefix + " " + logStr +
-                           'datafile doesn\'t exist at ' + self._datafile)
-        return(False)
 
     def delete(self, logStr=''):
         logPrefix = self.__class__.__name__ + " delete: "
