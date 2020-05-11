@@ -1,13 +1,14 @@
 ''' common functions '''
 
 import glob
-from common.general import logger
+import jsonpickle
 import os
 from pathlib import Path
 import pickle
 import re
 import traceback
 
+from common.general import logger
 from common.globals import DATADIR
 
 
@@ -72,6 +73,66 @@ class Storage():
         ''' available for override '''
         return(None)
 
+    def load(self, desiredAttributes=[], logStr='', fileType='pickle'):
+        ''' load from persistant storage
+              - load data into tmp object
+              - iterate through the attributes assigning all, except the
+                 ones that we specificly exclude, to the current object
+              - values of excluded objects are not overwritten '''
+        if logStr != '':
+            logStr += ' '   # append a space for easy logging
+
+        self.setDataFilename()
+        # We may muck with the object data.  Before we do, store
+        # the datafile info as a local variable so that there is no conflict.
+        filename = self._datafile
+
+        logPrefix = self.__class__.__name__ + " load: "
+
+        if filename == "":
+            logger.error(logPrefix + " Could not determine " +
+                         "filename for loading " + logStr)
+            return(False)
+
+        if self._debugStorage:
+            logger.debug(logPrefix + "Loading " + filename + "...")
+
+        if self.dataFileExists():
+            # read the persisted content
+            if re.match('.json', filename):
+                loadedInst = self.readJsonFile(filename)
+            else:
+                loadedInst = self.readPickleFile(filename)
+
+            if not loadedInst:
+                logger.error("storage.load - Could not get loaded instance")
+
+            loadedAttributes = vars(loadedInst)
+
+            # Filter out any attributes we want to ignore
+            instanceAttributes = self.filterAttributes(loadedAttributes,
+                                                       desiredAttributes,
+                                                       logStr)
+
+            # Add attributes to current class object
+            self.addAttributesToObject(instanceAttributes, loadedInst, logStr)
+
+            if self._debugStorage:
+                logger.debug(logPrefix + " loaded " + logStr +
+                             str(self.getId()) + " - " + self.describe())
+            self.initTmpAttributes()
+            self.fixAttributes()
+            self.postLoad()
+            if self.isValid():
+                return(True)
+            else:
+                logger.error(logPrefix + logStr + str(self.getId()) +
+                             " is not valid")
+        else:
+            logger.warning(logPrefix + " " + logStr +
+                           'datafile doesn\'t exist at ' + self._datafile)
+        return(False)
+
     def save(self, logStr=''):
         ''' save to persistant storage '''
         if logStr != '':
@@ -111,7 +172,13 @@ class Storage():
                              attName + " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
-        self.writePickleFile(filename)
+
+        # persist content
+        if re.match('.json', filename):
+            self.writeJSonFile(filename)
+        else:
+            self.writePickleFile(filename)
+
         # Restore attributes that we temporarily set aside when saving.
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
@@ -134,82 +201,62 @@ class Storage():
             return(loadedItem)
         return(None)
 
-    def load(self, desiredAttributes=[], logStr=''):   # noqa: C901
-        ''' load from persistant storage
-              - load data into tmp object
-              - iterate through the attributes assigning all, except the
-                 ones that we specificly exclude, to the current object
-              - values of excluded objects are not overwritten '''
-        if logStr != '':
-            logStr += ' '   # append a space for easy logging
+    def writeJSonFile(self, filename):
+        jsonpickle.set_encoder_options('json', sort_keys=True, indent=4,
+                                       ensure_ascii=False)
+        frozen = jsonpickle.encode(self)
+        with open(filename, 'w') as filehandle:
+            try:
+                filehandle.write(frozen)
+                # json.dump(frozen, filehandle)
+            except TypeError:
+                logger.debug(self.debug())
+                traceback.print_exc()
 
-        self.setDataFilename()
-        # We may muck with the object data.  Before we do, store
-        # the datafile info as a local variable so that there is no conflict.
-        filename = self._datafile
+    def readJsonFile(self, filename):
+        with open(filename, 'rb') as filehandle:
+            loadedItem = filehandle.read()
+            thawed = jsonpickle.decode(loadedItem)
+            return(thawed)
+        return(None)
 
-        logPrefix = self.__class__.__name__ + " load: "
+    def filterAttributes(self, instanceAttributes,
+                         desiredAttributes=[], logStr=''):
+        ''' filter out instance attributes that we don't want in the object '''
+        logPrefix = 'filterAttributes: '
 
-        if filename == "":
-            logger.error(logPrefix + " Could not determine " +
-                         "filename for loading " + logStr)
-            return(False)
-
-        if self._debugStorage:
-            logger.debug(logPrefix + "Loading " + filename + "...")
-
-        if self.dataFileExists():
-            loadedInst = self.readPickleFile(filename)
-
-            if not loadedInst:
-                logger.error("storage.load - Could not get loaded instance")
-
-            instanceAttributes = vars(loadedInst)
-
-            # filter out instance attributes that we want to ignore
-            for onevar in self.attributesThatShouldntBeSaved:
-                if self._debugStorage:
-                    logger.debug(logPrefix + " ignoring " +
-                                 logStr + "attribute " +
-                                 onevar + " during import")
-                instanceAttributes = list(filter((onevar).__ne__,
-                                                 instanceAttributes))
-
-            # If we specified a list of desired attributes, revise our
-            # attribute list to only contain the desired names.  Skip over
-            # names that don't exist
-            if len(desiredAttributes) > 0:
-                newAttList = []
-                for onevar in desiredAttributes:
-                    if onevar in instanceAttributes:
-                        newAttList.append(onevar)
-                instanceAttributes = newAttList
-
-            for onevar in instanceAttributes:
-                setattr(self, onevar, getattr(loadedInst, onevar))
-                buf = "imported " + logStr + "attribute " + onevar
-                value = getattr(self, onevar)
-                if ((isinstance(value, str) or isinstance(value, int) or
-                     isinstance(value, list))):
-                    buf += '=' + str(value)
-                if self._debugStorage:
-                    logger.debug(logPrefix + " " + buf + '\n')
-
+        # filter our any attributes listed in attributesThatShouldntBeSaved
+        for onevar in self.attributesThatShouldntBeSaved:
             if self._debugStorage:
-                logger.debug(logPrefix + " loaded " + logStr +
-                             str(self.getId()) + " - " + self.describe())
-            self.initTmpAttributes()
-            self.fixAttributes()
-            self.postLoad()
-            if self.isValid():
-                return(True)
-            else:
-                logger.error(logPrefix + logStr + str(self.getId()) +
-                             " is not valid")
-        else:
-            logger.warning(logPrefix + " " + logStr +
-                           'datafile doesn\'t exist at ' + self._datafile)
-        return(False)
+                logger.debug(logPrefix + " ignoring " +
+                             logStr + "attribute " +
+                             onevar + " during import")
+            instanceAttributes = list(filter((onevar).__ne__,
+                                             instanceAttributes))
+
+        # If we specified a list of desired attributes, revise our
+        # attribute list to only contain the desired names.  Skip over
+        # names that don't exist
+        if len(desiredAttributes) > 0:
+            newAttList = []
+            for onevar in desiredAttributes:
+                if onevar in instanceAttributes:
+                    newAttList.append(onevar)
+            instanceAttributes = newAttList
+        return(instanceAttributes)
+
+    def addAttributesToObject(self, instanceAttributes, loadedInst, logStr=''):
+        # Add attributes to current class object
+        logPrefix = 'addAttributesToObject: '
+        for onevar in instanceAttributes:
+            setattr(self, onevar, getattr(loadedInst, onevar))
+            buf = "imported " + logStr + "attribute " + onevar
+            value = getattr(self, onevar)
+            if ((isinstance(value, str) or isinstance(value, int) or
+                 isinstance(value, list))):
+                buf += '=' + str(value)
+            if self._debugStorage:
+                logger.debug(logPrefix + " " + buf + '\n')
 
     def delete(self, logStr=''):
         logPrefix = self.__class__.__name__ + " delete: "
