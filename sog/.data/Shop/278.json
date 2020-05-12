@@ -1,0 +1,59 @@
+{
+    "_abortedTransactionTxt": "Maybe next time",
+    "_antiMagic": false,
+    "_bank": true,
+    "_cantAffordTxt": "You have insufficient funds for that",
+    "_cantCarryTxt": "You would not be able to carry this additional item",
+    "_catalog": [],
+    "_dailyCoinLedger": {
+        "deposit": 180,
+        "fees": 20
+    },
+    "_dailyTransactionCount": {},
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "standing at the teller's window in Boldholm City Bank.  The teller waves you forward.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B+QEDhUWIgK/ew=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_notifyDM": false,
+    "_pawnshop": false,
+    "_permanentList": [
+        "Creature/40"
+    ],
+    "_priceBonus": 90,
+    "_repair": false,
+    "_roomNum": 278,
+    "_safe": false,
+    "_shortDesc": "standing at the teller's window in Boldholm City Bank.",
+    "_successfulTransactionTxt": "Thank you, sir.  We appreciate your business.",
+    "_totalCoinLedger": {
+        "deposit": 460,
+        "fees": 51,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0,
+        "withdrawl": 9
+    },
+    "_totalTransactionCount": {},
+    "d": 0,
+    "e": 231,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Shop",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

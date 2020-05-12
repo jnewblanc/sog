@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "slipping through Dore Alley, one of the seeder areas on this end of town",
+    "_encounterList": [
+        "33",
+        "6",
+        "24",
+        "25",
+        "26",
+        "18",
+        "19"
+    ],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 78,
+    "_safe": false,
+    "_shortDesc": "slipping through Dore Alley",
+    "d": 0,
+    "e": 0,
+    "n": 77,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 79,
+    "u": 0,
+    "w": 0
+}

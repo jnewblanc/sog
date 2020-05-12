@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "you are in the narthex of the cathedral.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 245,
+    "_safe": false,
+    "_shortDesc": "you are in the narthex of the cathedral.",
+    "d": 0,
+    "e": 246,
+    "n": 0,
+    "o": 29,
+    "py/object": "room.Room",
+    "s": 200,
+    "u": 28,
+    "w": 244
+}

@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "walking along Kesler Ave at Jewel Lane.  A northerly breeze brings a unpleasant odor.",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 7,
+    "_safe": false,
+    "_shortDesc": "walking along Kesler Ave at Jewel Lane",
+    "d": 0,
+    "e": 22,
+    "n": 20,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 8,
+    "u": 0,
+    "w": 6
+}

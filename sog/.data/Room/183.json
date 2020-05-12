@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on a pier.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 183,
+    "_safe": false,
+    "_shortDesc": "on a pier.",
+    "d": 0,
+    "e": 182,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

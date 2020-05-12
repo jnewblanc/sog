@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on a lush island.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 135,
+    "_safe": false,
+    "_shortDesc": "on a lush island.",
+    "d": 0,
+    "e": 92,
+    "n": 136,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 186
+}

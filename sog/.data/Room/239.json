@@ -1,0 +1,22 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "standing in the north foyer of Town Hall",
+    "_encounterList": [],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_roomNum": 239,
+    "_safe": false,
+    "_shortDesc": "standing in the north foyer of Town Hall.  An ornate mable staircase dominates the room.  Sunlight streams down from the dome above",
+    "d": 0,
+    "e": 196,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 238,
+    "u": 240,
+    "w": 286
+}

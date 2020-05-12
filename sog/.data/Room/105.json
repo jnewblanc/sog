@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "strolling along a beautiful streach of West River Road",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 105,
+    "_safe": false,
+    "_shortDesc": "strolling along a beautiful streach of West River Road",
+    "d": 0,
+    "e": 0,
+    "n": 150,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 104
+}

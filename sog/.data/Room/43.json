@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "approaching the midpoint of Pacific Street",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 43,
+    "_safe": false,
+    "_shortDesc": "approaching the midpoint of Pacific Street",
+    "d": 0,
+    "e": 74,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 42
+}

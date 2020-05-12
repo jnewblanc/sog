@@ -20,6 +20,8 @@ class Object(Item):
 
     _instanceDebug = False
 
+    _fileextention = '.json'
+
     # integer attributes
     intAttributes = ['_weight', '_value']
     # boolean attributes

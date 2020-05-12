@@ -1,0 +1,66 @@
+{
+    "_abortedTransactionTxt": "Scram, punk.",
+    "_antiMagic": false,
+    "_bank": false,
+    "_cantAffordTxt": "You have insufficient funds for that",
+    "_cantCarryTxt": "You would not be able to carry this additional item",
+    "_catalog": [],
+    "_dailyCoinLedger": {
+        "purchase": 48
+    },
+    "_dailyTransactionCount": {
+        "Armor/1": 1,
+        "Treasure/1": 1,
+        "Weapon/5": 1
+    },
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "in the aboandoned tannery.  The place is particularly clean given that production ended years ago.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B+QEGBcEJwmsGg=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_notifyDM": false,
+    "_pawnshop": true,
+    "_permanentList": [
+        "Door/6",
+        "Creature/35"
+    ],
+    "_priceBonus": 90,
+    "_repair": false,
+    "_roomNum": 130,
+    "_safe": false,
+    "_shortDesc": "in the abandoned tannery",
+    "_successfulTransactionTxt": "Sucker!  I can sell that for double what I paid you.",
+    "_totalCoinLedger": {
+        "deposit": 0,
+        "purchase": 139,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_totalTransactionCount": {
+        "Armor/1": 14,
+        "Treasure/1": 10,
+        "Weapon/1": 3,
+        "Weapon/5": 3
+    },
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Shop",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on a lush island.  You can see the shore of the bay in the distance.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 93,
+    "_safe": false,
+    "_shortDesc": "on a lush island.",
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 92,
+    "u": 0,
+    "w": 136
+}

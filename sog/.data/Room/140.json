@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "main hall of the wizards tower.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 140,
+    "_safe": false,
+    "_shortDesc": "main hall of the wizards tower.",
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 238,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 141,
+    "w": 0
+}

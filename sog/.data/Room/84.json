@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at a jog in Bartley Circle",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 84,
+    "_safe": false,
+    "_shortDesc": "at a jog in Bartley Circle",
+    "d": 0,
+    "e": 83,
+    "n": 51,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

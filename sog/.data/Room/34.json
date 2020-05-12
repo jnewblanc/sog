@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at a curve in Island Drive",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 34,
+    "_safe": false,
+    "_shortDesc": "at a curve in Island Drive",
+    "d": 0,
+    "e": 15,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 33,
+    "u": 0,
+    "w": 0
+}

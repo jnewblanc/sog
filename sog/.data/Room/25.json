@@ -1,0 +1,33 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Middlefield Road",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Portal/8"
+    ],
+    "_priceBonus": 0,
+    "_roomNum": 25,
+    "_safe": false,
+    "_shortDesc": "on Middlefield Road",
+    "d": 0,
+    "e": 48,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 26,
+    "u": 0,
+    "w": 10
+}

@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "stomping along Farmhill Road.  A small creek runs along the west side of the road, next to the city wall",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 217,
+    "_safe": false,
+    "_shortDesc": "stomping along Farmhill Road",
+    "d": 0,
+    "e": 0,
+    "n": 216,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 218,
+    "u": 0,
+    "w": 0
+}

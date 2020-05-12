@@ -1,0 +1,27 @@
+{
+    "_antiMagic": false,
+    "_dark": true,
+    "_datafile": "",
+    "_desc": "in a dark culvert",
+    "_encounterList": [
+        "3",
+        "4"
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Portal/12"
+    ],
+    "_roomNum": 293,
+    "_safe": false,
+    "_shortDesc": "in a dark culvert",
+    "d": 0,
+    "e": 316,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 261
+}

@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Penny Lane",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 99,
+    "_safe": false,
+    "_shortDesc": "on Penny Lane",
+    "d": 0,
+    "e": 0,
+    "n": 100,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 98,
+    "u": 0,
+    "w": 0
+}

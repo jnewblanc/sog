@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on West River Road where it meets the city wall.  A wide spot in the river is surronded by tall pine trees, one of which has something built onto it.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 151,
+    "_safe": false,
+    "_shortDesc": "on West River Road where it meets the city wall",
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 150
+}

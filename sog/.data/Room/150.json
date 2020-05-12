@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "near the north end of West River Road.  The auction house, where the rich come to buy and sell antiquities, is to the west.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 150,
+    "_safe": false,
+    "_shortDesc": "on West River Road",
+    "d": 0,
+    "e": 151,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 105,
+    "u": 0,
+    "w": 0
+}

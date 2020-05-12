@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "pushing your way through the crowds at Bridge Plaza.  To the north is the bridge that connects, and protects, the aristocrats from the rest of the city",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 36,
+    "_safe": false,
+    "_shortDesc": "pushing your way through the crowds at Bridge Plaza.",
+    "d": 0,
+    "e": 17,
+    "n": 37,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 35,
+    "u": 0,
+    "w": 0
+}

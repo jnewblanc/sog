@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "heading uphill on Highland Ave, near the city wall",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 154,
+    "_safe": false,
+    "_shortDesc": "heading uphill on Highland Ave, near the city wall",
+    "d": 0,
+    "e": 155,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 109,
+    "u": 0,
+    "w": 153
+}

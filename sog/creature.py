@@ -34,6 +34,8 @@ class Creature(Item):
 
     _instanceDebug = False
 
+    _fileextention = '.json'
+
     creatureSpellList = ['poison', 'fireball', 'lightning', 'befuddle']
 
     # obsolete attributes (to be removed)

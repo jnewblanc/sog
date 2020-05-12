@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "stomping through the mud slick at the bottom of Farmhill Road.  The creek along the city wall appears to have been accidentally dammed by some wallowing swine.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 218,
+    "_safe": false,
+    "_shortDesc": "stomping through the mud slick at the bottom of Farmhill Road",
+    "d": 0,
+    "e": 0,
+    "n": 217,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 219,
+    "u": 0,
+    "w": 0
+}

@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "taking a break in Serenity Square.  The cascading river provides a soothing backdrop for the afternoon tea of nobles and ladies",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 97,
+    "_safe": false,
+    "_shortDesc": "taking a break in Serenity Square",
+    "d": 0,
+    "e": 0,
+    "n": 98,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

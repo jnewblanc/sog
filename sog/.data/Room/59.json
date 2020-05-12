@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "where Middlefield Road ends abruptly at the bay",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 59,
+    "_safe": false,
+    "_shortDesc": "where Middlefield Road ends abruptly at the bay",
+    "d": 0,
+    "e": 32,
+    "n": 60,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

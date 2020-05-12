@@ -1,0 +1,35 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Middlefield Road, near Walnut Street.  The pounding of the blacksmith's hammer echos through the streets.",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        27,
+        28,
+        31,
+        32
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Door/3"
+    ],
+    "_priceBonus": 0,
+    "_roomNum": 13,
+    "_safe": false,
+    "_shortDesc": "on Middlefield Road, near Walnut Street",
+    "d": 0,
+    "e": 12,
+    "n": 14,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 32
+}

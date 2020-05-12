@@ -1,0 +1,32 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "stumbling down Clarion Alley.  The trash from Town Hall is piled along the sides of the road where aspiring artists have decorated the otherwise boring walls",
+    "_encounterList": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "7",
+        "8",
+        "33"
+    ],
+    "_encounterRate": 60,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 8,
+    "_safe": false,
+    "_shortDesc": "stumbling down Clarion Alley",
+    "d": 0,
+    "e": 0,
+    "n": 7,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

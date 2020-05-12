@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the south end of Aquilla Ave.  From here you can see where the Aquilla River empties into the bay",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 96,
+    "_safe": false,
+    "_shortDesc": "at the south end of Aquilla Ave",
+    "d": 0,
+    "e": 61,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 95,
+    "u": 0,
+    "w": 0
+}

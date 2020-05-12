@@ -1,0 +1,27 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "in the sewers",
+    "_encounterList": [
+        "3",
+        "4",
+        "1"
+    ],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 24,
+    "_safe": false,
+    "_shortDesc": "in the sewers",
+    "d": 0,
+    "e": 47,
+    "n": 23,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 24,
+    "u": 0,
+    "w": 24
+}

@@ -1,0 +1,33 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at a tee where Pacific Street abuts Jewel Lane",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Door/7"
+    ],
+    "_priceBonus": 0,
+    "_roomNum": 41,
+    "_safe": false,
+    "_shortDesc": "at a tee where Pacific Street abuts Jewel Lane",
+    "d": 0,
+    "e": 42,
+    "n": 70,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 20,
+    "u": 0,
+    "w": 0
+}

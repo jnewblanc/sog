@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the top of Pacific Ave, where it meets up with Highland Ave.",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 160,
+    "_safe": false,
+    "_shortDesc": "at the top of Pacific Ave, where it meets up with Highland Ave.",
+    "d": 0,
+    "e": 0,
+    "n": 159,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 161,
+    "u": 0,
+    "w": 113
+}

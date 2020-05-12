@@ -1,0 +1,64 @@
+{
+    "_abortedTransactionTxt": "Maybe next time",
+    "_antiMagic": false,
+    "_bank": true,
+    "_cantAffordTxt": "You have insufficient funds for that",
+    "_cantCarryTxt": "You would not be able to carry this additional item",
+    "_catalog": [
+        "Weapon/1",
+        "Armor/1",
+        "Scroll/1"
+    ],
+    "_dailyCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_dailyTransactionCount": {},
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "in the Test Shop.  The room is long.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B2wBAQAAAAAAAA=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_notifyDM": false,
+    "_pawnshop": true,
+    "_permanentList": [
+        "Creature/34"
+    ],
+    "_priceBonus": 100,
+    "_repair": true,
+    "_roomNum": 318,
+    "_safe": false,
+    "_shortDesc": "in the Test Shop.",
+    "_successfulTransactionTxt": "Thank you.  Please come again",
+    "_totalCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_totalTransactionCount": {},
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 319,
+    "py/object": "room.Shop",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

@@ -1,0 +1,65 @@
+{
+    "_abortedTransactionTxt": "Ok.  Let me know if you need anything else.",
+    "_antiMagic": false,
+    "_bank": false,
+    "_cantAffordTxt": "You can't pay for that.",
+    "_cantCarryTxt": "You have no way to carry that.",
+    "_catalog": [
+        "Potion/1",
+        "Potion/2",
+        "Potion/3"
+    ],
+    "_dailyCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_dailyTransactionCount": {},
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the bar of the inn.  Here the criss-cross of the wallpapered walls is broken by a large mirror and several lanterns.   Behind the bar are decanter filled shelves and trays of glassware.  The bartender keeps a tidy bartop with only a few pitchers and bottles along the back edge.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B2wBAQAAAAAAAA=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_notifyDM": false,
+    "_pawnshop": false,
+    "_permanentList": [
+        "Creature/40",
+        "Treasure/46"
+    ],
+    "_priceBonus": 0,
+    "_repair": false,
+    "_roomNum": 273,
+    "_safe": false,
+    "_shortDesc": "at the bar",
+    "_successfulTransactionTxt": "The bartender slides the drink across the bar.",
+    "_totalCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_totalTransactionCount": {},
+    "d": 0,
+    "e": 226,
+    "n": 274,
+    "o": 0,
+    "py/object": "room.Shop",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

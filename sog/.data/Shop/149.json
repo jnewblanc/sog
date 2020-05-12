@@ -1,0 +1,60 @@
+{
+    "_abortedTransactionTxt": "Come back if you change your mind.",
+    "_antiMagic": false,
+    "_bank": false,
+    "_cantAffordTxt": "I'm sorry, but this is too expensive for that",
+    "_cantCarryTxt": "You would not be able to carry this additional item",
+    "_catalog": [],
+    "_dailyCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_dailyTransactionCount": {},
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "mingling among the elite customers at the auction house.  In the back of the room is an area where auction items are rehabilitated prior to going on the block.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B2wBAQAAAAAAAA=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_notifyDM": false,
+    "_pawnshop": false,
+    "_permanentList": [
+        "Creature/42"
+    ],
+    "_priceBonus": 100,
+    "_repair": true,
+    "_roomNum": 149,
+    "_safe": false,
+    "_shortDesc": "mingling among the elite customers at the auction house.",
+    "_successfulTransactionTxt": "Thank you.  Good day.",
+    "_totalCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_totalTransactionCount": {},
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Shop",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

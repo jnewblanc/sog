@@ -1,0 +1,25 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the Harbor, along Chauncey Street.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Door/5"
+    ],
+    "_priceBonus": 0,
+    "_roomNum": 131,
+    "_safe": false,
+    "_shortDesc": "at the Harbor, along Chauncey Street.",
+    "d": 0,
+    "e": 0,
+    "n": 90,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 132
+}

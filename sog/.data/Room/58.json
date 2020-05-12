@@ -1,0 +1,22 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "floating on a cloud.  Is this a dream?",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_roomNum": 58,
+    "_safe": true,
+    "_shortDesc": "floating on a cloud.",
+    "d": 1,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

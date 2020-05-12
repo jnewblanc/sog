@@ -135,6 +135,11 @@ class TestRoom(TestGameBase):
         logger.debug("disp: " + str(disp))
         assert disp == 'You see three toothpicks and two bugs\n'
 
+    def testRoomLoad(self):
+        roomNumber = 319
+        roomObj = RoomFactory('room', roomNumber)
+        roomObj.load()
+
 
 if __name__ == '__main__':
     unittest.main()
