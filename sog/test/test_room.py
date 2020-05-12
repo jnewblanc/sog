@@ -147,7 +147,7 @@ class TestRoom(TestGameBase):
         roomObj = RoomFactory('room', shopNumber)
         roomObj.load()
         assert roomObj.o == 319
-        assert False
+
 
 if __name__ == '__main__':
     unittest.main()
