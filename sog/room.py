@@ -22,7 +22,7 @@ class Room(Item):
 
     _instanceDebug = False
 
-    _fileextention = '.json'
+    _fileextension = '.json'
 
     _baseEncounterTime = 60
 
@@ -57,7 +57,8 @@ class Room(Item):
                                      '_characterList', '_objectList',
                                      '_inventory', '_timeOfLastAttack',
                                      '_creatureCache', '_timeOfLastEncounter',
-                                     '_invWeight', '_maxweight', '_invValue']
+                                     '_invWeight', '_maxweight', '_invValue',
+                                     ]
 
     wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w",
                         '_encounterRate']
@@ -202,6 +203,21 @@ class Room(Item):
 
         AttributeHelper.fixAttributes(self)
 
+    def isBank(self):
+        return(False)
+
+    def isPawnShop(self):
+        return(False)
+
+    def isRepairShop(self):
+        return(False)
+
+    def isSafe(self):
+        return(self._safe)
+
+    def isTrainingGround(self):
+        return(False)
+
     def isValid(self):
         if ((self.getRoomNum() > 0 and self._shortDesc != '' and
              self._desc != '')):
@@ -209,18 +225,6 @@ class Room(Item):
         return(False)
 
     def isVendor(self):
-        return(False)
-
-    def isRepairShop(self):
-        return(False)
-
-    def isPawnShop(self):
-        return(False)
-
-    def isBank(self):
-        return(False)
-
-    def isTrainingGround(self):
         return(False)
 
     def creatureCachePush(self, creaObj):
@@ -360,15 +364,29 @@ class Room(Item):
 
         return(buf)
 
-    def getDataFilename(self):
-        ''' returns the filename of self.roomNum '''
+    def setDataFilename(self):
+        ''' sets the filename of the room '''
         filename = ''
 
+        if hasattr(self, '_fileextension'):
+            extension = self._fileextension
+        else:
+            extension = '.pickle'
+
+        logger.debug('room.getDataFilename: loading ' + str(self.getRoomNum()))
+
         if isinstance(self.getRoomNum(), int):
-            filename = os.path.abspath(DATADIR + "/Room/" +
-                                       str(self.getRoomNum()) +
-                                       '.pickle')
-        return(filename)
+            for roomType in RoomFactoryTypes:
+                filename = os.path.abspath(DATADIR + "/" +
+                                           roomType.capitalize() + "/" +
+                                           str(self.getRoomNum()) +
+                                           extension)
+                logger.debug('room.getDataFilename: Trying file ' + filename)
+                if os.path.isfile(filename):
+                    break
+
+        if filename != '':
+            self._datafile = filename
 
     def postLoad(self):
         ''' Called by the loader - can be used for room initialization '''

@@ -1,10 +1,16 @@
 ''' Item superClass, from which character, creatures, rooms, and object are
     derived.
 '''
-from common.storage import Storage
+
+import glob
+import os
+import re
+
 from common.attributes import AttributeHelper
 from common.editwizard import EditWizard
+from common.globals import DATADIR
 from common.inventory import Inventory
+from common.storage import Storage
 
 
 class Item(Storage, AttributeHelper, Inventory, EditWizard):
@@ -91,3 +97,31 @@ class Item(Storage, AttributeHelper, Inventory, EditWizard):
 
     def isVulnerable(self):
         return(False)
+
+    def getNextUnusedFileNumber(self, type):
+        ''' return the next unused item number, by looking through the
+            corresponding files for the last one used.  This is typically
+            used when creating new objects or creatures '''
+        # It's a little sucky to have to list these here, but we have no access
+        # to the object, where _fileextension is defined.
+        returnNum = 0
+        dir = DATADIR
+        if type != '':
+            dir += '/' + type.capitalize()
+
+        if hasattr(self, '_fileextension'):
+            extension = self._fileextension
+        else:
+            extension = '.pickle'
+
+        numberlist = []
+        if os.path.exists(dir):
+            filelist = glob.glob(dir + '/*' + extension)
+            for fqfn in filelist:
+                filenumber = re.sub('[^0-9]', '', os.path.basename(fqfn))
+                if filenumber != '':
+                    numberlist.append(int(filenumber))
+        if len(numberlist) > 0:
+            sortedlist = sorted(numberlist)
+            returnNum = sortedlist[-1] + 1
+        return(returnNum)

@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the saloon of the inn.  The large intricate rug, dark chrry wood furniture, and large chandelier give the room a elegant, welcoming feel.",
     "_encounterList": [],
     "_encounterRate": 0,
@@ -9,7 +8,6 @@
     "_notifyDM": false,
     "_permanentList": [
         "Portal/6",
-        "Portal/7",
         "Treasure/44",
         "Treasure/45"
     ],

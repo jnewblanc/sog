@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in a short hallway, overlooking the saloon of the inn.",
     "_encounterList": [],
     "_encounterRate": 0,
@@ -12,7 +11,7 @@
     "_roomNum": 227,
     "_safe": false,
     "_shortDesc": "in a short hallway, overlooking the saloon of the inn.",
-    "d": 274,
+    "d": 273,
     "e": 0,
     "n": 0,
     "o": 0,

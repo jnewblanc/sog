@@ -159,7 +159,7 @@ class Combat():
     CombatAttacks = attackDict.keys()
 
     _secsBetweenAttacks = 5
-    _playerAdvantageSecs = 3
+    _playerAdvantageSecs = 10
     _jailRoomNum = 280
     _kidnapRoomNum = 184
 
@@ -425,6 +425,15 @@ class Combat():
             attackCmd = 'attack'
 
         if not target:
+            return(False)
+
+        if roomObj.isSafe():
+            self.charMsg(charObj, "A unknown force prevents combat here.\n")
+            return(False)
+
+        if target.isUnKillable():
+            self.charMsg(charObj, "Aw.  Don't hurt the poor " +
+                         target.describe(article=''))
             return(False)
 
         if not charObj.canAttack():

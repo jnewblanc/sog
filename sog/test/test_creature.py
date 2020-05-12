@@ -52,6 +52,7 @@ class TestCreature(TestGameBase):
         assert not creObj.isMagic()
         assert not creObj.isPermanent()
         assert not creObj.isUndead()
+        assert not creObj.isUnKillable()
         assert not creObj.isVulnerable()
         assert not creObj.kidnaps()
         assert not creObj.sendsToJail()

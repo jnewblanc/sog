@@ -9,14 +9,13 @@
         "Armor/1"
     ],
     "_dailyCoinLedger": {
-        "sale": 40
+        "sale": 20
     },
     "_dailyTransactionCount": {
         "Armor/1": 1,
         "Weapon/1": 1
     },
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the blacksmith's shop, if you can call it a shop.  A forge in the back of the lot emits a deafening roar that is broken only by the hammering of metal on an anvil.  Unfinished gates line one wall, and baskets of horseshoes, weapons, and utilsils are scattered about.",
     "_encounterList": [],
     "_encounterRate": 0,
@@ -27,7 +26,7 @@
                 "py/type": "datetime.datetime"
             },
             [
-                "B+QEEBU7FAr9NQ=="
+                "B+QFDAoCFAQbYQ=="
             ]
         ],
         "py/object": "datetime.datetime"
@@ -48,12 +47,12 @@
         "deposit": 0,
         "purchase": 0,
         "repair": 0,
-        "sale": 240,
+        "sale": 260,
         "withdraw": 0
     },
     "_totalTransactionCount": {
-        "Armor/1": 11,
-        "Weapon/1": 12
+        "Armor/1": 12,
+        "Weapon/1": 13
     },
     "_vendor": true,
     "d": 0,
