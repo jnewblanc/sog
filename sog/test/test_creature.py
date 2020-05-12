@@ -175,6 +175,11 @@ class TestCreature(TestGameBase):
         logger.debug(resultMsg)
         assert '4200' in resultMsg.split(' ')
 
+    def testCreatureLoad(self):
+        creatureNumber = 2
+        creObj = self.createCreature(num=creatureNumber)
+        creObj.load()
+
 
 if __name__ == '__main__':
     unittest.main()

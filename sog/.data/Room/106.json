@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Aquilla Ave, near a beautiful stretch of the river",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 106,
+    "_safe": false,
+    "_shortDesc": "on Aquilla Ave, near a beautiful stretch of the river",
+    "d": 0,
+    "e": 107,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 69,
+    "u": 0,
+    "w": 0
+}

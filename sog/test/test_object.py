@@ -208,6 +208,17 @@ class TestObject(TestGameBase):
             status = bool(result == outputs[num])
             self.assertEqual(status, True, out)
 
+    def testObjLoad(self):
+        objNumber = 1
+        for num, oneType in enumerate(ObjFactoryTypes,
+                                      start=self.testObjNumber):
+            if oneType.lower() == 'object':
+                continue
+            obj = self.createObject(num=objNumber,
+                                    type=oneType,
+                                    name=(oneType + str(num)))
+            obj.load()
+
 
 if __name__ == '__main__':
     unittest.main()

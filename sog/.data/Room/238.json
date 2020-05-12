@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "in the south foyer of town hall",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 238,
+    "_safe": true,
+    "_shortDesc": "in the south foyer of town hall",
+    "d": 0,
+    "e": 195,
+    "n": 239,
+    "o": 1,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 285
+}

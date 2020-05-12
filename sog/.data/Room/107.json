@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Aquilla Ave at the tail end of Jewel Lane",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 107,
+    "_safe": false,
+    "_shortDesc": "on Aquilla Ave at the tail end of Jewel Lane",
+    "d": 0,
+    "e": 0,
+    "n": 152,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 70,
+    "u": 0,
+    "w": 106
+}

@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "entering the pits of the fighters arena",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 237,
+    "_safe": false,
+    "_shortDesc": "entering the pits of the fighters arena",
+    "d": 236,
+    "e": 194,
+    "n": 0,
+    "o": 114,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 284
+}

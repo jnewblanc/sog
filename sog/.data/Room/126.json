@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "lost in the forest.  A perfectly still pond reflects the towering canopy overhead.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 126,
+    "_safe": false,
+    "_shortDesc": "lost in the forest.",
+    "d": 0,
+    "e": 125,
+    "n": 85,
+    "o": 175,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 127
+}

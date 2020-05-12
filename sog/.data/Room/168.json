@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "walking along Woodside Road, outside the city wall",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 168,
+    "_safe": false,
+    "_shortDesc": "walking along Woodside Road, outside the city wall",
+    "d": 0,
+    "e": 0,
+    "n": 167,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 169,
+    "u": 0,
+    "w": 0
+}

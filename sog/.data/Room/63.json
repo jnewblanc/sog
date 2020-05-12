@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Inverness Ave, west of the bridge.  As you stare out over the river, you realize that the wealthiest part of town would not exist without that bridge.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 63,
+    "_safe": false,
+    "_shortDesc": "on Inverness Ave, west of the bridge",
+    "d": 0,
+    "e": 0,
+    "n": 64,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 98
+}

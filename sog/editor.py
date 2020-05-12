@@ -487,7 +487,8 @@ class Editor(LocalIo, AttributeHelper):
             attributeList = sorted(instanceAttributes, key=self.customSort)
             bufCount = 0
             for num, attName in enumerate(attributeList):
-                if attName in (["client", "gameObj", "acctObj", "_datafile"] +
+                if attName in (["client", "gameObj", "acctObj", "_datafile",
+                                "py/object"] +
                                obj.obsoleteAttributes +
                                obj.attributesThatShouldntBeSaved):
                     pass  # don't want these

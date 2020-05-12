@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Kesler, near Island Drive",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 16,
+    "_safe": false,
+    "_shortDesc": "on Kesler, near Island Drive",
+    "d": 0,
+    "e": 5,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 15,
+    "u": 0,
+    "w": 35
+}

@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "stomping up Highland Ave, along the city wall.",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 161,
+    "_safe": false,
+    "_shortDesc": "stomping up Highland Ave, along the city wall.",
+    "d": 0,
+    "e": 0,
+    "n": 160,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 162,
+    "u": 0,
+    "w": 0
+}

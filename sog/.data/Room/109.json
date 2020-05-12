@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on a winding path along Cole Street.  Well manicured shrubs and stone statues give you the impression that this is, or should be, a park.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 109,
+    "_safe": false,
+    "_shortDesc": "on a winding path along Cole Street",
+    "d": 0,
+    "e": 0,
+    "n": 154,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 108
+}

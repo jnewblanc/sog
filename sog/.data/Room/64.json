@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "hobnobing with local residents along Inverness Ave.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 64,
+    "_safe": false,
+    "_shortDesc": "hobnobing with local residents along Inverness Ave.",
+    "d": 0,
+    "e": 0,
+    "n": 65,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 63,
+    "u": 0,
+    "w": 0
+}

@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on a busy stretch of Bridge Parkway, just north of the bridge",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 66,
+    "_safe": false,
+    "_shortDesc": "on a busy stretch of Bridge Parkway",
+    "d": 0,
+    "e": 67,
+    "n": 103,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 37,
+    "u": 0,
+    "w": 65
+}

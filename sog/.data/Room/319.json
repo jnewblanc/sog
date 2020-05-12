@@ -1,0 +1,26 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "in the southern test room.  The room is long",
+    "_encounterList": [],
+    "_encounterRate": 40,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Portal/14",
+        "Portal/15",
+        "Portal/16"
+    ],
+    "_roomNum": 319,
+    "_safe": false,
+    "_shortDesc": "in the southern test room.  The room is short",
+    "d": 0,
+    "e": 0,
+    "n": 320,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

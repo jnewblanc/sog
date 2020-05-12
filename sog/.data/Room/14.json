@@ -1,0 +1,30 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the end of Walnut Street",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        31
+    ],
+    "_encounterRate": 90,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_roomNum": 14,
+    "_safe": false,
+    "_shortDesc": "at the end of Walnut Street",
+    "d": 0,
+    "e": 3,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 13,
+    "u": 0,
+    "w": 0
+}

@@ -22,6 +22,8 @@ class Room(Item):
 
     _instanceDebug = False
 
+    _fileextention = '.json'
+
     _baseEncounterTime = 60
 
     directionNameDict = {

@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Aquilla Ave, across the River from Serenity Square.  You can just make out some noblemen and ladies quietly strolling in the gardens",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 62,
+    "_safe": false,
+    "_shortDesc": "on Aquilla Ave, across the River from Serenity Square",
+    "d": 0,
+    "e": 35,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 61,
+    "u": 0,
+    "w": 0
+}

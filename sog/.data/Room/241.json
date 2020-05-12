@@ -1,0 +1,25 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the top of the Town Hall rotunda.  You are half blinded by the brilliant light shining through the stained glass dome",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Door/1"
+    ],
+    "_priceBonus": 0,
+    "_roomNum": 241,
+    "_safe": false,
+    "_shortDesc": "at the top of the Town Hall rotunda",
+    "d": 240,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

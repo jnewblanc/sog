@@ -1,0 +1,26 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "standing in the town square of Boldhome.  It's a busy area with merchants and townfolk shuffling by.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Portal/1",
+        "Portal/2"
+    ],
+    "_priceBonus": 0,
+    "_roomNum": 1,
+    "_safe": true,
+    "_shortDesc": "standing in the town square of Boldhome.",
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 2,
+    "u": 0,
+    "w": 4
+}

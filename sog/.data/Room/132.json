@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the Harbor where Chauncey Street ends",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 132,
+    "_safe": false,
+    "_shortDesc": "at the Harbor where Chauncey Street ends",
+    "d": 0,
+    "e": 131,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 181,
+    "u": 0,
+    "w": 0
+}

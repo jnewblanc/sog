@@ -1,0 +1,31 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Kesler, where it widens.  A small alley to the south cuts through to a busy thoroughfare",
+    "_encounterList": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+    ],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 77,
+    "_safe": false,
+    "_shortDesc": "on Kesler, where it widens",
+    "d": 0,
+    "e": 116,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 78,
+    "u": 0,
+    "w": 46
+}

@@ -1,0 +1,25 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "stomping through the mud slick at the bottom of Farmhill Road.  Running along the outside of the city wall is a foul smelling creek.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Portal/11"
+    ],
+    "_priceBonus": 0,
+    "_roomNum": 219,
+    "_safe": false,
+    "_shortDesc": "stomping through the mud slick at the bottom of Farmhill Road",
+    "d": 0,
+    "e": 0,
+    "n": 218,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 220,
+    "u": 0,
+    "w": 0
+}

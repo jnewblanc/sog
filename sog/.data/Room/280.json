@@ -1,0 +1,27 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "in a small cell.  A pair of bunks line one of the two walls with a grungy sink and toilet in the corner.  Through the bars you see guards come and go.",
+    "_encounterList": [],
+    "_encounterRate": 100,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [
+        "Portal/13",
+        "Treasure/41",
+        "Treasure/42",
+        "Treasure/43"
+    ],
+    "_roomNum": 280,
+    "_safe": true,
+    "_shortDesc": "in a small cell",
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

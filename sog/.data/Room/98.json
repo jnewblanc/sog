@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the beginning of Penny Lane.  The suburban sky looks quite blue here.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 98,
+    "_safe": false,
+    "_shortDesc": "at the beginning of Penny Lane",
+    "d": 0,
+    "e": 63,
+    "n": 99,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 97,
+    "u": 0,
+    "w": 0
+}

@@ -1,0 +1,67 @@
+{
+    "_abortedTransactionTxt": "If you're not going to buy anything, please clear out.",
+    "_antiMagic": false,
+    "_bank": false,
+    "_cantAffordTxt": "You don't have the coin for that",
+    "_cantCarryTxt": "You're not strong enough to carry that.  Get rid of some items first.",
+    "_catalog": [
+        "Weapon/1",
+        "Armor/1"
+    ],
+    "_dailyCoinLedger": {
+        "sale": 40
+    },
+    "_dailyTransactionCount": {
+        "Armor/1": 1,
+        "Weapon/1": 1
+    },
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "in the blacksmith's shop, if you can call it a shop.  A forge in the back of the lot emits a deafening roar that is broken only by the hammering of metal on an anvil.  Unfinished gates line one wall, and baskets of horseshoes, weapons, and utilsils are scattered about.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B+QEEBU7FAr9NQ=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_notifyDM": false,
+    "_pawnshop": false,
+    "_permanentList": [
+        "Door/4",
+        "Creature/34"
+    ],
+    "_priceBonus": 100,
+    "_repair": false,
+    "_roomNum": 30,
+    "_safe": true,
+    "_shortDesc": "in the blacksmith's shop",
+    "_successfulTransactionTxt": "Take your things ang go.",
+    "_totalCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 240,
+        "withdraw": 0
+    },
+    "_totalTransactionCount": {
+        "Armor/1": 11,
+        "Weapon/1": 12
+    },
+    "_vendor": true,
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Shop",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

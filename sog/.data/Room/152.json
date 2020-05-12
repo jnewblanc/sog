@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "on Aquilla Ave, where it meets the city wall.  Across a wide spot in the river, there is a grove of large trees.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 152,
+    "_safe": false,
+    "_shortDesc": "on Aquilla Ave, where it meets the city wall",
+    "d": 0,
+    "e": 153,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 107,
+    "u": 0,
+    "w": 0
+}

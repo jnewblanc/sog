@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "stomping along Farmhill Road, outside of the city wall.  You have a hard time distinguishing the creek from the road here.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 216,
+    "_safe": false,
+    "_shortDesc": "stomping along Farmhill Road, outside of the city wall",
+    "d": 0,
+    "e": 0,
+    "n": 215,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 217,
+    "u": 0,
+    "w": 0
+}

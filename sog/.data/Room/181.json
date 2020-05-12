@@ -1,0 +1,23 @@
+{
+    "_antiMagic": false,
+    "_dark": false,
+    "_datafile": "",
+    "_desc": "at the Harbor where it connects with Mountain Road.  The city wall is to the south.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_inventoryTruncSize": 12,
+    "_notifyDM": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_roomNum": 181,
+    "_safe": false,
+    "_shortDesc": "at the Harbor where it connects with Mountain Road",
+    "d": 0,
+    "e": 180,
+    "n": 132,
+    "o": 0,
+    "py/object": "room.Room",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

@@ -57,23 +57,27 @@ class Storage():
                              "datafile name")
                 return(False)
 
+            if hasattr(self, '_fileextention'):
+                extention = self._fileextention
+            else:
+                extention = '.pickle'
+
             self._datafile = os.path.abspath(DATADIR + '/' +
                                              self.__class__.__name__ +
-                                             '/' + str(id) + '.pickle')
+                                             '/' + str(id) + extention)
         else:
             # set data file name to name provided
             self._datafile = os.path.abspath(str(dfStr))
 
         if self._debugStorage:
-            logger.debug(logPrefix + "_datafile = " +
-                         self._datafile)
+            logger.debug(logPrefix + "_datafile = " + self._datafile)
         return(True)
 
     def getId(self):
         ''' available for override '''
         return(None)
 
-    def load(self, desiredAttributes=[], logStr='', fileType='pickle'):
+    def load(self, requestedAttNames=[], logStr='', fileType='pickle'):
         ''' load from persistant storage
               - load data into tmp object
               - iterate through the attributes assigning all, except the
@@ -99,27 +103,21 @@ class Storage():
 
         if self.dataFileExists():
             # read the persisted content
-            if re.match('.json', filename):
-                loadedInst = self.readJsonFile(filename)
+            if re.search('\\.json$', filename):
+                loadedDict = self.readJsonFile(filename, logStr)
             else:
-                loadedInst = self.readPickleFile(filename)
+                loadedDict = self.readPickleFile(filename, logStr)
 
-            if not loadedInst:
+            if not loadedDict:
                 logger.error("storage.load - Could not get loaded instance")
 
-            loadedAttributes = vars(loadedInst)
-
-            # Filter out any attributes we want to ignore
-            instanceAttributes = self.filterAttributes(loadedAttributes,
-                                                       desiredAttributes,
-                                                       logStr)
-
-            # Add attributes to current class object
-            self.addAttributesToObject(instanceAttributes, loadedInst, logStr)
+            # Add attributes to current class object, based on revised list
+            self.addAttributesToSelf(loadedDict, requestedAttNames, logStr)
 
             if self._debugStorage:
                 logger.debug(logPrefix + " loaded " + logStr +
                              str(self.getId()) + " - " + self.describe())
+
             self.initTmpAttributes()
             self.fixAttributes()
             self.postLoad()
@@ -168,13 +166,13 @@ class Storage():
                 pass
             setattr(self, attName, None)
             if self._debugStorage:
-                logger.debug(logPrefix + "ignoring " +
-                             attName + " during save")
+                logger.debug(logPrefix + "ignoring " + attName +
+                             " during save")
         # create data file
         delattr(self, '_datafile')     # never save _datafile attribute
 
         # persist content
-        if re.match('.json', filename):
+        if re.search('\\.json$', filename):
             self.writeJSonFile(filename)
         else:
             self.writePickleFile(filename)
@@ -182,6 +180,7 @@ class Storage():
         # Restore attributes that we temporarily set aside when saving.
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
+
         if self._debugStorage:
             logger.debug(logPrefix + "saved " + logStr + " - " +
                          str(self.getId()))
@@ -195,11 +194,17 @@ class Storage():
                 logger.debug(self.debug())
                 traceback.print_exc()
 
-    def readPickleFile(self, filename):
+    def readPickleFile(self, filename, logStr=''):
         with open(filename, 'rb') as inputfilehandle:
             loadedItem = pickle.load(inputfilehandle)
-            return(loadedItem)
-        return(None)
+
+        pickleDict = {}
+        for onevar in vars(loadedItem):
+            # filter out attributes that should be excluded
+            if self.attributeShouldBeIgnored(onevar):
+                continue
+            pickleDict[onevar] = getattr(loadedItem, onevar)
+        return(pickleDict)
 
     def writeJSonFile(self, filename):
         jsonpickle.set_encoder_options('json', sort_keys=True, indent=4,
@@ -213,45 +218,65 @@ class Storage():
                 logger.debug(self.debug())
                 traceback.print_exc()
 
-    def readJsonFile(self, filename):
-        with open(filename, 'rb') as filehandle:
+    def readJsonFile(self, filename, logStr=''):
+        logPrefix = 'readJsonFile: '
+        with open(filename, 'r') as filehandle:
             loadedItem = filehandle.read()
-            thawed = jsonpickle.decode(loadedItem)
-            return(thawed)
+            thawedDict = jsonpickle.decode(loadedItem)
+
+            if isinstance(thawedDict, dict):
+                logger.warn(logPrefix + "Loaded content is of type: " +
+                            str(type(thawedDict)) + " which probably means " +
+                            " that it was saved or loaded incorrectly")
+
+                # filter out attributes that should be excluded
+                for onevar in self.attributesThatShouldntBeSaved:
+                    if hasattr(thawedDict, onevar):
+                        if self._debugStorage:
+                            logger.debug(logPrefix + " ignoring " + logStr +
+                                         "attribute " + onevar +
+                                         " during import")
+                        thawedDict = list(filter((onevar).__ne__, thawedDict))
+
+            else:  # imported content is a known object (Creature, Char, etc)
+                jsonDict = {}
+                for onevar in vars(thawedDict):
+                    # filter out attributes that should be excluded
+                    if self.attributeShouldBeIgnored(onevar):
+                        continue
+                    jsonDict[onevar] = getattr(thawedDict, onevar)
+                thawedDict = jsonDict
+
+            return(thawedDict)
         return(None)
 
-    def filterAttributes(self, instanceAttributes,
-                         desiredAttributes=[], logStr=''):
-        ''' filter out instance attributes that we don't want in the object '''
-        logPrefix = 'filterAttributes: '
-
-        # filter our any attributes listed in attributesThatShouldntBeSaved
-        for onevar in self.attributesThatShouldntBeSaved:
+    def attributeShouldBeIgnored(self, attName, logStr=''):
+        ''' Return True if given attribute should be ignored '''
+        logPrefix = 'attributeShouldBeIgnored: '
+        if attName in self.attributesThatShouldntBeSaved:
             if self._debugStorage:
-                logger.debug(logPrefix + " ignoring " +
-                             logStr + "attribute " +
-                             onevar + " during import")
-            instanceAttributes = list(filter((onevar).__ne__,
-                                             instanceAttributes))
+                logger.debug(logPrefix + " ignoring " + logStr +
+                             "attribute " + attName + " during import")
+            return(True)
+        return(False)
 
-        # If we specified a list of desired attributes, revise our
-        # attribute list to only contain the desired names.  Skip over
-        # names that don't exist
-        if len(desiredAttributes) > 0:
-            newAttList = []
-            for onevar in desiredAttributes:
-                if onevar in instanceAttributes:
-                    newAttList.append(onevar)
-            instanceAttributes = newAttList
-        return(instanceAttributes)
+    def addAttributesToSelf(self, loadedDict, requestedAttNames=[], logStr=''):
+        ''' Add attributes to current class object '''
+        logPrefix = 'addAttributesToSelf: '
 
-    def addAttributesToObject(self, instanceAttributes, loadedInst, logStr=''):
-        # Add attributes to current class object
-        logPrefix = 'addAttributesToObject: '
-        for onevar in instanceAttributes:
-            setattr(self, onevar, getattr(loadedInst, onevar))
-            buf = "imported " + logStr + "attribute " + onevar
-            value = getattr(self, onevar)
+        if not isinstance(loadedDict, dict):
+            logger.error(logPrefix + 'loadedDict is not a dict.' +
+                         '  Its of type ' + str(type(loadedDict)))
+
+        for key, value in zip(loadedDict.keys(), loadedDict.values()):
+            # If specific attributes are requested, skip all attributes that
+            # do not match.
+            if len(requestedAttNames) > 0:
+                if key not in requestedAttNames:
+                    continue
+
+            setattr(self, key, value)
+            buf = "imported " + logStr + "attribute " + key
             if ((isinstance(value, str) or isinstance(value, int) or
                  isinstance(value, list))):
                 buf += '=' + str(value)
