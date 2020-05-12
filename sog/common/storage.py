@@ -1,6 +1,5 @@
 ''' common functions '''
 
-import glob
 import jsonpickle
 import os
 from pathlib import Path
@@ -57,14 +56,14 @@ class Storage():
                              "datafile name")
                 return(False)
 
-            if hasattr(self, '_fileextention'):
-                extention = self._fileextention
+            if hasattr(self, '_fileextension'):
+                extension = self._fileextension
             else:
-                extention = '.pickle'
+                extension = '.pickle'
 
             self._datafile = os.path.abspath(DATADIR + '/' +
                                              self.__class__.__name__ +
-                                             '/' + str(id) + extention)
+                                             '/' + str(id) + extension)
         else:
             # set data file name to name provided
             self._datafile = os.path.abspath(str(dfStr))
@@ -159,19 +158,18 @@ class Storage():
         # store the values before we save, then we will restore them
         # immediately after.
         tmpStore = {}
-        for attName in self.attributesThatShouldntBeSaved:
+        for attName in self.attributesThatShouldntBeSaved + ['_datafile']:
             try:
                 tmpStore[attName] = getattr(self, attName)
             except AttributeError:
                 pass
-            setattr(self, attName, None)
+            if hasattr(self, attName):
+                delattr(self, attName)
             if self._debugStorage:
                 logger.debug(logPrefix + "ignoring " + attName +
                              " during save")
-        # create data file
-        delattr(self, '_datafile')     # never save _datafile attribute
 
-        # persist content
+        # persist content - create data file
         if re.search('\\.json$', filename):
             self.writeJSonFile(filename)
         else:
@@ -332,24 +330,3 @@ class Storage():
     def isValid(self):
         ''' available for override '''
         return(True)
-
-
-def getNextUnusedFileNumber(type):
-    ''' return the next unused item number, by looking through the
-        corresponding files for the last one used.  This is typically
-        used when creating new objects or creatures '''
-    dir = DATADIR
-    if type != '':
-        dir += '/' + type.capitalize()
-
-    numberlist = []
-    if os.path.exists(dir):
-        filelist = glob.glob(dir + '/*.pickle')
-        for fqfn in filelist:
-            filenumber = re.sub('[^0-9]', '', os.path.basename(fqfn))
-            if filenumber != '':
-                numberlist.append(int(filenumber))
-    if len(numberlist) > 0:
-        sortedlist = sorted(numberlist)
-        return((sortedlist[-1] + 1))
-    return 0

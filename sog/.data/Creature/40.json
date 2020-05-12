@@ -31,7 +31,6 @@
     "_instanceDebug": null,
     "_invValue": null,
     "_invWeight": null,
-    "_inventory": null,
     "_invisible": false,
     "_itemCatalog": [],
     "_kidnap": false,
@@ -48,7 +47,7 @@
         2
     ],
     "_offensiveSpells": [],
-    "_parleyAction": "None",
+    "_parleyAction": "Custom",
     "_parleyTeleportRooms": [],
     "_parleyTxt": [
         "What can I get you?",
@@ -73,19 +72,5 @@
     "_vulnerable": null,
     "_watch": false,
     "_weight": 20,
-    "attributesThatShouldntBeSaved": [
-        "_creationDate",
-        "_currentlyAttacking",
-        "_enterRoomTime",
-        "_instanceDebug",
-        "_invWeight",
-        "_invValue",
-        "_attackPlayer",
-        "_lastAttackDate",
-        "_secondsUntilNextAttack",
-        "_vulnerable",
-        "_inventory",
-        "_inventory"
-    ],
     "py/object": "creature.Creature"
 }

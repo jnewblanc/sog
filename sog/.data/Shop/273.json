@@ -18,7 +18,6 @@
     },
     "_dailyTransactionCount": {},
     "_dark": false,
-    "_datafile": "",
     "_desc": "at the bar of the inn.  Here the criss-cross of the wallpapered walls is broken by a large mirror and several lanterns.   Behind the bar are decanter filled shelves and trays of glassware.  The bartender keeps a tidy bartop with only a few pitchers and bottles along the back edge.",
     "_encounterList": [],
     "_encounterRate": 0,
@@ -38,7 +37,8 @@
     "_pawnshop": false,
     "_permanentList": [
         "Creature/40",
-        "Treasure/46"
+        "Treasure/46",
+        "Portal/7"
     ],
     "_priceBonus": 0,
     "_repair": false,

@@ -53,6 +53,7 @@ class TestRoom(TestGameBase):
         roomObj._dark = False
         charObj.removeDm()
         assert roomObj.displayExits(charObj) != ''
+        assert not roomObj.isSafe()
 
         # This room has items in it
         roomObj = RoomFactory('room', self._testRoomNum2)
@@ -136,9 +137,16 @@ class TestRoom(TestGameBase):
         assert disp == 'You see three toothpicks and two bugs\n'
 
     def testRoomLoad(self):
+        self.setTestName('testRoomLoad')
         roomNumber = 319
         roomObj = RoomFactory('room', roomNumber)
         roomObj.load()
+
+        # Shop/318 is a shop.  Make sure that we can load it by room number
+        shopNumber = 318
+        roomObj = RoomFactory('room', shopNumber)
+        roomObj.load()
+        assert roomObj.o == 319
 
 
 if __name__ == '__main__':

@@ -83,6 +83,7 @@ class TestCharacter(TestGameBase):
         assert not charObj.isPlagued()
         assert not charObj.isEvil()
         assert not charObj.isAttacking()
+        assert not charObj.isUnKillable()
 
     def testSpellAndBroadcastStats(self):
         charObj = self.createCharacter()

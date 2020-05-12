@@ -163,7 +163,7 @@ class Character(Item):
                 'charisma', 'constitution', 'luck']
     skillDict = {
         '_slash': 'swords and axes come easily to you',
-        '_bludgeon': 'hammers and maces are an extention of your arms',
+        '_bludgeon': 'hammers and maces are an extension of your arms',
         '_pierce': 'you gravitate toward daggers and spears',
         '_magic': 'an inner confidence that enhances spells',
         '_dodge': 'being quick on your feet helps avoid blows'}
@@ -235,7 +235,7 @@ class Character(Item):
         self._playtester = False
 
         self._bankBalance = 0
-        self._coins = 100
+        self._coins = 20
         self._knownSpells = []
         self._doubleUpStatLevels = []
 
@@ -908,17 +908,298 @@ class Character(Item):
             self.incrementStat('luck')
             self.incrementStat('luck')
 
+    def addHP(self, num=0):
+        self._hp = min((self._hp + num), self.getMaxHP())
+
+    def addMana(self, num=0):
+        self._mana = min((self._mana + num), self.getMaxMana())
+
+    def addExp(self, num):
+        self._expToNextLevel -= num
+
+    def canAttack(self):
+        if self.checkCooldown(self.getSecondsUntilNextAttack(),
+                              'until next attack'):
+            return(True)
+        return(False)
+
+    def canSeeHidden(self):
+        if self.isDm():
+            return(True)
+        if self.getClassName().lower() in ['ranger', 'rogue']:
+            return(True)
+        if random.randint(1, 100) < int(self.getLuck() / 3):
+            return(True)
+        return(False)
+
+    def canSeeInTheDark(self):
+        ''' ToDo: a light spell should allow players to see in the dark '''
+        if self.isDm():
+            return(True)
+        return(False)
+
+    def canSeeInvisible(self):
+        if self.isDm():
+            return(True)
+        return(False)
+
+    def describe(self, count=1, article=''):
+        return(self._name)
+
+    def getAc(self):
+        return(self._ac)
+
+    def getDodgeBonus(self):
+        return(self._dodgeBonus)
+
+    def isAttacking(self):
+        if self._currentlyAttacking is not None:
+            return(True)
+        return(False)
+
+    def isAttackingWithFist(self):
+        if self.getLastAttackCmd() in SpellList:
+            return(False)
+        if self.getEquippedWeapon().getName() == 'fist':
+            return(True)
+        return(False)
+
+    def isBlessed(self):
+        return(self._blessed)
+
+    def isDm(self):
+        return(self._dm)
+
+    def isDrunk(self):
+        return(self._drunk)
+
+    def isEvil(self):
+        return(self._evil)
+
+    def isHidden(self):
+        return(self._hidden)
+
+    def isInvisible(self):
+        return(self._invisible)
+
+    def isMagic(self):
+        return(False)
+
+    def isPlagued(self):
+        return(self._plagued)
+
+    def isPoisoned(self):
+        return(self._poisoned)
+
+    def isUnKillable(self):
+        if self.isDm():
+            return(True)
+        return(False)
+
+    def isVulnerable(self):
+        return(self._vulnerable)
+
+    def getAlignment(self):
+        return(self._alignment)
+
+    def getAttacking(self):
+        return(self._attackTargets)
+
+    def getCharisma(self):
+        return(int(self.charisma))
+
+    def getClassName(self):
+        return(self._classname)
+
+    def getCurrentlyAttacking(self):
+        if self.isAttacking():
+            return(self._currentlyAttacking)
+        return(None)
+
+    def getConstitution(self):
+        return(int(self.constitution))
+
+    def getDexterity(self):
+        return(int(self.dexterity))
+
+    def getEquippedWeapon(self):
+        return(self._equippedWeapon)
+
+    def getEquippedArmor(self):
+        return(self._equippedArmor)
+
+    def getEquippedShield(self):
+        return(self._equippedShield)
+
+    def getEquippedRing(self):
+        return(self._equippedRing)
+
+    def getEquippedNecklace(self):
+        return(self._equippedNecklace)
+
+    def getExp(self):
+        return(self._expToNextLevel)
+
+    def getGender(self):
+        return(self._gender)
+
     def getHitPoints(self):
         return(self._hp)
+
+    def getId(self):
+        return(self._acctName + '/' + str(self.getName()))
+
+    def getIntelligence(self):
+        return(int(self.intelligence))
+
+    def getLastAttackCmd(self):
+        return(self._lastAttackCmd)
+
+    def getLastAttackDate(self):
+        return(self._lastAttackDate)
+
+    def getLastCmd(self):
+        return(self._lastCommand)
+
+    def getLimitedSpellCount(self):
+        return(int(self._limitedSpellsLeft))
+
+    def getLevel(self):
+        return(self._level)
+
+    def getLimitedBroadcastCount(self):
+        return(int(self._broadcastLimit))
+
+    def getLuck(self):
+        return(int(self.constitution))
+
+    def getMana(self):
+        return(self._mana)
+
+    def getMaxHP(self):
+        return(self._maxhp)
+
+    def getMaxMana(self):
+        return(self._maxmana)
+
+    def getName(self):
+        return(self._name)
+
+    def getRoom(self):
+        return(self._roomObj)
+
+    def getSecondsUntilNextAttack(self):
+        return(self._secondsUntilNextAttack)
+
+    def getStrength(self):
+        return(int(self.strength))
+
+    def getType(self):
+        return(self.__class__.__name__)
+
+    def kidnaps(self):
+        return(False)
+
+    def sendsToJail(self):
+        return(False)
+
+    def reduceLimitedSpellCount(self, num=1):
+        self._limitedSpellsLeft -= int(num)
+
+    def reduceLimitedBroadcastCount(self, num=1):
+        self._broadcastLimit -= int(num)
+
+    def removeDm(self):
+        self._dm = False
+
+    def removeRoom(self):
+        self._roomObj = None
+
+    def setAlignment(self, _alignment):
+        if _alignment in self.alignmentList:
+            self._alignment = str(_alignment)
+        else:
+            logger.error('setAlignment: Attempt to set invalid gender')
+
+    def setBlessed(self, val=True):
+        self._blessed = val
+
+    def setClassName(self, _classname):
+        if _classname in self.classList:
+            self._classname = str(_classname)
+        else:
+            logger.error('setClassName: Attempt to set invalid gender')
+
+    def setCurrentlyAttacking(self, player):
+        self._currentlyAttacking = player
+
+    def setDm(self):
+        self._dm = True
+
+    def setDrunk(self, val=True):
+        self._drunk = val
+
+    def setEvil(self, val=True):
+        self._evil = val
+
+    def setExpForLevel(self):
+        ''' set the character's exp to the amount required for next level '''
+        self._expToNextLevel = (2 ** (9 + self.getLevel()))
+
+    def setGender(self, _gender):
+        if _gender in self.genderList:
+            self._gender = str(_gender)
+        else:
+            logger.error('setGender: Attempt to set invalid gender')
+
+    def setHidden(self, val=True):
+        self._hidden = val
+
+    def setInvisible(self, val=True):
+        self._invisible = val
 
     def setHitPoints(self, num):
         self._hp = int(num)
 
-    def addHP(self, num=0):
-        self._hp = min((self._hp + num), self.getMaxHP())
+    def setInputDate(self):
+        self._lastInputDate = datetime.now()
 
-    def subtractHP(self, num=0):
-        self._hp -= max(0, num)
+    def setLevel(self, num):
+        self._level = int(num)
+
+    def setLoginDate(self):
+        self._lastLoginDate = datetime.now()
+
+    def setLogoutDate(self):
+        self._lastLogoutDate = datetime.now()
+
+    def setLastCmd(self, str1):
+        self._lastCommand = str1
+
+    def setLastAttackCmd(self, str1):
+        self._lastAttackCmd = str1
+
+    def setLastAttack(self, cmd='attack'):
+        self.setLastAttackCmd(cmd)
+        self.setLastAttackDate()
+
+    def setLastAttackDate(self):
+        self._lastAttackDate = datetime.now()
+
+    def setLastRegen(self, when='now'):
+        if when == 'never':
+            self._lastRegenDate = getNeverDate()
+        else:
+            self._lastRegenDate = datetime.now()
+
+    def setLastPoison(self, when='now'):
+        if when == 'never':
+            self._lastPoisonDate = getNeverDate()
+        else:
+            self._lastPoisonDate = datetime.now()
+
+    def setMana(self, num):
+        self._mana = int(num)
 
     def setMaxHP(self, num=0):
         if num == 0:
@@ -926,33 +1207,38 @@ class Character(Item):
             num = baseHealth * self.getLevel()
         self._maxhp = num
 
-    def getMaxHP(self):
-        return(self._maxhp)
-
-    def getMana(self):
-        return(self._mana)
-
-    def setMana(self, num):
-        self._mana = int(num)
-
-    def addMana(self, num=0):
-        self._mana = min((self._mana + num), self.getMaxMana())
-
     def setMaxMana(self, num=0):
         if num == 0:
             baseMagic = self.classDict[self.getClassKey()]['baseMagic']
             num = (baseMagic * self.getLevel())
         self._maxmana = num
 
-    def getMaxMana(self):
-        return(self._maxmana)
+    def setName(self, _name):
+        self._name = str(_name)
+
+    def setPlagued(self, val=True):
+        self._plagued = val
+
+    def setPoisoned(self, val=True):
+        self._poisoned = val
+
+    def setRoom(self, roomObj):
+        self._roomObj = roomObj
+
+    def setSecondsUntilNextAttack(self, secs=3):
+        self._secondsUntilNextAttack = int(secs)
+
+    def setVulnerable(self, val=True):
+        self._vulnerable = bool(val)
 
     def subtractMana(self, num):
         self._mana -= int(num)
 
-    def setExpForLevel(self):
-        ''' set the character's exp to the amount required for next level '''
-        self._expToNextLevel = (2 ** (9 + self.getLevel()))
+    def subtractHP(self, num=0):
+        self._hp -= max(0, num)
+
+    def subtractlevel(self, num=1):
+        self._level -= int(num)
 
     def hasExpToTrain(self):
         ''' return True if character has enough exp to train for next level '''
@@ -1132,195 +1418,6 @@ class Character(Item):
         self._ac = ac
         self._dodgeBonus = db
 
-    def getAc(self):
-        return(self._ac)
-
-    def getDodgeBonus(self):
-        return(self._dodgeBonus)
-
-    def setLoginDate(self):
-        self._lastLoginDate = datetime.now()
-
-    def setLogoutDate(self):
-        self._lastLogoutDate = datetime.now()
-
-    def setInputDate(self):
-        self._lastInputDate = datetime.now()
-
-    def setLastCmd(self, str1):
-        self._lastCommand = str1
-
-    def getLastCmd(self):
-        return(self._lastCommand)
-
-    def setLastAttackCmd(self, str1):
-        self._lastAttackCmd = str1
-
-    def getLastAttackCmd(self):
-        return(self._lastAttackCmd)
-
-    def setLastAttack(self, cmd='attack'):
-        self.setLastAttackCmd(cmd)
-        self.setLastAttackDate()
-
-    def setLastAttackDate(self):
-        self._lastAttackDate = datetime.now()
-
-    def getLastAttackDate(self):
-        return(self._lastAttackDate)
-
-    def setSecondsUntilNextAttack(self, secs=3):
-        self._secondsUntilNextAttack = int(secs)
-
-    def getSecondsUntilNextAttack(self):
-        return(self._secondsUntilNextAttack)
-
-    def canAttack(self):
-        if self.checkCooldown(self.getSecondsUntilNextAttack(),
-                              'until next attack'):
-            return(True)
-        return(False)
-
-    def setLastRegen(self, when='now'):
-        if when == 'never':
-            self._lastRegenDate = getNeverDate()
-        else:
-            self._lastRegenDate = datetime.now()
-
-    def setLastPoison(self, when='now'):
-        if when == 'never':
-            self._lastPoisonDate = getNeverDate()
-        else:
-            self._lastPoisonDate = datetime.now()
-
-    def isVulnerable(self):
-        return(self._vulnerable)
-
-    def setVulnerable(self, val=True):
-        self._vulnerable = bool(val)
-
-    def isDm(self):
-        return(self._dm)
-
-    def setDm(self):
-        self._dm = True
-
-    def removeDm(self):
-        self._dm = False
-
-    def isInvisible(self):
-        return(self._invisible)
-
-    def setInvisible(self, val=True):
-        self._invisible = val
-
-    def getLimitedSpellCount(self):
-        return(int(self._limitedSpellsLeft))
-
-    def reduceLimitedSpellCount(self, num=1):
-        self._limitedSpellsLeft -= int(num)
-
-    def getLimitedBroadcastCount(self):
-        return(int(self._broadcastLimit))
-
-    def reduceLimitedBroadcastCount(self, num=1):
-        self._broadcastLimit -= int(num)
-
-    def setRoom(self, roomObj):
-        self._roomObj = roomObj
-
-    def getRoom(self):
-        return(self._roomObj)
-
-    def removeRoom(self):
-        self._roomObj = None
-
-    def addExp(self, num):
-        self._expToNextLevel -= num
-
-    def isHidden(self):
-        return(self._hidden)
-
-    def isDrunk(self):
-        return(self._drunk)
-
-    def setDrunk(self, val=True):
-        self._drunk = val
-
-    def isBlessed(self):
-        return(self._blessed)
-
-    def setBlessed(self, val=True):
-        self._blessed = val
-
-    def isPoisoned(self):
-        return(self._poisoned)
-
-    def setPoisoned(self, val=True):
-        self._poisoned = val
-
-    def isPlagued(self):
-        return(self._plagued)
-
-    def setPlagued(self, val=True):
-        self._plagued = val
-
-    def isEvil(self):
-        return(self._evil)
-
-    def setEvil(self, val=True):
-        self._evil = val
-
-    def getLevel(self):
-        return(self._level)
-
-    def setLevel(self, num):
-        self._level = int(num)
-
-    def subtractlevel(self, num=1):
-        self._level -= int(num)
-
-    def isMagic(self):
-        return(False)
-
-    def getEquippedWeapon(self):
-        return(self._equippedWeapon)
-
-    def getEquippedArmor(self):
-        return(self._equippedArmor)
-
-    def getEquippedShield(self):
-        return(self._equippedShield)
-
-    def getEquippedRing(self):
-        return(self._equippedRing)
-
-    def getEquippedNecklace(self):
-        return(self._equippedNecklace)
-
-    def getExp(self):
-        return(self._expToNextLevel)
-
-    def isAttacking(self):
-        if self._currentlyAttacking is not None:
-            return(True)
-        return(False)
-
-    def getCurrentlyAttacking(self):
-        if self.isAttacking():
-            return(self._currentlyAttacking)
-        return(None)
-
-    def setCurrentlyAttacking(self, player):
-        self._currentlyAttacking = player
-
-    def isAttackingWithFist(self):
-        if self.getLastAttackCmd() in SpellList:
-            return(False)
-        if self.getEquippedWeapon().getName() == 'fist':
-            return(True)
-        return(False)
-
     def getEquippedWeaponDamage(self):
         ''' Given the equipped weapon and attack type, return the damage '''
         damage = self.getFistDamage()
@@ -1475,95 +1572,6 @@ class Character(Item):
             buf += ' ' + msgStr
         buf += '.\n'
         self._spoolOut(buf)
-        return(False)
-
-    def getName(self):
-        return(self._name)
-
-    def describe(self, count=1, article=''):
-        return(self._name)
-
-    def getType(self):
-        return(self.__class__.__name__)
-
-    def setName(self, _name):
-        self._name = str(_name)
-
-    def getGender(self):
-        return(self._gender)
-
-    def setGender(self, _gender):
-        if _gender in self.genderList:
-            self._gender = str(_gender)
-        else:
-            logger.error('setGender: Attempt to set invalid gender')
-
-    def getClassName(self):
-        return(self._classname)
-
-    def setClassName(self, _classname):
-        if _classname in self.classList:
-            self._classname = str(_classname)
-        else:
-            logger.error('setClassName: Attempt to set invalid gender')
-
-    def getAlignment(self):
-        return(self._alignment)
-
-    def setAlignment(self, _alignment):
-        if _alignment in self.alignmentList:
-            self._alignment = str(_alignment)
-        else:
-            logger.error('setAlignment: Attempt to set invalid gender')
-
-    def getId(self):
-        return(self._acctName + '/' + str(self.getName()))
-
-    def getStrength(self):
-        return(int(self.strength))
-
-    def getDexterity(self):
-        return(int(self.dexterity))
-
-    def getIntelligence(self):
-        return(int(self.intelligence))
-
-    def getCharisma(self):
-        return(int(self.charisma))
-
-    def getConstitution(self):
-        return(int(self.constitution))
-
-    def getLuck(self):
-        return(int(self.constitution))
-
-    def getAttacking(self):
-        return(self._attackTargets)
-
-    def canSeeInTheDark(self):
-        ''' ToDo: a light spell should allow players to see in the dark '''
-        if self.isDm():
-            return(True)
-        return(False)
-
-    def canSeeInvisible(self):
-        if self.isDm():
-            return(True)
-        return(False)
-
-    def canSeeHidden(self):
-        if self.isDm():
-            return(True)
-        if self.getClassName().lower() in ['ranger', 'rogue']:
-            return(True)
-        if random.randint(1, 100) < int(self.getLuck() / 3):
-            return(True)
-        return(False)
-
-    def kidnaps(self):
-        return(False)
-
-    def sendsToJail(self):
         return(False)
 
     def condition(self):
@@ -1764,9 +1772,6 @@ class Character(Item):
             self.equipFist()
 
         return(True)
-
-    def setHidden(self, val=True):
-        self._hidden = val
 
     def attemptToHide(self):
         randX = random.randint(0, 99)

@@ -4,6 +4,7 @@
 '''
 import colorama
 # import pprint
+import os
 import random
 import re
 import sys
@@ -13,8 +14,7 @@ from character import Character
 from creature import Creature
 from common.attributes import AttributeHelper
 from common.ioLib import LocalIo
-from common.globals import LOGDIR
-from common.storage import getNextUnusedFileNumber
+from common.globals import LOGDIR, DATADIR
 from common.general import isIntStr, logger
 # from object import Portal, Door
 # from object import Armor, Weapon, Shield, Container, Key
@@ -72,22 +72,27 @@ class Editor(LocalIo, AttributeHelper):
 
     def parseListArgs(self, cmdargs):   # noqa: C901
         ''' parses the arguments for the list command '''
+        startNum = 0
+        endNum = 0
+
+        if len(cmdargs) >= 2:
+            targetStr = cmdargs[1]
+            if targetStr.lower() != 'coins':
+                targetStr = targetStr.rstrip('s')
+            tmpobj = self.getItemObj(targetStr, 99999)
+
         if len(cmdargs) < 3:
             print("Usage: list <type> <number-range | all>\n")
             print("  For example: list creature 1-5")
             if len(cmdargs) == 2:
-                nextnum = getNextUnusedFileNumber(cmdargs[1])
+                nextnum = tmpobj.getNextUnusedFileNumber(cmdargs[1])
                 if nextnum:
                     print("\nLast used number for " + str(cmdargs[1]) +
                           " is " + str(nextnum - 1))
-            return('', 0, 0)
-        targetStr = cmdargs[1]
-        if targetStr.lower() != 'coins':
-            targetStr = targetStr.rstrip('s')
+            return('', startNum, endNum)
+
         listNums = str.rstrip(cmdargs[2], '\n')
 
-        startNum = 0
-        endNum = 0
         if listNums == 'all':
             startNum = 1
         elif '-' in listNums:
@@ -102,7 +107,7 @@ class Editor(LocalIo, AttributeHelper):
             print("Invalid Range")
             return('', 0, 0)
 
-        lastUnused = getNextUnusedFileNumber(targetStr)
+        lastUnused = tmpobj.getNextUnusedFileNumber(targetStr)
         if endNum <= 0 or endNum > lastUnused:
             endNum = lastUnused
 
@@ -152,6 +157,14 @@ class Editor(LocalIo, AttributeHelper):
             self.wizard(cmdargs[0], itemObj)
             changeFlag = True
 
+        if not re.search(itemObj.getType(), itemObj.getDataFilename()):
+            filetype = os.path.dirname(itemObj.getDataFilename())
+            filetype = re.sub('.*\\\\', '', filetype)
+            self.printError("ERROR It looks like you are trying to edit a " +
+                            filetype + " as a " + itemObj.getType() +
+                            ".  Edit the " + filetype + " instead.")
+            return(False)
+
         if self.editRaw(cmdargs[0], itemObj, changeFlag):
             return(True)
         return(False)
@@ -174,7 +187,8 @@ class Editor(LocalIo, AttributeHelper):
             else:
                 ''' prompt for number '''
                 prompt = "Enter " + cmdargs[0] + " number"
-                nextnum = getNextUnusedFileNumber(cmdargs[0])
+                tmpobj = self.getItemObj(cmdargs[0], 99999)
+                nextnum = tmpobj.getNextUnusedFileNumber(cmdargs[0])
                 if nextnum != 0:
                     prompt += " (next unused = " + str(nextnum) + ")"
                 prompt += ": "
@@ -515,8 +529,15 @@ class Editor(LocalIo, AttributeHelper):
                  inStr == 'wq' or inStr == "save")):
                 # save edited item
                 if str(obj.getId()) == '' or str(obj.getId()) == "0":
-                    print("ERROR", objName, "could not be saved.  Bad Id:",
-                          obj.getId())
+                    self.printError("ERROR " + objName +
+                                    " could not be saved.  Bad Id: " +
+                                    obj.getId())
+                elif not re.search(obj.getType(), obj.getDataFilename()):
+                    filetype = os.path.dirname(obj.getDataFilename())
+                    filetype = re.sub('.*\\\\', '', filetype)
+                    self.printError("ERROR Could not save.  It looks like " +
+                                    "you are editing a " + filetype +
+                                    " as a " + obj.getType())
                 elif obj.save():
                     print(objName.capitalize(), obj.getId(), "saved")
                     logger.info(objName + " changes saved")
@@ -605,6 +626,9 @@ class Editor(LocalIo, AttributeHelper):
 
         headerList = ['id']
         fullList = []
+
+        logger.debug("showList: " + targetStr + " - " + str(startNum) +
+                     "-" + str(endNum))
 
         for itemNum in range(startNum, endNum):
             obj = self.getItemObj(targetStr, itemNum)

@@ -34,7 +34,7 @@ class Creature(Item):
 
     _instanceDebug = False
 
-    _fileextention = '.json'
+    _fileextension = '.json'
 
     creatureSpellList = ['poison', 'fireball', 'lightning', 'befuddle']
 
@@ -309,42 +309,6 @@ class Creature(Item):
         dLog("Creature destructor called for " + str(self.getId()),
              self._instanceDebug)
 
-    def debug(self):
-        return(pprint.pformat(vars(self)))
-
-    def toggleInstanceDebug(self):
-        self._instanceDebug = not self._instanceDebug
-
-    def getInstanceDebug(self):
-        return(self._instanceDebug)
-
-    def setInstanceDebug(self, val):
-        self._instanceDebug = bool(val)
-
-    def describe(self, count=1, article='none'):
-        if count > 1:
-            return(count + " " + self._pluraldesc)
-        if article == 'none':
-            article = self._article + ' '
-        elif article != '':
-            article += ' '
-        return(article + self._singledesc)
-
-    def isValid(self):
-        for att in ["_name", "_article", "_singledesc", "_longdesc", "_level"]:
-            if getattr(self, att) == '':
-                return(False)
-        return(True)
-
-    def examine(self):
-        return(self._longdesc)
-
-    def delete(self):
-        return(None)
-
-    def getId(self):
-        return(self._creatureId)
-
     def addHP(self, num=0):
         self._hp = min((self._hp + num), self.getMaxHP())
 
@@ -359,6 +323,24 @@ class Creature(Item):
         if num >= self.getHitPoints():
             return(True)
         return(False)
+
+    def debug(self):
+        return(pprint.pformat(vars(self)))
+
+    def delete(self):
+        return(None)
+
+    def describe(self, count=1, article='none'):
+        if count > 1:
+            return(count + " " + self._pluraldesc)
+        if article == 'none':
+            article = self._article + ' '
+        elif article != '':
+            article += ' '
+        return(article + self._singledesc)
+
+    def examine(self):
+        return(self._longdesc)
 
     def fleesIfAttacked(self):
         return(self._fleeIfAttacked)
@@ -394,6 +376,17 @@ class Creature(Item):
     def getHitPoints(self):
         return(self._hp)
 
+    def getHitPointPercent(self):
+        ''' returns the int percentage of health remaining '''
+        percent = self.getHitPoints() * 100 / self.getMaxHP()
+        return(int(percent))
+
+    def getInstanceDebug(self):
+        return(self._instanceDebug)
+
+    def getId(self):
+        return(self._creatureId)
+
     def getLastAttackDate(self):
         return(self._lastAttackDate)
 
@@ -406,17 +399,37 @@ class Creature(Item):
     def getName(self):
         return(self._name)
 
+    def getParleyAction(self):
+        return(self._parleyAction)
+
+    def getParleyTeleportRoomNum(self):
+        if len(self._parleyTeleportRooms) == 0:
+            return(random.randint(1, 300))
+        return(getRandomItemFromList(self._parleyTeleportRooms))
+
+    def getParleySaleItem(self):
+        return(self.getRandomInventoryItem())
+
     def getPlural(self):
         return(self._pluraldesc)
+
+    def getDamage(self, level=0):
+        ''' returns the damage dealt by a creature '''
+        if not level:
+            level = self.getLevel()
+
+        damage = int(self._baseStatDict[level]['_damage'] *
+                     self._damagePct / 100)
+        return(damage)
+
+    def getToHit(self):
+        return(self._tohit)
 
     def getSecondsUntilNextAttack(self):
         return(self._secondsUntilNextAttack)
 
     def getSingular(self):
         return(self._singledesc)
-
-    def getToHit(self):
-        return(self._tohit)
 
     def getType(self):
         return(self.__class__.__name__)
@@ -432,6 +445,11 @@ class Creature(Item):
 
     def isAntiMagic(self):
         return(self._antiMagic)
+
+    def isAttacking(self):
+        if self._currentlyAttacking is not None:
+            return(True)
+        return(False)
 
     def isCarryable(self):  # set for objects, not usually useful for Creatures
         return(self._carry)
@@ -454,6 +472,15 @@ class Creature(Item):
     def isUndead(self):
         return(self._undead)
 
+    def isUnKillable(self):
+        return(self._noKill)
+
+    def isValid(self):
+        for att in ["_name", "_article", "_singledesc", "_longdesc", "_level"]:
+            if getattr(self, att) == '':
+                return(False)
+        return(True)
+
     def isVulnerable(self):
         return(self._vulnerable)
 
@@ -463,14 +490,8 @@ class Creature(Item):
     def sendsToJail(self):
         return(self._sendToJail)
 
-    def getDamage(self, level=0):
-        ''' returns the damage dealt by a creature '''
-        if not level:
-            level = self.getLevel()
-
-        damage = int(self._baseStatDict[level]['_damage'] *
-                     self._damagePct / 100)
-        return(damage)
+    def setInstanceDebug(self, val):
+        self._instanceDebug = bool(val)
 
     def setHitPoints(self, num=0):
         if num:
@@ -481,10 +502,14 @@ class Creature(Item):
     def setEnterRoomTime(self):
         self._enterRoomTime = datetime.now()
 
-    def isAttacking(self):
-        if self._currentlyAttacking is not None:
-            return(True)
-        return(False)
+    def setLastAttack(self):
+        self.setLastAttackDate()
+
+    def setLastAttackDate(self):
+        self._lastAttackDate = datetime.now()
+
+    def setSecondsUntilNextAttack(self, secs=10):
+        self._secondsUntilNextAttack = int(secs)
 
     def setCurrentlyAttacking(self, player):
         self._currentlyAttacking = player
@@ -494,6 +519,9 @@ class Creature(Item):
 
     def setVulnerable(self, val=True):
         self._vulnerable = bool(val)
+
+    def toggleInstanceDebug(self):
+        self._instanceDebug = not self._instanceDebug
 
     def flees(self, percentChanceOfFleeing=20):
         ''' Returns true if creature flees
@@ -515,6 +543,15 @@ class Creature(Item):
         '''
         return(self.getToHit())
 
+    def getEquippedWeaponDamage(self, fluctuationPercent=15):
+        ''' calculate creature 'weapon' damage
+            * creatures don't have weapons equipped.  Instead, we treat their
+              damage attribute as a weapon with some random fluctuation '''
+        damage = self.getDamage()
+        damageAdj = int(damage * fluctuationPercent / 100)
+        damage += random.randint(-(damageAdj), damageAdj)
+        return(damage)
+
     def initiateAttack(self, charObj=None, alwaysNotices=False):
         ''' Returns true if creature initiates attack on player '''
         if not charObj:
@@ -532,15 +569,6 @@ class Creature(Item):
             return(True)
 
         return(False)
-
-    def getEquippedWeaponDamage(self, fluctuationPercent=15):
-        ''' calculate creature 'weapon' damage
-            * creatures don't have weapons equipped.  Instead, we treat their
-              damage attribute as a weapon with some random fluctuation '''
-        damage = self.getDamage()
-        damageAdj = int(damage * fluctuationPercent / 100)
-        damage += random.randint(-(damageAdj), damageAdj)
-        return(damage)
 
     def acDamageReduction(self, damage):
         ''' reduce damage based on AC '''
@@ -649,22 +677,6 @@ class Creature(Item):
         self._exp = int(exp + monsterLevelBonus)
         return(None)
 
-    def getHitPointPercent(self):
-        ''' returns the int percentage of health remaining '''
-        percent = self.getHitPoints() * 100 / self.getMaxHP()
-        return(int(percent))
-
-    def getParleyAction(self):
-        return(self._parleyAction)
-
-    def getParleyTeleportRoomNum(self):
-        if len(self._parleyTeleportRooms) == 0:
-            return(random.randint(1, 300))
-        return(getRandomItemFromList(self._parleyTeleportRooms))
-
-    def getParleySaleItem(self):
-        return(self.getRandomInventoryItem())
-
     def getParleyTxt(self):
         ''' Returns a string containing the creatures response to a parley '''
         buf = ''
@@ -716,15 +728,6 @@ class Creature(Item):
     def doesntNotice(self, charObj):
         ''' wrapper around negated 'notices' method '''
         return(not self.notices(charObj))
-
-    def setLastAttack(self):
-        self.setLastAttackDate()
-
-    def setLastAttackDate(self):
-        self._lastAttackDate = datetime.now()
-
-    def setSecondsUntilNextAttack(self, secs=10):
-        self._secondsUntilNextAttack = int(secs)
 
     def canAttack(self, allowOptOut=True):
         ''' returns true if the creature is ready for an attack '''
