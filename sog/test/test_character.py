@@ -202,6 +202,7 @@ class TestCharacter(TestGameBase):
         charObj.setLevel(1)
         obj1 = object.Weapon(self.testObjNumber)
         obj1.setName("testGranade")
+        obj1._singledesc = "deadly testGranade"
         obj1.setDamageType('_pierce')
         obj1.setMaximumDamage(100)
         obj1.setMinimumDamage(20)
@@ -225,6 +226,28 @@ class TestCharacter(TestGameBase):
         obj3 = charObj.getEquippedWeapon()
         msg = "Item is not unequipped - obj3=" + obj3.getName()
         self.assertEqual(obj3.getName() == 'fist', True, msg)
+
+        # Test that discarded weapon is unequipped
+        charObj.addToInventory(obj1)
+        charObj.equip(obj1)
+        # Create a room and add character to it
+        roomObj = self.createRoom(num=99999)
+        charObj.setRoom(roomObj)
+        roomObj.addCharacter(charObj)
+        logger.info('Pre - Equipped weapon = ' +
+                    charObj.getEquippedWeapon().describe())
+        logger.info('Pre - Char Inventory: ' + str(charObj.getInventory()))
+        logger.info('Pre - Room Inventory: ' + str(roomObj.getInventory()))
+        assert not charObj.isAttackingWithFist()
+        # Run test
+        charObj.discardsEquippedWeapon()
+        obj3 = charObj.getEquippedWeapon()
+        logger.info('Post - Equipped weapon = ' + obj3.describe())
+        assert charObj.isAttackingWithFist()
+        logger.info('Post - Char Inventory: ' + str(charObj.getInventory()))
+        logger.info('Post - Room Inventory: ' + str(roomObj.getInventory()))
+        assert obj1 not in charObj.getInventory()
+        assert obj1 in roomObj.getInventory()
 
     def testArmorEffectiveness(self):
         ''' Test armor AC effectiveness '''

@@ -14,11 +14,11 @@
     },
     "_dailyTransactionCount": {},
     "_dark": false,
-    "_datafile": "",
     "_desc": "mingling among the elite customers at the auction house.  In the back of the room is an area where auction items are rehabilitated prior to going on the block.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
+    "_isShop": true,
     "_lastTransactionDate": {
         "__reduce__": [
             {

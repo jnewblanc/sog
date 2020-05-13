@@ -3,8 +3,6 @@
   * Offline editing of accounts, rooms, creatures, and characters
 '''
 import colorama
-# import pprint
-import os
 import random
 import re
 import sys
@@ -14,7 +12,7 @@ from character import Character
 from creature import Creature
 from common.attributes import AttributeHelper
 from common.ioLib import LocalIo
-from common.globals import LOGDIR, DATADIR
+from common.globals import LOGDIR
 from common.general import isIntStr, logger
 # from object import Portal, Door
 # from object import Armor, Weapon, Shield, Container, Key
@@ -157,13 +155,12 @@ class Editor(LocalIo, AttributeHelper):
             self.wizard(cmdargs[0], itemObj)
             changeFlag = True
 
-        if not re.search(itemObj.getType(), itemObj.getDataFilename()):
-            filetype = os.path.dirname(itemObj.getDataFilename())
-            filetype = re.sub('.*\\\\', '', filetype)
-            self.printError("ERROR It looks like you are trying to edit a " +
-                            filetype + " as a " + itemObj.getType() +
-                            ".  Edit the " + filetype + " instead.")
-            return(False)
+        if itemObj.getType().lower() == 'room':
+            if hasattr(itemObj, '_isShop'):
+                self.printError("ERROR It looks like you are trying to edit " +
+                                "a Shop/Guild as a " + itemObj.getType() +
+                                ".  Edit the Shop/Guild instead.")
+                return(False)
 
         if self.editRaw(cmdargs[0], itemObj, changeFlag):
             return(True)
@@ -532,11 +529,11 @@ class Editor(LocalIo, AttributeHelper):
                     self.printError("ERROR " + objName +
                                     " could not be saved.  Bad Id: " +
                                     obj.getId())
-                elif not re.search(obj.getType(), obj.getDataFilename()):
-                    filetype = os.path.dirname(obj.getDataFilename())
-                    filetype = re.sub('.*\\\\', '', filetype)
-                    self.printError("ERROR Could not save.  It looks like " +
-                                    "you are editing a " + filetype +
+                elif obj.lower() == 'room' and hasattr(obj, '_isShop'):
+                    # special case to protect us from editing shops/guilds
+                    # as rooms, since room objects can load shops
+                    self.printError("ERROR Could not save.  It looks " +
+                                    "like you are editing a Shop/Guild " +
                                     " as a " + obj.getType())
                 elif obj.save():
                     print(objName.capitalize(), obj.getId(), "saved")

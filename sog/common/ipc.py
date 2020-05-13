@@ -101,18 +101,7 @@ class Ipc():
 
         roomNumbList = [roomObj.getId()]
         # Get ajacent directional rooms
-        roomNumbList += list(roomObj.getExits().values())
-
-        # Get rooms connected by a portal or door
-        for obj in roomObj.getInventory():
-            type = obj.getType()
-            if type == "Door" or type == "Portal":
-                roomNum = obj.getToWhere()
-                if roomNum:
-                    roomNumbList.append(roomNum)
-
-        # filter out any non-room room numbers (i.e. roomNum = 0)
-        roomNumbList = list(filter(lambda x: x != 0, set(roomNumbList)))
+        roomNumbList += list(roomObj.getAllAdjacentRooms())
 
         if self._instanceDebug:
             logger.debug('yellMsg: ajoining rooms' + str(roomNumbList))

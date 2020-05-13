@@ -85,7 +85,7 @@ class Character(Item):
             'bonusStats': ['strength', 'constitution'],
             'penaltyStats': ['intelligence', 'piety'],
             'baseDamage': 2,
-            'baseHealth': 18,
+            'baseHealth': 23,
             'baseMagic': 2,
             'identifyLevel': 10
             },
@@ -98,8 +98,8 @@ class Character(Item):
             'bonusStats': ['dexterity', 'charisma'],
             'penaltyStats': ['strength', 'piety'],
             'baseDamage': 1,
-            'baseHealth': 14,
-            'baseMagic': 6,
+            'baseHealth': 18,
+            'baseMagic': 8,
             'identifyLevel': 8
             },
         2: {
@@ -111,8 +111,8 @@ class Character(Item):
             'bonusStats': ['intelligence', 'intelligence'],
             'penaltyStats': ['strength', 'strength'],
             'baseDamage': 0,
-            'baseHealth': 6,
-            'baseMagic': 14,
+            'baseHealth': 14,
+            'baseMagic': 13,
             'identifyLevel': 5
             },
         3: {
@@ -124,8 +124,8 @@ class Character(Item):
             'bonusStats': ['piety', 'piety'],
             'penaltyStats': ['strength', 'dexterity'],
             'baseDamage': 0,
-            'baseHealth': 7,
-            'baseMagic': 13,
+            'baseHealth': 16,
+            'baseMagic': 11,
             'identifyLevel': 8,
             },
         4: {
@@ -137,8 +137,8 @@ class Character(Item):
             'bonusStats': ['dexterity', 'intelligence'],
             'penaltyStats': ['charisma', 'charisma'],
             'baseDamage': 1,
-            'baseHealth': 12,
-            'baseMagic': 8,
+            'baseHealth': 17,
+            'baseMagic': 9,
             'identifyLevel': 7,
             },
         5: {
@@ -150,8 +150,8 @@ class Character(Item):
             'bonusStats': ['charisma', 'piety'],
             'penaltyStats': ['intelligence', 'constitution'],
             'baseDamage': 2,
-            'baseHealth': 10,
-            'baseMagic': 10,
+            'baseHealth': 20,
+            'baseMagic': 5,
             'identifyLevel': 9
             }
         }  # end classDict
@@ -1046,6 +1046,11 @@ class Character(Item):
     def getHitPoints(self):
         return(self._hp)
 
+    def getHitPointPercent(self):
+        ''' returns the int percentage of health remaining '''
+        percent = self.getHitPoints() * 100 / self.getMaxHP()
+        return(int(percent))
+
     def getId(self):
         return(self._acctName + '/' + str(self.getName()))
 
@@ -1682,13 +1687,14 @@ class Character(Item):
         self.setPoisoned(False)
         self.setPlagued(False)
 
-        # return to starting room or guild
-        self.client.gameObj.joinRoom(58, self)
-
         self.save()
         if not silent:   # primarily used for testing hundreds of deaths
             self._spoolOut('You are dead!\n')
             self.obituary()
+
+        # return to starting room or guild
+        self.client.gameObj.joinRoom(58, self)
+        self._spoolOut(self.getRoom().display(self))
 
         return(True)
 
@@ -1833,6 +1839,19 @@ class Character(Item):
             self.unEquip(slotName='_equippedShield')
             self.setSecondsUntilNextAttack(30)
         return(fumbles)
+
+    def discardsEquippedWeapon(self):
+        ''' drop currently equipped weapon '''
+        if self.isAttackingWithFist():
+            return(True)
+
+        weaponObj = self.getEquippedWeapon()
+        self.unEquip(slotName='_equippedWeapon')
+        self.removeFromInventory(weaponObj)
+        roomObj = self.getRoom()
+        if roomObj:
+            roomObj.addToInventory(weaponObj)
+        return(True)
 
     def possibilyLoseHiddenWhenMoving(self):
         ''' set hidden to false if you fail the roll.

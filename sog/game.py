@@ -1750,7 +1750,7 @@ class GameCmd(cmd.Cmd):
 
     def do_run(self, line):
         ''' drop weapon and escape room in random direction '''
-        self.selfMsg(line + " not implemented yet\n")
+        self.gameObj.run(self.charObj)
 
     def do_s(self, line):
         ''' navigation '''

@@ -14,11 +14,11 @@
         "Weapon/5": 1
     },
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the aboandoned tannery.  The place is particularly clean given that production ended years ago.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
+    "_isShop": true,
     "_lastTransactionDate": {
         "__reduce__": [
             {

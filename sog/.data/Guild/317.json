@@ -14,12 +14,12 @@
     },
     "_dailyTransactionCount": {},
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the test guild.  The room is long.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_guildDues": 100,
     "_inventoryTruncSize": 12,
+    "_isShop": true,
     "_lastTrainDate": {
         "__reduce__": [
             {
