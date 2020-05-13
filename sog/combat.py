@@ -3,7 +3,7 @@
 import random
 
 from character import Character
-from common.general import dLog
+from common.general import dLog, getRandomItemFromList
 from magic import SpellList, getSpellDamageType
 # from common.general import logger
 
@@ -158,10 +158,14 @@ class Combat():
 
     CombatAttacks = attackDict.keys()
 
-    _secsBetweenAttacks = 5
-    _playerAdvantageSecs = 10
     _jailRoomNum = 280
     _kidnapRoomNum = 184
+
+    _charSecsBetweenAttacks = 5    # time a player need to wait between attacks
+
+    # Base numbers.  Creature attack rate scales up/down by percentage attr
+    _creatureMinSecsBetweenAttacks = 10  # min time for creature atk cooldown
+    _creatureMaxSecsBetweenAttacks = 30  # max time for creature atk cooldown
 
     def getAttackDict(self):
         return(self.attackDict)
@@ -416,7 +420,7 @@ class Combat():
                        spellObj=None):
         logPrefix = "Game attackCreature: "
         roomObj = charObj.getRoom()
-        self._instanceDebug = True
+        self._instanceDebug = False
 
         isSpell = False
         if attackCmd in SpellList:
@@ -524,9 +528,8 @@ class Combat():
                  charObj.getName(), self._instanceDebug)
             return(False)
 
-        secs = random.randint(self._secsBetweenAttacks,
-                              self._secsBetweenAttacks +
-                              self._playerAdvantageSecs)
+        secs = random.randint(self._creatureMinSecsBetweenAttacks,
+                              self._creatureMaxSecsBetweenAttacks)
         creatureObj.setSecondsUntilNextAttack(secs)
         creatureObj.setLastAttack()
 
@@ -676,6 +679,9 @@ class Combat():
                 # death is handled in charObj.takeDamage
 
         charObj.takeDamage(damage)
+
+        self.panicIfNeeded(charObj)
+
         # end applyPlayerDamage
 
     def unAttack(self, roomObj, charObj):
@@ -715,3 +721,42 @@ class Combat():
         self.engageTarget(charObj, target)
 
         return(None)
+
+    def panicIfNeeded(self, charObj):
+        ''' If character has less than X percent health remaining, run away '''
+        dLog('panicIfNeeded: ' + str(charObj.getHitPointPercent()) + " <? 10",
+             True)
+        if charObj.getHitPoints() < 30 and charObj.getHitPointPercent() <= 10:
+            self.charMsg(charObj, "Panic!  ")
+            self.run(charObj)
+            return(True)
+        return(False)
+
+    def run(self, charObj):
+        ''' Drop weapon and escape to an adjoining room '''
+        roomNumList = []
+        roomNumList += list(charObj.getRoom().getAllAdjacentRooms())
+
+        if len(roomNumList) == 0:
+            self.charMsg(charObj, "You try to run, but " +
+                         "there are no escape routes.\n")
+            return(False)
+
+        escapeRoom = getRandomItemFromList(roomNumList)
+
+        # drop weapon
+        if not charObj.isAttackingWithFist():
+            charObj.discardsEquippedWeapon()
+            cMsg = 'You drop your weapon and run!'
+            (article, possessive, predicate) = charObj.getArticle('self')
+            oMsg = (charObj.getName() + ' drops ' + possessive +
+                    ' weapon and runs away!')
+        else:
+            cMsg = 'You run away!'
+            oMsg = (charObj.getName() + ' runs away!')
+
+        self.charMsg(charObj, cMsg + '\n')
+        self.othersInRoomMsg(charObj, charObj.getRoom(), oMsg + "\n")
+
+        self.joinRoom(escapeRoom, charObj)
+        self.charMsg(charObj, charObj.getRoom().display(charObj))

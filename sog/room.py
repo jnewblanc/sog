@@ -373,15 +373,12 @@ class Room(Item):
         else:
             extension = '.pickle'
 
-        logger.debug('room.getDataFilename: loading ' + str(self.getRoomNum()))
-
         if isinstance(self.getRoomNum(), int):
             for roomType in RoomFactoryTypes:
                 filename = os.path.abspath(DATADIR + "/" +
                                            roomType.capitalize() + "/" +
                                            str(self.getRoomNum()) +
                                            extension)
-                logger.debug('room.getDataFilename: Trying file ' + filename)
                 if os.path.isfile(filename):
                     break
 
@@ -645,6 +642,33 @@ class Room(Item):
                                         " blocks your way.\n")
             return(False)
         return(True)
+
+    def getAllAdjacentRooms(self):
+        ''' Returns a list of room numbers that are accessible from room '''
+        roomNumList = []
+
+        # Add directional Exits
+        roomNumList += list(self.getExits().values())
+
+        # Get rooms connected by a portal or door
+        for obj in self.getInventory():
+            type = obj.getType()
+            if type == "Door" or type == "Portal":
+                roomNum = obj.getToWhere()
+                if roomNum:
+                    roomNumList.append(roomNum)
+
+        # remove dups
+        set(roomNumList)
+
+        # remove current room from list
+        if self.getId() in roomNumList:
+            roomNumList.remove(self.getId())
+
+        # filter out any non-room room numbers (i.e. roomNum = 0)
+        roomNumList = list(filter(lambda x: x != 0, set(roomNumList)))
+
+        return(roomNumList)
     # End of Room class
 
 
@@ -662,6 +686,7 @@ class Shop(Room):
         self._repair = False      # can repair items here
         self._priceBonus = 100    # percent to raise/lower prices
         self._catalog = []        # items that are sold here, if any
+        self._isShop = True
 
         # Set some defaults
         self._safe = True         # Shops are safe, by default.  Can be changed
@@ -825,12 +850,21 @@ class Shop(Room):
             * non-room price changes occur elsewhere '''
         price *= (self._priceBonus / 100)
         return(int(price))
+
+    def setDataFilename(self):
+        ''' sets the filename of the room '''
+        if isinstance(self.getRoomNum(), int):
+            self._datafile = os.path.abspath(DATADIR + "/" +
+                                             'Shop' + "/" +
+                                             str(self.getRoomNum()) +
+                                             self._fileextension)
+
     # End of Shop class
 
 
 class Guild(Shop):
     ''' Room where players of the proper class can level up by training '''
-    wizardAttributes = Room.wizardAttributes + ["_order", '_possessiveOrder']
+    wizardAttributes = Room.wizardAttributes + ["_order"]
 
     def __init__(self, roomNum=1):
         super().__init__(roomNum)
@@ -901,6 +935,14 @@ class Guild(Shop):
         msg += ("We also honor the following recent advancements:\n")
         for name in self.getLastTrainees():
             msg += "  " + name + "\n"
+
+    def setDataFilename(self):
+        ''' sets the filename of the room '''
+        if isinstance(self.getRoomNum(), int):
+            self._datafile = os.path.abspath(DATADIR + "/" +
+                                             'Guild' + "/" +
+                                             str(self.getRoomNum()) +
+                                             self._fileextension)
 
 
 RoomFactoryTypes = ['room', 'shop', 'guild']

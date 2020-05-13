@@ -11,6 +11,7 @@ import account
 import character
 import creature
 from object import ObjectFactory
+from room import RoomFactory
 import common.serverLib
 from common.general import logger
 import threads
@@ -128,6 +129,12 @@ class TestGameBase(unittest.TestCase):
         cre.setEnterRoomTime()
         assert cre.isValid()
         return(cre)
+
+    def createRoom(self, num=99999):
+        room = RoomFactory('room', num)
+        room._shortDesc = 'Its a test room - short'
+        room._desc = 'Its a test room - long'
+        return(room)
 
     def joinGame(self):
         assert self._client.gameObj.isValid()

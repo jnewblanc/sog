@@ -20,6 +20,7 @@
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
+    "_isShop": true,
     "_lastTransactionDate": {
         "__reduce__": [
             {

@@ -11,11 +11,11 @@
     },
     "_dailyTransactionCount": {},
     "_dark": false,
-    "_datafile": "",
     "_desc": "standing at the teller's window in Boldholm City Bank.  The teller waves you forward.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
+    "_isShop": true,
     "_lastTransactionDate": {
         "__reduce__": [
             {

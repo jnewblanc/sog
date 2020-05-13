@@ -14,11 +14,11 @@
     },
     "_dailyTransactionCount": {},
     "_dark": false,
-    "_datafile": "",
     "_desc": "browsing the displays at the heavily fortified jewelery shoppe",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
+    "_isShop": true,
     "_lastTransactionDate": {
         "__reduce__": [
             {
