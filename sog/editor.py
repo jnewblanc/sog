@@ -3,8 +3,6 @@
   * Offline editing of accounts, rooms, creatures, and characters
 '''
 import colorama
-# import pprint
-import os
 import random
 import re
 import sys

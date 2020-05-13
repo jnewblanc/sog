@@ -444,7 +444,7 @@ class Combat():
             return(False)
 
         charObj.setHidden(False)
-        charObj.setSecondsUntilNextAttack(self._secsBetweenAttacks)
+        charObj.setSecondsUntilNextAttack(self._charSecsBetweenAttacks)
         charObj.setLastAttack(attackCmd)
 
         if not isSpell:
