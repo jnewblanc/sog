@@ -30,7 +30,7 @@ class TestGameBase(unittest.TestCase):
           - Creature
           - Objects
     '''
-    _testAcctName = "sogTest@gadgetshead.com"
+    _testAcctName = "sogTest@example.com"
     _testAcctDisplay = "sogTest"
 
     _testCharName = 'testCharBase'

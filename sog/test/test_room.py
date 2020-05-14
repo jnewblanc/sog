@@ -2,7 +2,7 @@
 import unittest
 
 from common.test import TestGameBase
-from common.general import logger, targetSearch
+from common.general import logger, targetSearch, getNeverDate
 from room import RoomFactory
 
 
@@ -144,9 +144,88 @@ class TestRoom(TestGameBase):
 
         # Shop/318 is a shop.  Make sure that we can load it by room number
         shopNumber = 318
-        roomObj = RoomFactory('room', shopNumber)
+        roomObj = RoomFactory('Shop', shopNumber)
         roomObj.load()
         assert roomObj.o == 319
+        assert hasattr(roomObj, '_catalog')
+
+        # Shop/317 is a guild.  Make sure that we can load it by room number
+        guildNumber = 317
+        roomObj = RoomFactory('Guild', guildNumber)
+        roomObj.load()
+        assert roomObj.o == 319
+        assert hasattr(roomObj, '_order')
+
+    def testRoomShop(self):
+        tmpRoomNum = 99999
+        roomObj = RoomFactory('Shop', tmpRoomNum)  # instanciate room object
+        roomObj._catalog = ['Armor/2', 'Weapon/2']
+        charObj = self.getCharObj()
+        charObj.setName('Lucky')
+        charObj.setCoins(10)
+        assert roomObj.isVendor()
+        assert not roomObj.isRepairShop()
+        assert not roomObj.isPawnShop()
+        assert not roomObj.isBank()
+        assert roomObj.getCatalog() != ''
+        assert roomObj.getPriceBonus() == 100
+        assert roomObj.getCantAffordTxt() != ''
+        assert roomObj.getCantCarryTxt() != ''
+        assert roomObj.getSuccessTxt() != ''
+        assert roomObj.getAbortedTxt() != ''
+        assert roomObj.shopGetInfo() != ''
+        assert roomObj.getTaxRate() >= 0
+        assert roomObj.getTaxAmount(100) == 0
+        assert roomObj.adjustPrice(1000) == 1000
+        obj = self.createObject(num=99999, type='Weapon', name='knife')
+        logger.debug(roomObj.debug())
+        roomObj.recordTransaction(obj, saveRoom=False)
+        logger.debug(roomObj.debug())
+        assert roomObj.displayTransactions() != ''
+        assert not roomObj.displayLedger() != ''
+        roomObj._bank = True
+        roomObj.recordTransaction('deposit/5000', saveRoom=False)
+        assert roomObj.displayLedger() != ''
+
+    def testRoomGuild(self):
+        tmpRoomNum = 99999
+        roomObj = RoomFactory('Guild', tmpRoomNum)  # instanciate room object
+        roomObj._lastTrainees = ['Bob', 'Satish', 'Goldilocks', 'Dom', "Lashi"]
+        roomObj._order = 'fighter'
+        roomObj._masterLevel = 5
+        roomObj._masters = ['Berger']
+        charObj = self.getCharObj()
+        charObj.setClassName('fighter')
+        charObj.setCoins(10)
+        charObj.setName('Bingo')
+        assert not roomObj.train(charObj)
+        assert roomObj.display(charObj) != ''
+        assert roomObj.getNotHereTxt() != ''
+        assert roomObj.getNotEnoughExpTxt() != ''
+        assert roomObj.guildGetInfo() != ''
+        assert roomObj.getOrder() != ''
+        assert isinstance(roomObj.getLastTrainees(), list)
+        assert isinstance(roomObj.getMasters(), list)
+        assert roomObj.getMasterLevel() == 5
+        assert roomObj.getLastTrainDate() == getNeverDate()
+        assert roomObj.isTrainingGround()
+        assert roomObj.isTrainingGroundForChar(charObj)
+        charObj.setClassName('mage')
+        assert not roomObj.isTrainingGroundForChar(charObj)
+        assert not roomObj.train(charObj)
+        assert roomObj.getCostToTrain(5) == 4096
+        assert not roomObj.payToTrain(charObj)
+        charObj.setCoins(4096)
+        assert roomObj.payToTrain(charObj)
+        charObj._expToNextLevel = 10
+        assert not roomObj.train(charObj)
+        charObj._expToNextLevel = 0
+        assert roomObj.train(charObj)
+        assert charObj.getLevel() == 2
+        assert roomObj.calculateMasterCoinBonus(7) == 49000
+        assert self._testAcctName + '/Bingo' in roomObj.getLastTrainees()
+        logger.info(roomObj.getPlaqueMsg())
+        assert roomObj.getPlaqueMsg() != ''
 
 
 if __name__ == '__main__':

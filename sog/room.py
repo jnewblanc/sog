@@ -800,8 +800,10 @@ class Shop(Room):
         buf += 'Bank Ledger:\n'
         for onekey in self._totalCoinLedger.keys():
             buf += "  " + self.S_ROW_FORMAT.format(
-                onekey, "today: " + str(self._dailyCoinLedger[onekey]) +
-                " - total: " + str(self._totalCoinLedger[onekey]))
+                onekey, "today: " +
+                str(self._dailyCoinLedger.get(onekey, 0)) +
+                " - total: " +
+                str(self._totalCoinLedger.get(onekey, 0)))
         return(buf)
 
     def getTaxRate(self):
@@ -812,7 +814,7 @@ class Shop(Room):
         taxes = int(int(amount) * self.getTaxRate())
         return(taxes)
 
-    def recordTransaction(self, item):
+    def recordTransaction(self, item, saveRoom=True):
         ''' Everytime a buy/sell/repair is done, use this to update stats '''
         if differentDay(datetime.now(), self._lastTransactionDate):
             self._dailyTransactionCount = {}         # reset daily counts
@@ -847,7 +849,9 @@ class Shop(Room):
                 self._dailyTransactionCount[itemStr] = 1
 
         self._lastTransactionDate = datetime.now()  # store date of transaction
-        self.save()                                 # save the room
+
+        if saveRoom:
+            self.save()                             # save the room
 
     def adjustPrice(self, price):
         ''' Adjust the price of goods depending on room attributes
@@ -881,11 +885,22 @@ class Guild(Shop):
         self._masterLevel = 1     # Highest level players in this guild
         self._masters = []        # Leaderboard of players at highest level
 
+        self._successfulTransactionTxt = "Congratulations!"
+        self._cantAffordTxt = "You have insufficient funds for that!"
+        self._notHereTxt = "You can't train here!"
+        self._notEnoughExpTxt = "You don't have enough experience to train."
+
     def guildGetInfo(self):
         ROW_FORMAT = "{0:14}: {1:<30}\n"
         buf = ''
         buf += (ROW_FORMAT.format("Order", self._order))
         return(buf)
+
+    def getNotHereTxt(self):
+        return(self._notHereTxt + "\n")
+
+    def getNotEnoughExpTxt(self):
+        return(self._notEnoughExpTxt + "\n")
 
     def getOrder(self):
         return(self._order)
@@ -894,7 +909,7 @@ class Guild(Shop):
         return(self._lastTrainees)
 
     def getLastTrainDate(self):
-        return(self._lastTrainees)
+        return(self._lastTrainDate)
 
     def getMasterLevel(self):
         return(self._masterLevel)
@@ -925,18 +940,18 @@ class Guild(Shop):
 
         coinsMissing = (costToTrain - charObj.getCoins())
         charObj.client.spoolOut(
-            "You don't have enough coin to train.  You need " +
-            str(coinsMissing) + " more shillings.")
+            self.getCantAffordTxt() +
+            "You need " + str(coinsMissing) + " more shillings.")
         return(False)
 
     def train(self, charObj):
         if not self.isTrainingGroundForChar(charObj):
-            charObj.client.spoolOut("You can't train here\n")
+            charObj.client.spoolOut(self.getNotHereTxt())
 
         if not charObj.hasExpToTrain():
             charObj.client.spoolOut(
-                "You don't have enough experience to train.  You need " +
-                str(charObj.getExp()) + " more experience")
+                self.getNotEnoughExpTxt() +
+                "You need " + str(charObj.getExp()) + " more experience")
             return(False)
 
         if not self.payToTrain(charObj):
@@ -944,12 +959,13 @@ class Guild(Shop):
 
         charObj.levelUp()
         newLevel = charObj.getLevel()
-        charObj.client.spoolOut("Congratulations.  You are now level " +
-                                str(newLevel) + ".")
+        charObj.client.spoolOut(self.getSuccessTxt() +
+                                "You are now level " + str(newLevel) + ".")
         logger.info("room.train: " + charObj.getId() + 'has trained to ' +
                     "become level " + str(newLevel) + ".")
 
         self.recordTrainStats(charObj)
+        return(True)
 
     def calculateMasterCoinBonus(self, level):
         return(int(1000 * (level ** 2)))
