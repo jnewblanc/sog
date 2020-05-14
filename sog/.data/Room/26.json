@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "at the beginning of Cemetary Road, near the cathedral",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Door/16"
+    ],
     "_priceBonus": 0,
     "_roomNum": 26,
     "_safe": false,

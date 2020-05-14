@@ -1,0 +1,76 @@
+{
+    "_abortedTransactionTxt": "Maybe next time",
+    "_antiMagic": false,
+    "_bank": false,
+    "_cantAffordTxt": "You can't afford the training fee!",
+    "_cantCarryTxt": "You would not be able to carry this additional item",
+    "_catalog": [],
+    "_dailyCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_dailyTransactionCount": {},
+    "_dark": false,
+    "_desc": "on the second floor of the wizards tower.  Plaques on the walls celebrate the acheivements of mages and wizards.",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_guildDues": 100,
+    "_inventoryTruncSize": 12,
+    "_isShop": true,
+    "_lastTrainDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B2wBAQAAAAAAAA=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_lastTrainees": [],
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B2wBAQAAAAAAAA=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_masterLevel": 1,
+    "_masters": [],
+    "_notEnoughExpTxt": "You don't have enough experience to train.",
+    "_notHereTxt": "You can't train here!",
+    "_notifyDM": false,
+    "_order": "mage",
+    "_pawnshop": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_repair": false,
+    "_roomNum": 142,
+    "_safe": false,
+    "_shortDesc": "on the second floor of the wizards tower.",
+    "_successfulTransactionTxt": "Congratulations!",
+    "_totalCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_totalTransactionCount": {},
+    "d": 141,
+    "e": 0,
+    "n": 0,
+    "o": 0,
+    "py/object": "room.Guild",
+    "s": 0,
+    "u": 143,
+    "w": 0
+}

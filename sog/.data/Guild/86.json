@@ -1,0 +1,76 @@
+{
+    "_abortedTransactionTxt": "Maybe next time",
+    "_antiMagic": false,
+    "_bank": false,
+    "_cantAffordTxt": "You can't afford the training fee!",
+    "_cantCarryTxt": "You would not be able to carry this additional item",
+    "_catalog": [],
+    "_dailyCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_dailyTransactionCount": {},
+    "_dark": false,
+    "_desc": "at ease in the Ranger Sanctuary.  A perfectly still pond reflects the towering canopy overhead",
+    "_encounterList": [],
+    "_encounterRate": 0,
+    "_guildDues": 100,
+    "_inventoryTruncSize": 12,
+    "_isShop": true,
+    "_lastTrainDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B2wBAQAAAAAAAA=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_lastTrainees": [],
+    "_lastTransactionDate": {
+        "__reduce__": [
+            {
+                "py/type": "datetime.datetime"
+            },
+            [
+                "B2wBAQAAAAAAAA=="
+            ]
+        ],
+        "py/object": "datetime.datetime"
+    },
+    "_masterLevel": 1,
+    "_masters": [],
+    "_notEnoughExpTxt": "You don't have enough experience to train.",
+    "_notHereTxt": "You can't train here!",
+    "_notifyDM": false,
+    "_order": "ranger",
+    "_pawnshop": false,
+    "_permanentList": [],
+    "_priceBonus": 0,
+    "_repair": false,
+    "_roomNum": 86,
+    "_safe": true,
+    "_shortDesc": "at ease in the Ranger Sanctuary",
+    "_successfulTransactionTxt": "Congratulations!",
+    "_totalCoinLedger": {
+        "deposit": 0,
+        "purchase": 0,
+        "repair": 0,
+        "sale": 0,
+        "withdraw": 0
+    },
+    "_totalTransactionCount": {},
+    "d": 0,
+    "e": 0,
+    "n": 0,
+    "o": 88,
+    "py/object": "room.Guild",
+    "s": 0,
+    "u": 0,
+    "w": 0
+}

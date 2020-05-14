@@ -10,13 +10,13 @@
         "Scroll/1"
     ],
     "_dailyCoinLedger": {
-        "deposit": 0,
-        "purchase": 0,
-        "repair": 0,
-        "sale": 0,
-        "withdraw": 0
+        "deposit": 39000,
+        "fees": 0,
+        "purchase": 11
     },
-    "_dailyTransactionCount": {},
+    "_dailyTransactionCount": {
+        "Armor/1": 1
+    },
     "_dark": false,
     "_desc": "in the Test Shop.  The room is long.",
     "_encounterList": [],
@@ -29,7 +29,7 @@
                 "py/type": "datetime.datetime"
             },
             [
-                "B2wBAQAAAAAAAA=="
+                "B+QFDgs5Bw2JEA=="
             ]
         ],
         "py/object": "datetime.datetime"
@@ -46,13 +46,16 @@
     "_shortDesc": "in the Test Shop.",
     "_successfulTransactionTxt": "Thank you.  Please come again",
     "_totalCoinLedger": {
-        "deposit": 0,
-        "purchase": 0,
+        "deposit": 39000,
+        "fees": 0,
+        "purchase": 11,
         "repair": 0,
         "sale": 0,
         "withdraw": 0
     },
-    "_totalTransactionCount": {},
+    "_totalTransactionCount": {
+        "Armor/1": 5
+    },
     "d": 0,
     "e": 0,
     "n": 0,

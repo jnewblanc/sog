@@ -1,8 +1,7 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
-    "_desc": "on the setps of the Cathedral",
+    "_desc": "on the steps of the Cathedral",
     "_encounterList": [
         9,
         10,
@@ -19,7 +18,7 @@
     "_priceBonus": 0,
     "_roomNum": 29,
     "_safe": false,
-    "_shortDesc": "on the setps of the Cathedral",
+    "_shortDesc": "on the steps of the Cathedral",
     "d": 0,
     "e": 0,
     "n": 12,

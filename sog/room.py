@@ -886,7 +886,7 @@ class Guild(Shop):
         self._masters = []        # Leaderboard of players at highest level
 
         self._successfulTransactionTxt = "Congratulations!"
-        self._cantAffordTxt = "You have insufficient funds for that!"
+        self._cantAffordTxt = "You can't afford the training fee!"
         self._notHereTxt = "You can't train here!"
         self._notEnoughExpTxt = "You don't have enough experience to train."
 
@@ -985,9 +985,9 @@ class Guild(Shop):
             charObj.addCoins(coinBonus)
             charObj.client.spoolOut(
                 "As the first " + self._order + " to reach level " +
-                charLevel + ", the guild honors your new rank with a bonus " +
-                "of " + coinBonus + " shillings and hangs a plaque with your" +
-                "name on it on the wall.\n")
+                str(charLevel) + ", the guild honors your new rank with a " +
+                "bonus of " + str(coinBonus) + " shillings and adds your " +
+                "name to a plaque on the wall.\n")
 
     def getPlaqueMsg(self):
         msg = ("Our guild honors the following level " +

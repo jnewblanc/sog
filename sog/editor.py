@@ -473,7 +473,8 @@ class Editor(LocalIo, AttributeHelper):
 
     def customSort(self, s):
         ''' returns the key for sorting '''
-        if re.search('.*Id', s) or s == '_roomNum':
+        if (((re.search('^_*[a-z]+Id', s) or s == '_roomNum') and
+             not s == '_lockId')):
             return('!' + s)
         elif re.search('_name', s):
             return("\"" + s)

@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the apse of the cathedral.  The large altar surrounding you makes you feel humble.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Door/11"
+    ],
     "_priceBonus": 0,
     "_roomNum": 202,
     "_safe": false,

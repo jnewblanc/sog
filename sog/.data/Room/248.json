@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the priests quaters.  This simple room is devoid of anything that would give it character.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Door/14"
+    ],
     "_priceBonus": 0,
     "_roomNum": 248,
     "_safe": false,
