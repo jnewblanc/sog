@@ -691,7 +691,7 @@ class Creature(Item):
         else:
             buf += self.describe(article='The') + " says, " + msg.capitalize()
 
-        if re.match('/W$', buf):
+        if re.search('/W$', buf):
             # Add punctuation if it's not already included
             buf += "."
         return(buf)

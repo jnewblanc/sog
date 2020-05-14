@@ -291,6 +291,11 @@ class Room(Item):
             return(msg)
         return('')
 
+    def displayExtra(self, charObj):
+        ''' Subclasses can override this, to get their messages inserted '''
+        msg = ''
+        return(msg)
+
     def displayItems(self, charObj):     # noqa C901
         ''' show items in current room '''
         buf = self.describeInvAsList(showDm=charObj.isDm(),
@@ -357,6 +362,7 @@ class Room(Item):
         buf = ''
 
         buf += self.displayDescription(charObj)
+        buf += self.displayExtra(charObj)
         buf += self.displayExits(charObj)
         buf += self.displayItems(charObj)
         buf += self.displayPlayers(charObj)
@@ -374,13 +380,11 @@ class Room(Item):
             extension = '.pickle'
 
         if isinstance(self.getRoomNum(), int):
-            for roomType in RoomFactoryTypes:
-                filename = os.path.abspath(DATADIR + "/" +
-                                           roomType.capitalize() + "/" +
-                                           str(self.getRoomNum()) +
-                                           extension)
-                if os.path.isfile(filename):
-                    break
+            roomType = getRoomTypeFromFile(self.getRoomNum(), extension)
+            filename = os.path.abspath(DATADIR + "/" +
+                                       roomType.capitalize() + "/" +
+                                       str(self.getRoomNum()) +
+                                       extension)
 
         if filename != '':
             self._datafile = filename
@@ -883,15 +887,69 @@ class Guild(Shop):
         buf += (ROW_FORMAT.format("Order", self._order))
         return(buf)
 
-    def isTrainingGround(self, charObj):
+    def getOrder(self):
+        return(self._order)
+
+    def getLastTrainees(self):
+        return(self._lastTrainees)
+
+    def getLastTrainDate(self):
+        return(self._lastTrainees)
+
+    def getMasterLevel(self):
+        return(self._masterLevel)
+
+    def getMasters(self):
+        return(self._masters)
+
+    def isTrainingGround(self):
         return(True)
 
     def isTrainingGroundForChar(self, charObj):
         if not self.isTrainingGround():
             return(False)
-        if charObj.getClassName() == self.order:
+        if charObj.getClassName() == self.getOrder():
             return(True)
         return(False)
+
+    def getCostToTrain(self, level):
+        ''' amount required to train for next level '''
+        return(2 ** (7 + level))
+
+    def payToTrain(self, charObj):
+        costToTrain = self.getCostToTrain(charObj.getLevel())
+
+        if charObj.canAffordAmount(costToTrain):
+            charObj.subtractCoins(costToTrain)
+            return(True)
+
+        coinsMissing = (costToTrain - charObj.getCoins())
+        charObj.client.spoolOut(
+            "You don't have enough coin to train.  You need " +
+            str(coinsMissing) + " more shillings.")
+        return(False)
+
+    def train(self, charObj):
+        if not self.isTrainingGroundForChar(charObj):
+            charObj.client.spoolOut("You can't train here\n")
+
+        if not charObj.hasExpToTrain():
+            charObj.client.spoolOut(
+                "You don't have enough experience to train.  You need " +
+                str(charObj.getExp()) + " more experience")
+            return(False)
+
+        if not self.payToTrain(charObj):
+            return(False)
+
+        charObj.levelUp()
+        newLevel = charObj.getLevel()
+        charObj.client.spoolOut("Congratulations.  You are now level " +
+                                str(newLevel) + ".")
+        logger.info("room.train: " + charObj.getId() + 'has trained to ' +
+                    "become level " + str(newLevel) + ".")
+
+        self.recordTrainStats(charObj)
 
     def calculateMasterCoinBonus(self, level):
         return(int(1000 * (level ** 2)))
@@ -915,26 +973,20 @@ class Guild(Shop):
                 "of " + coinBonus + " shillings and hangs a plaque with your" +
                 "name on it on the wall.\n")
 
-    def getLastTrainees(self):
-        return(self._lastTrainees)
-
-    def getLastTrainDate(self):
-        return(self._lastTrainees)
-
-    def getMasterLevel(self):
-        return(self._masterLevel)
-
-    def getMasters(self):
-        return(self._masters)
-
-    def readPlaque(self):
+    def getPlaqueMsg(self):
         msg = ("Our guild honors the following level " +
-               str(self.getMasterLevel) + " masters:\n")
+               str(self.getMasterLevel()) + " masters:\n")
+        if len(self.getMasters()) == 0:
+            msg += "  None\n"
         for name in self.getMasters()[:10]:  # Show the first 10 names
             msg += "  " + name + "\n"
-        msg += ("We also honor the following recent advancements:\n")
+
+        msg += ("The following students have trained recently:\n")
+        if len(self.getLastTrainees()) == 0:
+            msg += "  None.\n"
         for name in self.getLastTrainees():
             msg += "  " + name + "\n"
+        return(msg)
 
     def setDataFilename(self):
         ''' sets the filename of the room '''
@@ -944,8 +996,25 @@ class Guild(Shop):
                                              str(self.getRoomNum()) +
                                              self._fileextension)
 
+    def displayExtra(self, charObj):
+        buf = self.getPlaqueMsg()
+        return(buf)
+
+    # End of Guild class
+
 
 RoomFactoryTypes = ['room', 'shop', 'guild']
+
+
+def getRoomTypeFromFile(num, extension='.json'):
+    returnType = 'room'
+    for roomType in RoomFactoryTypes:
+        filename = os.path.abspath(DATADIR + "/" + roomType.capitalize() +
+                                   "/" + str(num) + extension)
+        if os.path.isfile(filename):
+            returnType = roomType
+            break
+    return(returnType)
 
 
 def isRoomFactoryType(item):

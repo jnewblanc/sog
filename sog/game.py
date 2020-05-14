@@ -18,7 +18,7 @@ from common.general import splitTargets, targetSearch, itemSort
 from common.general import getRandomItemFromList
 from common.help import enterHelp
 from magic import Spell, SpellList, spellCanTargetSelf
-from room import RoomFactory, isRoomFactoryType
+from room import RoomFactory, isRoomFactoryType, getRoomTypeFromFile
 from object import ObjectFactory, isObjectFactoryType
 from creature import Creature
 
@@ -185,6 +185,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         roomStr = str(roomStr)
         if isIntStr(roomStr):
             roomNum = int(roomStr)
+            roomType = getRoomTypeFromFile(roomNum)
         elif '/' in roomStr:
             # if it's not a number, assume it's in the form: Room/35
             roomType, roomNum = roomStr.split('/')
@@ -426,10 +427,10 @@ class _Game(cmd.Cmd, Combat, Ipc):
         ''' display message and remove item from player's inventory
             * Has some canned responses, such as "disintegrate"     '''
         if msg == 'disint':
-            msg = item.describe(article='The') + "disintegrates"
+            msg = item.describe(article='The') + " disintegrates"
 
         if msg != '':
-            self.selfMsg(msg + '\n')
+            self.charMsg(charObj, msg + '\n')
 
         # Remove item from player's inventory
         charObj.removeFromInventory(item)
@@ -577,8 +578,9 @@ class GameCmd(cmd.Cmd):
         roomInv = roomObj.getCharsAndInventory()
         targetList = self.getObjFromCmd(charObjList + roomInv, line)
 
-        targetObj = None
         spellItem = None
+        spellName = ''
+        targetObj = None
 
         if self.getLastCmd() == 'cast':
             # When casting a spell, there is no spellItem, so the first item
@@ -590,6 +592,8 @@ class GameCmd(cmd.Cmd):
             # When using a magic item, the first magic item encountered is the
             # spellItem and the next, if any, is the target
             for target in targetList:
+                if not target:
+                    continue
                 if not target.isMagicItem():
                     continue
                 if not spellItem:
@@ -597,10 +601,13 @@ class GameCmd(cmd.Cmd):
                 if not targetObj:
                     targetObj = target
                 break
-            spellName = spellItem.getSpellName()
 
-        if not targetObj and spellCanTargetSelf(spellName):
-            targetObj = charObj
+            if spellItem:
+                spellName = spellItem.getSpellName()
+
+        if spellName != '':
+            if not targetObj and spellCanTargetSelf(spellName):
+                targetObj = charObj
 
         return(spellItem, spellName, targetObj)
 
@@ -748,7 +755,7 @@ class GameCmd(cmd.Cmd):
             if targetList[0]:
                 target = targetList[0]
 
-                if re.match('[^ ]+ [^ ]+', line):
+                if re.search('[^ ]+ [^ ]+', line):
                     # todo: fix this if target is more than one word.
                     #       i.e. Player #1.
                     junk, msg = line.split(' ', 1)
@@ -788,6 +795,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Attack what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -804,6 +812,7 @@ class GameCmd(cmd.Cmd):
 
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Backstab what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -829,6 +838,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Block what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -1016,6 +1026,7 @@ class GameCmd(cmd.Cmd):
 
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Circle what?\n")
             return(False)
 
         if target.isAttacking():
@@ -1259,6 +1270,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Feint at what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -1387,6 +1399,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Hit what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -1421,6 +1434,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Kill what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -1488,7 +1502,7 @@ class GameCmd(cmd.Cmd):
 
         if line == '':  # display the room
             msg = roomObj.display(self.charObj)
-            if not re.match("\n$", msg):
+            if not re.search("\n$", msg):
                 msg += "\n"
             self.selfMsg(msg)
             return(False)
@@ -1509,6 +1523,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Lunge at what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -1608,6 +1623,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Parry at what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -1852,6 +1868,7 @@ class GameCmd(cmd.Cmd):
         ''' dm - combat - do max damage to creature, effectively killing it '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Slay what?\n")
             return(False)
 
         if self.charObj.isDm():
@@ -1921,6 +1938,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Strike what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -1934,6 +1952,10 @@ class GameCmd(cmd.Cmd):
             return(self.missingArgFailure())
 
         (spellItem, spellName, targetObj) = self.parseSpellArgs(line)
+
+        if not spellItem:
+            self.selfMsg("Study what?\n")
+            return(False)
 
         if not spellItem.getType().lower() == 'scroll':
             self.selfMsg("You can't study that.\n")
@@ -2001,6 +2023,8 @@ class GameCmd(cmd.Cmd):
                     obj = itemList[0]
                 else:
                     self.selfMsg("Can't toggle " + line + '\n')
+                    self.selfMsg("Fixed toggles:\n" +
+                                 "  self, room, game, gamecmd, client\n")
                     return(False)
         else:
             self.selfMsg("Unknown Command\n")
@@ -2015,6 +2039,7 @@ class GameCmd(cmd.Cmd):
         ''' combat '''
         target = self.getCombatTarget(line)
         if not target:
+            self.selfMsg("Thrust at what?\n")
             return(False)
 
         self.gameObj.attackCreature(self.charObj, target, self.getLastCmd())
@@ -2029,13 +2054,7 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        if not roomObj.isTrainingGroundForChar(charObj):
-            self.selfMsg("You can't train here\n")
-
-        if not charObj.hasExpToTrain():
-            self.selfMsg("You don't have enough experience to train\n")
-
-        charObj.levelUp()
+        roomObj.train(charObj)
 
     def do_turn(self, line):
         ''' magic - chance for clerics/paladins to destroy creatures '''

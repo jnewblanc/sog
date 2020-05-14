@@ -843,6 +843,13 @@ class Character(Item):
                     ROW_FORMAT.format('2xStatLvls', dblstatList) +
                     ROW_FORMAT.format('DodgeBonus',
                                       str(self.getDodgeBonus())) +
+                    ROW_FORMAT.format('WeaponDamage',
+                                      str(self.getEquippedWeaponDamage()) +
+                                      ' (' +
+                                      str(self.getEquippedWeaponDamageType()) +
+                                      ')') +
+                    ROW_FORMAT.format('WeaponToHit',
+                                      str(self.getEquippedWeaponToHit())) +
                     ROW_FORMAT.format('BankBalance',
                                       str(self.getBankBalance())) +
                     ROW_FORMAT.format('TaxesPaid', str(self.getTax())) +
@@ -1065,6 +1072,18 @@ class Character(Item):
 
     def getLastCmd(self):
         return(self._lastCommand)
+
+    def getLastPoisonDate(self):
+        if not hasattr(self, '_lastPoisonDate'):
+            self.setLastPoison()
+            return(getNeverDate())
+        return(self._lastPoisonDate)
+
+    def getLastRegenDate(self):
+        if not hasattr(self, '_lastRegenDate'):
+            self.setLastRegen()
+            return(getNeverDate())
+        return(self._lastRegenDate)
 
     def getLimitedSpellCount(self):
         return(int(self._limitedSpellsLeft))
@@ -1505,9 +1524,11 @@ class Character(Item):
         # It's a little bit strange to have to traverse back to the game/combat
         # class to get this data, but it seems to make more sense than trying
         # to pass it all around.
-        fullAttackDict = self.client.gameObj.getAttackDict()
-        attackDict = fullAttackDict.get(self.getLastAttackCmd(), {})
-        dodgePct += attackDict.get('dodge', 0)
+        if hasattr(self, 'client'):
+            fullAttackDict = self.client.gameObj.getAttackDict()
+            attackDict = fullAttackDict.get(self.getLastAttackCmd(), {})
+            dodgePct += attackDict.get('dodge', 0)
+
         dLog(logPrefix + 'totalDodge=' + str(dodgePct), self._instanceDebug)
         return(dodgePct)
 
@@ -1823,15 +1844,21 @@ class Character(Item):
             * random chance, partially based on dex.
             * if fumble, player's weapon is unequipped
         '''
+        logPrefix = "char.fumbles: "
         fumbles = False
 
         if self.isAttackingWithFist():
             return(False)
 
         fumbleRoll = random.randint(1, 100)
+        percentage = basePercent - self.getDexterity()
         if fumbleRoll == 1:  # always a 1% change of fumbling
+            dLog(logPrefix + "Bad luck - 1% fumble triggered",
+                 self._instanceDebug)
             fumbles = True
-        elif fumbleRoll < (basePercent - self.getDexterity()):
+        elif fumbleRoll < percentage:
+            dLog(logPrefix + "Standard Roll: " + str(fumbleRoll) + " < " +
+                 str(percentage), self._instanceDebug)
             fumbles = True
 
         if fumbles:
@@ -1881,14 +1908,14 @@ class Character(Item):
 
         if not self.isPlagued():       # no regen if plagued
             # Check the time
-            if self._lastRegenDate == getNeverDate():
+            if self.getLastRegenDate() == getNeverDate():
                 regenSecsRemaining = 0
             else:
                 regenSecsRemaining = (regenInterval -
-                                      secsSinceDate(self._lastRegenDate))
+                                      secsSinceDate(self.getLastRegenDate()))
             dLog('regen counter: ' + str(regenSecsRemaining) +
-                 ' secs - ' + str(self._lastRegenDate) + ' - ' +
-                 str(secsSinceDate(self._lastRegenDate)), False)
+                 ' secs - ' + str(self.getLastRegenDate()) + ' - ' +
+                 str(secsSinceDate(self.getLastRegenDate())), False)
             if regenSecsRemaining <= 0:
                 self.addHP(regenHp)
                 self.addMana(regenMana)
@@ -1896,11 +1923,11 @@ class Character(Item):
 
         if self.isPoisoned():          # take damage if poisoned
             # Check the time
-            if self._lastPoisonDate == getNeverDate():
+            if self.getLastPoisonDate() == getNeverDate():
                 poisonSecsRemaining = 0
             else:
                 poisonSecsRemaining = (poisonInterval -
-                                       secsSinceDate(self._lastPoisonDate))
+                                       secsSinceDate(self.getLastPoisonDate()))
             dLog('poison cntr: ' + str(regenSecsRemaining) + ' secs', False)
 
             if poisonSecsRemaining <= 0:

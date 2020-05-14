@@ -9,7 +9,7 @@
         "Armor/1"
     ],
     "_dailyCoinLedger": {
-        "sale": 20
+        "sale": 60
     },
     "_dailyTransactionCount": {
         "Armor/1": 1,
@@ -27,7 +27,7 @@
                 "py/type": "datetime.datetime"
             },
             [
-                "B+QFDAoCFAQbYQ=="
+                "B+QFDBQ3HAGsxQ=="
             ]
         ],
         "py/object": "datetime.datetime"
@@ -48,12 +48,12 @@
         "deposit": 0,
         "purchase": 0,
         "repair": 0,
-        "sale": 260,
+        "sale": 300,
         "withdraw": 0
     },
     "_totalTransactionCount": {
-        "Armor/1": 12,
-        "Weapon/1": 13
+        "Armor/1": 16,
+        "Weapon/1": 17
     },
     "_vendor": true,
     "d": 0,

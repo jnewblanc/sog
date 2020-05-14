@@ -158,16 +158,19 @@ class Storage():
         # store the values before we save, then we will restore them
         # immediately after.
         tmpStore = {}
-        for attName in self.attributesThatShouldntBeSaved + ['_datafile']:
+        for attName in (self.attributesThatShouldntBeSaved +
+                        ['_datafile', '_instanceDebug']):
             try:
                 tmpStore[attName] = getattr(self, attName)
+                if hasattr(self, attName):
+                    delattr(self, attName)
+                if self._debugStorage:
+                    logger.debug(logPrefix + "Ignoring " + attName +
+                                 " during save")
             except AttributeError:
-                pass
-            if hasattr(self, attName):
-                delattr(self, attName)
-            if self._debugStorage:
-                logger.debug(logPrefix + "ignoring " + attName +
-                             " during save")
+                if self._debugStorage:
+                    logger.debug(logPrefix + "Could not ignore " + attName +
+                                 " during save")
 
         # persist content - create data file
         if re.search('\\.json$', filename):

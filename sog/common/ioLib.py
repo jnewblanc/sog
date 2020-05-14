@@ -51,7 +51,7 @@ class Spooler():
         newQueue = queue.Queue()
         while not self._outputSpool.empty():
             data = self._outputSpool.get()
-            if re.match(str1, data):
+            if re.search(str1, data):
                 found = True
             newQueue.put(data)
         self._outputSpool = newQueue
@@ -76,7 +76,7 @@ class Spooler():
 
             if oneStr == '' or not self.isRunning():
                 return('')
-            elif regex == '' or re.match(regex, oneStr):
+            elif regex == '' or re.search(regex, oneStr):
                 return(oneStr)
             else:
                 self.spoolOut(requirementsTxt)
