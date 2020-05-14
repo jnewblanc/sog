@@ -10,6 +10,8 @@ from magic import SpellList, getSpellDamageType
 
 class Combat():
 
+    # _instanceDebug = True
+
     attackDict = {
         'attack': {
             'desc': "a standard attack",
@@ -165,7 +167,7 @@ class Combat():
 
     # Base numbers.  Creature attack rate scales up/down by percentage attr
     _creatureMinSecsBetweenAttacks = 10  # min time for creature atk cooldown
-    _creatureMaxSecsBetweenAttacks = 30  # max time for creature atk cooldown
+    _creatureMaxSecsBetweenAttacks = 25  # max time for creature atk cooldown
 
     def getAttackDict(self):
         return(self.attackDict)
@@ -182,11 +184,15 @@ class Combat():
         ''' Determine if an attack hits '''
         logPrefix = "combat.attackHit: "
 
+        dLog(logPrefix + "Calculating attackHit for " +
+             attackerObj.describe() + " attacking " + defenderObj.describe() +
+             " with cmd " + attackCmd + "...", self._instanceDebug)
+
         # right off the bat, with no calcs, there's a 25% chance of a hit,
         # which means that 25% is the lowest hit chance
         hitRoll = random.randint(1, 4)
         if random.randint(1, 4) == 1:
-            dLog(logPrefix + "25% hit chance triggered",
+            dLog(logPrefix + "  25% hit chance triggered",
                  self._instanceDebug)
             return(True)
 
@@ -195,47 +201,56 @@ class Combat():
         # level bonus/penalty = %5 per level
         levelAdj = (attackerObj.getLevel() - defenderObj.getLevel()) * 5
         hitPercentage += levelAdj
-        dLog(logPrefix + str(levelAdj) + "% level adj",
+        dLog(logPrefix + "  " + str(levelAdj) + "% level adj",
              self._instanceDebug)
 
         # dex bonus/penalty = +/- %3 per dex above/below 12
         if isinstance(attackerObj, Character):
             dexAdj = (attackerObj.getDexterity() - 12) * 3
             hitPercentage += dexAdj
-            dLog(logPrefix + str(dexAdj) + "% level adj",
+            dLog(logPrefix + "  " + str(dexAdj) + "% dex adj",
                  self._instanceDebug)
+
+        # hidden bonus
+        if attackerObj.isHidden():
+            hitPercentage += 10
+            dLog(logPrefix + "  10% hidden adj", self._instanceDebug)
 
         # attack command bonus/penalty
         attackCmdAdj = self.getToHit(attackCmd)
         hitPercentage += attackCmdAdj
-        dLog(logPrefix + str(attackCmdAdj) + "% cmd adj",
+        dLog(logPrefix + "  " + str(attackCmdAdj) + "% cmd adj",
              self._instanceDebug)
 
         if attackCmd in SpellList:
             # magic skill
             offenseAdj = attackerObj.getSkillPercentage("magic")
             hitPercentage += offenseAdj
-            dLog(logPrefix + str(attackCmdAdj) + "% magic skill adj",
+            dLog(logPrefix + "  " + str(attackCmdAdj) + "% magic skill adj",
                  self._instanceDebug)
         else:
             # weapon bonus/penalty + skill
             offenseAdj = attackerObj.getEquippedWeaponToHit()
             hitPercentage += offenseAdj
-            dLog(logPrefix + str(attackCmdAdj) + "% weapon/skill adj",
+            dLog(logPrefix + "  " + str(attackCmdAdj) + "% weapon/skill adj",
                  self._instanceDebug)
 
         # armor bonus/penalty
         defenceAdj = defenderObj.getCumulativeDodge()
         hitPercentage -= defenceAdj
-        dLog(logPrefix + str(defenceAdj) + "% defence adj",
-             self._instanceDebug)
-
-        dLog(logPrefix + str(hitPercentage) + "% total hit percent",
+        dLog(logPrefix + "  " + str(defenceAdj) + "% defence adj",
              self._instanceDebug)
 
         hitRoll = random.randint(1, 100)
+
+        dLog(logPrefix + "  " + str(hitPercentage) + "% total hit percent " +
+             "needs to be less than random roll " + str(hitRoll),
+             self._instanceDebug)
+
         if (hitRoll >= hitPercentage):
+            dLog(logPrefix + "HIT", self._instanceDebug)
             return(True)
+        dLog(logPrefix + "MISS", self._instanceDebug)
         return(False)
 
     def misses(self, attacker, target, attackCmd='attack'):
@@ -247,33 +262,41 @@ class Combat():
         logPrefix = "combat.calcDmgPct: "
         damagePercent = 100
 
+        dLog(logPrefix + "Calculating DmgPct for " +
+             attackerObj.describe() + " attacking " + opponentObj.describe() +
+             " with cmd " + attackCmd + "...", self._instanceDebug)
+
+        dLog(logPrefix + "  " + str(damagePercent) + "% starting point",
+             self._instanceDebug)
+
         if isinstance(attackerObj, Character):
             # if char is chaotic and monster is lawful, then bonus
             if ((attackerObj.getAlignment() == 'chaotic' and
                  opponentObj.getAlignment() == 'good')):
                 damagePercent += 10
-                dLog(logPrefix + "10% alignment bonus", self._instanceDebug)
+                dLog(logPrefix + "  10% alignment bonus", self._instanceDebug)
             elif ((attackerObj.getAlignment() == 'lawful' and
                    opponentObj.getAlignment() == 'evil')):
                 damagePercent += 10
-                dLog(logPrefix + "10% alignment bonus", self._instanceDebug)
+                dLog(logPrefix + "  10% alignment bonus", self._instanceDebug)
 
             # skill bonus
             skillPercent = attackerObj.getEquippedSkillPercentage()
             damagePercent += skillPercent
-            dLog(logPrefix + str(skillPercent) + "% skill bonus",
+            dLog(logPrefix + "  " + str(skillPercent) + "% skill bonus",
                  self._instanceDebug)
 
             # strength bonus/penalty
             strengthPercent = int((attackerObj.getStrength() - 12) / 3) * 10
             damagePercent += strengthPercent
-            dLog(logPrefix + str(strengthPercent) + "% strength adj",
+            dLog(logPrefix + "  " + str(strengthPercent) + "% strength adj",
                  self._instanceDebug)
 
         # significantly less damage dealt to unseen opponents
         if opponentObj.isHidden() or opponentObj.isInvisible():
             damagePercent -= 40
-            dLog(logPrefix + "-40% hidden target penalty", self._instanceDebug)
+            dLog(logPrefix + "  " + "-40% hidden target penalty",
+                 self._instanceDebug)
 
         # backstab bonus/penalty - risk = reward
         if attackCmd == 'backstab':
@@ -289,7 +312,7 @@ class Combat():
             cmdPercent = self.attackDict['attack']['damagepctBonus']
 
         damagePercent += cmdPercent
-        dLog(logPrefix + str(cmdPercent) + "% attack cmd bonus",
+        dLog(logPrefix + "  " + str(cmdPercent) + "% attack cmd bonus",
              self._instanceDebug)
 
         dLog(logPrefix + str(damagePercent) + "% total damage percent",
@@ -333,6 +356,10 @@ class Combat():
             attack '''
         logPrefix = "combat.AttackDamage: "
 
+        dLog(logPrefix + "Calculating attackDamage for " +
+             attackerObj.describe() + " attacking " + opponentObj.describe() +
+             " with cmd " + attackCmd + "...", self._instanceDebug)
+
         weaponDamage = attackerObj.getEquippedWeaponDamage()
 
         damagePercent = int(self.calcDmgPct(attackerObj, opponentObj,
@@ -350,7 +377,7 @@ class Combat():
         damage = self.applyCritOrDD(damage, opponentObj,
                                     [attackerObj, opponentObj])
 
-        dLog(logPrefix + "total damage(" + str(damage) + ")",
+        dLog(logPrefix + "Total damage(" + str(damage) + ")",
              self._instanceDebug)
         return(damage)
 
@@ -420,7 +447,7 @@ class Combat():
                        spellObj=None):
         logPrefix = "Game attackCreature: "
         roomObj = charObj.getRoom()
-        self._instanceDebug = False
+        # self._instanceDebug = False
 
         isSpell = False
         if attackCmd in SpellList:
@@ -429,6 +456,7 @@ class Combat():
             attackCmd = 'attack'
 
         if not target:
+            dLog(logPrefix + "no target", self._instanceDebug)
             return(False)
 
         if roomObj.isSafe():
@@ -437,7 +465,7 @@ class Combat():
 
         if target.isUnKillable():
             self.charMsg(charObj, "Aw.  Don't hurt the poor " +
-                         target.describe(article=''))
+                         target.describe(article='') + '\n')
             return(False)
 
         if not charObj.canAttack():
@@ -530,6 +558,9 @@ class Combat():
 
         secs = random.randint(self._creatureMinSecsBetweenAttacks,
                               self._creatureMaxSecsBetweenAttacks)
+        dLog(logPrefix + "setting creature secs to  " + str(secs),
+             self._instanceDebug)
+
         creatureObj.setSecondsUntilNextAttack(secs)
         creatureObj.setLastAttack()
 
@@ -567,8 +598,8 @@ class Combat():
             self.charMsg(charObj, self.getHitMsg(atkDict, damage))
 
         if target.damageIsLethal(damage):
-            debugMsg = (atkDict['attackerSubject'] +
-                        ' does leathal damage to ' + atkDict['targetSubject'])
+            debugMsg = (atkDict['attackerName'] +
+                        ' does lethal damage to ' + atkDict['targetSubject'])
             dLog(logPrefix + debugMsg, self._instanceDebug)
 
         if isinstance(target, Character):
@@ -625,7 +656,8 @@ class Combat():
         roomObj = charObj.getRoom()
 
         if target.damageIsLethal(damage):
-            self.charMsg(charObj, "You killed " + target.describe() + "\n")
+            self.charMsg(charObj, "You killed " +
+                         target.describe(article='the') + "\n")
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
                                  " kills " + target.describe() + "\n")
             truncsize = roomObj.getInventoryTruncSize()
@@ -674,6 +706,7 @@ class Combat():
                 if not charObj.isDm():
                     # Transfer players inventory to room
                     for item in charObj.getInventory():
+                        charObj.unEquip(item)
                         if charObj.getRoom().addToInventory(item):
                             charObj.removeFromInventory(item)
                 # death is handled in charObj.takeDamage
@@ -692,17 +725,28 @@ class Combat():
                 creatureObj.setCurrentlyAttacking = None
 
     def engageTarget(self, charObj, target):
-        ''' Character locks on to creature and creature begins to defend '''
+        ''' Character locks on to creature and creature begins to defend
+            * If both are already fighting each other, do nothing.  '''
+        logPrefix = "engageTarget: "
 
-        if not isinstance(target, Character):
-            # creature begins to attack player
-            if target.attacksBack():
-                target.setSecondsUntilNextAttack(random.randint(3, 5))
-                target.setCurrentlyAttacking(charObj)
+        if target.getCurrentlyAttacking() != charObj:
+            if not isinstance(target, Character):
+                # creature begins to attack player
+                if target.attacksBack():
+                    target.setLastAttack()
+                    secs = int(random.randint(
+                        self._creatureMinSecsBetweenAttacks,
+                        self._creatureMaxSecsBetweenAttacks) / 2)
+                    target.setSecondsUntilNextAttack(secs)
+                    target.setCurrentlyAttacking(charObj)
+                    dLog(logPrefix + target.describe() + " engages " +
+                         charObj.describe(), self._instanceDebug)
 
         # attacker becomes locked on to target
         if charObj.getCurrentlyAttacking() != target:
             charObj.setCurrentlyAttacking(target)
+            dLog(logPrefix + charObj.describe() + " engages " +
+                 target.describe(), self._instanceDebug)
             self.othersInRoomMsg(charObj, charObj.getRoom(),
                                  charObj.getName() + " attacks " +
                                  target.describe() + "\n")

@@ -10,13 +10,11 @@
         "Potion/3"
     ],
     "_dailyCoinLedger": {
-        "deposit": 0,
-        "purchase": 0,
-        "repair": 0,
-        "sale": 0,
-        "withdraw": 0
+        "sale": 0
     },
-    "_dailyTransactionCount": {},
+    "_dailyTransactionCount": {
+        "Potion/1": 1
+    },
     "_dark": false,
     "_desc": "at the bar of the inn.  Here the criss-cross of the wallpapered walls is broken by a large mirror and several lanterns.   Behind the bar are decanter filled shelves and trays of glassware.  The bartender keeps a tidy bartop with only a few pitchers and bottles along the back edge.",
     "_encounterList": [],
@@ -29,7 +27,7 @@
                 "py/type": "datetime.datetime"
             },
             [
-                "B2wBAQAAAAAAAA=="
+                "B+QFDREjOgSVGg=="
             ]
         ],
         "py/object": "datetime.datetime"
@@ -54,7 +52,9 @@
         "sale": 0,
         "withdraw": 0
     },
-    "_totalTransactionCount": {},
+    "_totalTransactionCount": {
+        "Potion/1": 1
+    },
     "d": 0,
     "e": 226,
     "n": 274,

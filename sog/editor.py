@@ -473,13 +473,13 @@ class Editor(LocalIo, AttributeHelper):
 
     def customSort(self, s):
         ''' returns the key for sorting '''
-        if re.match('.*Id', s) or s == '_roomNum':
+        if re.search('.*Id', s) or s == '_roomNum':
             return('!' + s)
-        elif re.match('_name', s):
+        elif re.search('_name', s):
             return("\"" + s)
         elif s in ['_desc', '_shortDesc', '_longDesc']:
             return("\'" + s)
-        elif re.match('^_', s):
+        elif re.search('^_', s):
             return('}' + s)
         return(s)
 
@@ -529,7 +529,8 @@ class Editor(LocalIo, AttributeHelper):
                     self.printError("ERROR " + objName +
                                     " could not be saved.  Bad Id: " +
                                     obj.getId())
-                elif obj.lower() == 'room' and hasattr(obj, '_isShop'):
+                elif (obj.getType().lower() == 'room' and
+                      hasattr(obj, '_isShop')):
                     # special case to protect us from editing shops/guilds
                     # as rooms, since room objects can load shops
                     self.printError("ERROR Could not save.  It looks " +

@@ -52,7 +52,8 @@ class Ipc():
             return(True)
 
         charObj.client.spoolOut(msg)
-        logger.info("charMsg to " + charObj.getName() + ": " + msg)
+        debugMsg = re.sub('\n$', '', msg)
+        logger.info("charMsg to " + charObj.getName() + ": " + debugMsg)
         return(True)
 
     def gameMsg(self, msg):
