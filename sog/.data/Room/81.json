@@ -1,13 +1,15 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "standing amoungst the graves in the cemetary",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Door/22",
+        "Door/23"
+    ],
     "_priceBonus": 0,
     "_roomNum": 81,
     "_safe": false,

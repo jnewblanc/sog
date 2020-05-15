@@ -1,7 +1,7 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_desc": "at the beginning of Cemetary Road, near the cathedral",
+    "_desc": "at the beginning of Cemetary Road, near the Monastery",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
@@ -12,7 +12,7 @@
     "_priceBonus": 0,
     "_roomNum": 26,
     "_safe": false,
-    "_shortDesc": "at the beginning of Cemetary Road, near the cathedral",
+    "_shortDesc": "at the beginning of Cemetary Road, near the Monastery",
     "d": 0,
     "e": 49,
     "n": 25,

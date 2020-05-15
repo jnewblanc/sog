@@ -1,16 +1,11 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
-    "_desc": "on Whipple Ave",
+    "_desc": "in the hot and muggy steam room.  Built on top of a natural geothermic fissure, the open stone structure houses a large steam generator.  Pipes of various sizes eminate out in every direction.",
     "_encounterList": [
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
+        "7",
+        "8",
+        "24"
     ],
     "_encounterRate": 100,
     "_inventoryTruncSize": 12,
@@ -19,9 +14,9 @@
     "_priceBonus": 0,
     "_roomNum": 19,
     "_safe": false,
-    "_shortDesc": "on Whipple Ave",
+    "_shortDesc": "in the steam room.",
     "d": 0,
-    "e": 20,
+    "e": 0,
     "n": 0,
     "o": 0,
     "py/object": "room.Room",

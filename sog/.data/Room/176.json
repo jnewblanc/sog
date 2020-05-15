@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "walking along the city wall on Mountain Road.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/27"
+    ],
     "_priceBonus": 0,
     "_roomNum": 176,
     "_safe": false,

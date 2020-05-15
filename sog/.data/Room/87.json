@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "lost in the forest.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/30"
+    ],
     "_priceBonus": 0,
     "_roomNum": 87,
     "_safe": false,

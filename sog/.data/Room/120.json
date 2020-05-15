@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "passing between the crypts and mausoleums in the cemetary.  The familiar names of the city's founders are chiseled into stone balustrades between the statues of angels and apostles. ",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/31"
+    ],
     "_priceBonus": 0,
     "_roomNum": 120,
     "_safe": false,

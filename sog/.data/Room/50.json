@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
-    "_desc": "on Cemetary Road",
+    "_desc": "on Cemetary Road.  It's a dreaded sunny day.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Door/21"
+    ],
     "_priceBonus": 0,
     "_roomNum": 50,
     "_safe": false,

@@ -1,21 +1,21 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
-    "_desc": "walking along Kesler Ave",
+    "_desc": "walking along Kesler Ave near the Boldholm Public Bath.  The air is thick and your nose picks up the slight scent of rotten eggs.",
     "_encounterList": [
-        9,
         10,
         11,
-        12,
         13,
         14,
-        15
+        15,
+        8
     ],
     "_encounterRate": 100,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/24"
+    ],
     "_priceBonus": 0,
     "_roomNum": 5,
     "_safe": false,

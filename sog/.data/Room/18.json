@@ -1,24 +1,25 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_desc": "at the west end of City Works",
+    "_desc": "at the Boldholm Public Bath.  A vine covered pergola emerges through the cloud of steam.  The hushed murmur of a dozen conversations eminates from somewhere within.",
     "_encounterList": [
         9,
         10,
-        11,
         12,
-        13,
-        14,
-        15
+        13
     ],
     "_encounterRate": 100,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Treasure/48",
+        "Treasure/48",
+        "Treasure/48"
+    ],
     "_priceBonus": 0,
     "_roomNum": 18,
     "_safe": false,
-    "_shortDesc": "at the west end of City Works",
+    "_shortDesc": "at the public bath.",
     "d": 0,
     "e": 19,
     "n": 0,

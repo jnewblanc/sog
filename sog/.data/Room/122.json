@@ -1,13 +1,15 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "deep in the catacombs",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/33",
+        "Treasure/49"
+    ],
     "_priceBonus": 0,
     "_roomNum": 122,
     "_safe": false,
