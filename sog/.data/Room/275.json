@@ -1,13 +1,16 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in a private room on the second floor of the inn.",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Door/20",
+        "Portal/23",
+        "Treasure/47"
+    ],
     "_priceBonus": 0,
     "_roomNum": 275,
     "_safe": false,

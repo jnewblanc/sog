@@ -1,4 +1,5 @@
 ''' test_object '''
+import re
 import unittest
 
 from common.test import TestGameBase
@@ -218,6 +219,37 @@ class TestObject(TestGameBase):
                                     type=oneType,
                                     name=(oneType + str(num)))
             obj.load()
+
+    def testContainer(self):
+        box = self.createObject(num=99999,
+                                type='Container',
+                                name='box')
+        axe = self.createObject(num=99998,
+                                type='Weapon',
+                                name='Axe')
+        pin = self.createObject(num=99997,
+                                type='Treasure',
+                                name='Pin')
+        charObj = self.createCharacter(name='Smoochie')
+        charObj.addToInventory(axe)
+        box.addToInventory(pin)
+        logger.info(box.examine())
+        assert re.search('Pin', box.examine())
+        assert not re.search('Axe', box.examine())
+        assert not box.deposit(charObj, pin)
+        assert box.deposit(charObj, axe)
+        logger.info(box.examine())
+        assert box.getWeight() > box.getContainerWeight()
+        assert re.search('Axe', box.examine())
+        assert re.search('Pin', box.examine())
+        assert box.withdraw(charObj, pin)
+        logger.info(box.examine())
+        assert not box.withdraw(charObj, pin)
+        assert not box.withdraw(charObj, None)
+        assert not box.deposit(charObj, None)
+        box.close()
+        logger.info(box.examine())
+        assert not box.deposit(charObj, axe)
 
 
 if __name__ == '__main__':

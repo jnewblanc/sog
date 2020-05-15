@@ -1301,9 +1301,27 @@ class GameCmd(cmd.Cmd):
         if not itemObj:
             return(self.missingArgFailure())
 
+        if itemObj.getType() == 'Container':
+            if containerObj:
+                # Player is trying to put a container from the room into a
+                # container in the room.  Let's just say no to that
+                self.selfMsg("You can't put a container in a container\n")
+                return(False)
+            else:
+                # The 1st item was not found, so the container is the 1st item
+                containerObj = itemObj
+
         if containerObj:
-            # todo: check if we're getting item from a chest
-            pass
+            if not containerObj.getType() == 'Container':
+                self.selfMsg("That's not a container?\n")
+                return(False)
+
+            # Find target item in the container
+            cList = self.getObjFromCmd(containerObj.getInventory(), line)
+            itemObj = cList[0]
+            if not itemObj:
+                self.selfMsg("Put what in there?\n")
+                return(False)
 
         if not itemObj.isCarryable():
             self.selfMsg(itemObj.describe() + " can not be carried.\n")
@@ -1319,9 +1337,14 @@ class GameCmd(cmd.Cmd):
                          " blocks you from taking that.\n")
             return(False)
 
-        roomObj.removeObject(itemObj)
-        charObj.addToInventory(itemObj)
-        self.selfMsg("Ok\n")
+        if containerObj:
+            if containerObj.withdraw(charObj, itemObj):
+                self.selfMsg("ok\n")
+        else:
+            # Get item form room
+            roomObj.removeObject(itemObj)
+            charObj.addToInventory(itemObj)
+            self.selfMsg("Ok\n")
 
     def do_go(self, line):
         ''' go through a door or portal '''
@@ -1679,8 +1702,9 @@ class GameCmd(cmd.Cmd):
         roomObj = charObj.getRoom()
 
         charObjList = charObj.getInventory()
+        roomObjList = roomObj.getInventory()
 
-        targetList = self.getObjFromCmd(charObjList, line)
+        targetList = self.getObjFromCmd(charObjList + roomObjList, line)
 
         if not targetList[0]:
             return(self.missingArgFailure())
@@ -1688,10 +1712,24 @@ class GameCmd(cmd.Cmd):
         itemObj = targetList[0]
         containerObj = targetList[1]
 
-        if roomObj or itemObj or containerObj:  # tmp - delete when implemented
-            pass
+        if not itemObj:
+            self.selfMsg("What are you trying to put?\n")
+            return(False)
 
-        self.selfMsg("'put' not implemented yet\n")
+        if not containerObj:
+            self.selfMsg("What are you trying to put where?\n")
+            return(False)
+
+        if containerObj.getType() != 'Container':
+            self.selfMsg("You can't put anything in that!\n")
+            return(False)
+
+        if containerObj.deposit(charObj, itemObj):
+            self.selfMsg("ok\n")
+            return(False)
+
+        self.selfMsg("Didn't work!\n")
+        return(False)
 
     def do_quit(self, line):
         ''' quit the game '''

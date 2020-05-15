@@ -1,0 +1,28 @@
+{
+    "_alignmentsAllowed": [],
+    "_article": "the",
+    "_carry": false,
+    "_classesAllowed": [
+        "fighter"
+    ],
+    "_cursed": false,
+    "_enchanted": false,
+    "_gendersAllowed": [],
+    "_hidden": false,
+    "_invisible": false,
+    "_isObject": true,
+    "_longdesc": "A downward cloping tunnel leads down to the fighting pits.",
+    "_magic": false,
+    "_maxLevelAllowed": 100,
+    "_minLevelAllowed": 0,
+    "_name": "pits",
+    "_permanent": true,
+    "_pluraldesc": "fighting pits",
+    "_singledesc": "fighting pits",
+    "_toWhere": "249",
+    "_toll": 0,
+    "_value": 1,
+    "_weight": 1,
+    "objId": 22,
+    "py/object": "object.Portal"
+}

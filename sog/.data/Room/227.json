@@ -6,7 +6,10 @@
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Door/17",
+        "Door/19"
+    ],
     "_priceBonus": 0,
     "_roomNum": 227,
     "_safe": false,

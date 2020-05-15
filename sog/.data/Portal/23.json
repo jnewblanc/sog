@@ -1,0 +1,28 @@
+{
+    "_alignmentsAllowed": [],
+    "_article": "a",
+    "_carry": false,
+    "_classesAllowed": [],
+    "_cursed": false,
+    "_enchanted": false,
+    "_gendersAllowed": [
+        "female"
+    ],
+    "_hidden": false,
+    "_invisible": false,
+    "_isObject": true,
+    "_longdesc": "It's a small window, held open with a hexogonal dowel.",
+    "_magic": false,
+    "_maxLevelAllowed": 100,
+    "_minLevelAllowed": 0,
+    "_name": "window",
+    "_permanent": true,
+    "_pluraldesc": "small windows",
+    "_singledesc": "small window",
+    "_toWhere": "276",
+    "_toll": 0,
+    "_value": 1,
+    "_weight": 1,
+    "objId": 23,
+    "py/object": "object.Portal"
+}

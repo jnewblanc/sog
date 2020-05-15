@@ -1,15 +1,13 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "walking along Island Drive, near the town Square of Boldhome",
     "_encounterList": [
         1,
         7,
         9,
-        10,
-        11,
-        23
+        23,
+        20
     ],
     "_encounterRate": 20,
     "_inventoryTruncSize": 12,

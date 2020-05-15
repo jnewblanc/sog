@@ -50,13 +50,15 @@
     "_notifyDM": false,
     "_order": "fighter",
     "_pawnshop": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/22"
+    ],
     "_priceBonus": 0,
     "_repair": false,
     "_roomNum": 114,
     "_safe": false,
     "_shortDesc": "entering the Arena",
-    "_successfulTransactionTxt": "Congratulations!",
+    "_successfulTransactionTxt": "You flex your muscle with renewed vigor.",
     "_totalCoinLedger": {
         "deposit": 0,
         "purchase": 0,

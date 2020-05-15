@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "stumbling down Clarion Alley.  The trash from Town Hall is piled along the sides of the road where aspiring artists have decorated the otherwise boring walls",
     "_encounterList": [
         "1",
@@ -16,7 +15,9 @@
     "_encounterRate": 60,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/20"
+    ],
     "_priceBonus": 0,
     "_roomNum": 8,
     "_safe": false,

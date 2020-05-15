@@ -14,7 +14,9 @@
     "_encounterRate": 100,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/17"
+    ],
     "_priceBonus": 0,
     "_roomNum": 29,
     "_safe": false,

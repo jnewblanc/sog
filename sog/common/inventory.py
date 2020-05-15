@@ -74,12 +74,13 @@ class Inventory():
             self._setInventoryValue()
         return(True)
 
-    def describeInventory(self, showIndex=False, markerAfter=0, markerTxt=''):
+    def describeInventory(self, showIndex=False, markerAfter=0, markerTxt='',
+                          headerTxt='Inventory'):
         ''' Display inventory
             * showIndex - show the enumerated number in front of each item
             * markerAfter - add a separator after this many items
             * markerTxt - txt for the marker '''
-        buf = "Inventory:\n"
+        buf = headerTxt + ":\n"
 
         ROW_FORMAT = "  "
         if showIndex:

@@ -1,13 +1,14 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the south foyer of town hall",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Portal/19"
+    ],
     "_priceBonus": 0,
     "_roomNum": 238,
     "_safe": true,

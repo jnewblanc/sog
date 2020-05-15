@@ -79,6 +79,9 @@ class Editor(LocalIo, AttributeHelper):
                 targetStr = targetStr.rstrip('s')
             tmpobj = self.getItemObj(targetStr, 99999)
 
+        if not tmpobj:
+            return('', 0, 0)
+
         if len(cmdargs) < 3:
             print("Usage: list <type> <number-range | all>\n")
             print("  For example: list creature 1-5")
@@ -185,6 +188,8 @@ class Editor(LocalIo, AttributeHelper):
                 ''' prompt for number '''
                 prompt = "Enter " + cmdargs[0] + " number"
                 tmpobj = self.getItemObj(cmdargs[0], 99999)
+                if not tmpobj:
+                    return(0)
                 nextnum = tmpobj.getNextUnusedFileNumber(cmdargs[0])
                 if nextnum != 0:
                     prompt += " (next unused = " + str(nextnum) + ")"

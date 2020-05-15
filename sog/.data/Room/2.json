@@ -1,14 +1,13 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "on Walnut Street, just south of Boldhome town square",
     "_encounterList": [
         "9",
         "7",
-        "8",
         "1",
-        "23"
+        "23",
+        "12"
     ],
     "_encounterRate": 30,
     "_inventoryTruncSize": 12,

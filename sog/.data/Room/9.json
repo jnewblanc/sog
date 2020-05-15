@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in Boldholm City Park",
     "_encounterList": [
         "5",
@@ -10,7 +9,7 @@
         "1",
         "33"
     ],
-    "_encounterRate": 60,
+    "_encounterRate": 80,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [

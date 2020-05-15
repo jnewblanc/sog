@@ -1,0 +1,28 @@
+{
+    "_alignmentsAllowed": [],
+    "_article": "a",
+    "_carry": false,
+    "_classesAllowed": [
+        "mage"
+    ],
+    "_cursed": false,
+    "_enchanted": false,
+    "_gendersAllowed": [],
+    "_hidden": false,
+    "_invisible": false,
+    "_isObject": true,
+    "_longdesc": "This large clock is the size of a small room and has a small door is built into the side, so that craftspeople can maintain it.",
+    "_magic": false,
+    "_maxLevelAllowed": 100,
+    "_minLevelAllowed": 0,
+    "_name": "clock",
+    "_permanent": true,
+    "_pluraldesc": "huge wooden grandfather clocks",
+    "_singledesc": "huge wooden grandfather clock",
+    "_toWhere": "140",
+    "_toll": 0,
+    "_value": 1,
+    "_weight": 1,
+    "objId": 19,
+    "py/object": "object.Portal"
+}

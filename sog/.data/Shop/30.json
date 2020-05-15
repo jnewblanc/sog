@@ -36,7 +36,8 @@
     "_pawnshop": false,
     "_permanentList": [
         "Door/4",
-        "Creature/34"
+        "Creature/34",
+        "Container/1"
     ],
     "_priceBonus": 100,
     "_repair": false,

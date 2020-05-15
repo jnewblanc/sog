@@ -6,9 +6,10 @@ import pprint
 import random
 import re
 
-from common.item import Item
 from common.attributes import AttributeHelper
 from common.general import logger
+from common.inventory import Inventory
+from common.item import Item
 from magic import getSpellChant, Spell
 
 # create obj staff in chest in 3001,ty=magdevice,magic=true,spell=3,
@@ -901,6 +902,8 @@ class Container(Closable):
 
     def __init__(self, objId=0):
         super().__init__(objId)
+        Inventory.__init__(self)
+
         self._closed = False
         self._locklevel = 0  # 0=unpickable, 1=easy-to-pick
 
@@ -911,10 +914,77 @@ class Container(Closable):
         # their DEX was multiplied by 2 in this equation.
 
         self._lockId = 0
-        self._maxitems = 5
+        self._inventoryTruncSize = 6
         self._permanent = True
-        self._inventory = []
+        self._containerWeight = 20
+        self._closedTxt = "It's closed.  You must open it first"
+        self._dontHaveTxt = "You don't have that"
+        self._NotThereTxt = "That item isn't in there"
+        self._notStrongEnoughTxt = "You aren't strong enough to take that."
         return(None)
+
+    def postLoad(self):
+        self.truncateInventory(self._inventoryTruncSize)
+
+    def examine(self):
+        buf = super().examine() + '\n'
+        buf += self.describeInventory(markerAfter=self._inventoryTruncSize,
+                                      headerTxt='Contents')
+        return(buf)
+
+    def getContainerWeight(self):
+        return(self._containerWeight)
+
+    def getWeight(self):
+        return(self.getContainerWeight() + self.getInventoryWeight())
+
+    def deposit(self, charObj, item, saveItem=True):
+        ''' add an item to the container's inventory '''
+
+        if item not in charObj.getInventory():
+            charObj.client.spoolOut(self._dontHaveTxt + "\n")
+            return(False)
+
+        if self.isClosed():
+            charObj.client.spoolOut(self._closedTxt + '\n')
+            return(False)
+
+        charObj.removeFromInventory(item)
+        self.addToInventory(item)
+        if len(self.getInventory()) >= self._inventoryTruncSize:
+            msg = ('Warning - any items in excess of ' +
+                   self._inventoryTruncSize +
+                   ' will be truncated on when you leave the room.')
+            charObj.client.spoolOut(msg + '\n')
+        self._weight = self.getWeight()
+        if saveItem:
+            self.save()
+        return(True)
+
+    def withdraw(self, charObj, item, saveItem=True):
+        ''' remove an item to the container's inventory '''
+        if item not in self.getInventory():
+            charObj.client.spoolOut(self._NotThereTxt + "\n")
+            return(False)
+
+        if self.isClosed():
+            charObj.client.spoolOut(self._closedTxt + '\n')
+            return(False)
+
+        if not charObj.canCarryAdditionalWeight(item.getWeight()):
+            charObj.client.spoolOut(self._notStrongEnoughTxt + '\n')
+
+        self.removeFromInventory(item)
+        charObj.addToInventory(item)
+        self._weight = self.getWeight()
+        if saveItem:
+            self.save()
+        return(True)
+
+    def dmTxt(self, msg):
+        ''' inventory wants this to be defined.  For now, let's just define
+            it '''
+        return('')
 
 
 class Key(Exhaustible):
