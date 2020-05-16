@@ -138,9 +138,15 @@ class TestCreature(TestGameBase):
         charObj.setLevel(1)
         charObj.charisma = 10
         charObj.setCoins(10)
+
+        for onelvl in range(1, 10):
+            creObj._level = onelvl
+            logger.info("bribe amount for lvl " + str(creObj.getLevel()) +
+                        " = " + str(creObj.getDesiredBribe(charObj)))
         creObj._level = 6
+
         # Test char does not have enough coins
-        assert creObj.getDesiredBribe(charObj) == 4200
+        assert creObj.getDesiredBribe(charObj) == 3144
         assert not creObj.acceptsBribe(charObj, 5000)
         assert charObj.getCoins() == 10
         logger.debug(charObj.client.popOutSpool())
@@ -158,23 +164,23 @@ class TestCreature(TestGameBase):
         assert charObj.getCoins() == 9900
         resultMsg = charObj.client.popOutSpool()
         logger.debug(resultMsg)
-        assert '4200' not in resultMsg.split(' ')
+        assert '3144' not in resultMsg.split(' ')
 
         # Test unsucessful bribe, coins are not taken
         charObj.setCoins(10000)
-        assert not creObj.acceptsBribe(charObj, 4100)
+        assert not creObj.acceptsBribe(charObj, 3000)
         assert charObj.getCoins() == 10000
         resultMsg = charObj.client.popOutSpool()
         logger.debug(resultMsg)
-        assert '4200' in resultMsg.split(' ')
+        assert '3144' in resultMsg.split(' ')
 
         # Test unsucessful bribe, coins taken, but amount is shown
         charObj.setCoins(10000)
-        assert not creObj.acceptsBribe(charObj, 1100)
-        assert charObj.getCoins() == 8900
+        assert not creObj.acceptsBribe(charObj, 500)
+        assert charObj.getCoins() == 9500
         resultMsg = charObj.client.popOutSpool()
         logger.debug(resultMsg)
-        assert '4200' in resultMsg.split(' ')
+        assert '3144' in resultMsg.split(' ')
 
     def testCreatureLoad(self):
         creatureNumber = 2

@@ -1,6 +1,7 @@
 ''' creature Class '''     # noqa
 
 from datetime import datetime
+import math
 # import os
 import pprint
 import random
@@ -171,22 +172,6 @@ class Creature(Item):
             '_tohit': 60,
             '_dodge': 30
         }
-    }
-
-    _baseStatDict = {
-        1: {'_damage': 3, '_bribeAmt': 60},
-        2: {'_damage': 6, '_bribeAmt': 120},
-        3: {'_damage': 9, '_bribeAmt': 400},
-        4: {'_damage': 12, '_bribeAmt': 1000},
-        5: {'_damage': 15, '_bribeAmt': 2000},
-        6: {'_damage': 20, '_bribeAmt': 4000},
-        7: {'_damage': 25, '_bribeAmt': 6000},
-        8: {'_damage': 35, '_bribeAmt': 8000},
-        9: {'_damage': 50, '_bribeAmt': 10000},
-        10: {'_damage': 75, '_bribeAmt': 20000},
-        11: {'_damage': 100, '_bribeAmt': 30000},
-        12: {'_damage': 150, '_bribeAmt': 40000},
-        99: {'_damage': 200, '_bribeAmt': 50000}
     }
 
     _parleyDefaultsDict = {
@@ -418,8 +403,9 @@ class Creature(Item):
         if not level:
             level = self.getLevel()
 
-        damage = int(self._baseStatDict[level]['_damage'] *
-                     self._damagePct / 100)
+        damage = int((level ** 2)/2 + 2 + level ** 1.7)
+        damage *= self._damagePct / 100
+
         return(damage)
 
     def getToHit(self):
@@ -764,8 +750,10 @@ class Creature(Item):
         ''' calculate the amount of money it would take to bribe creature '''
         charLvl = charObj.getLevel()
         charChr = charObj.getCharisma()
+        creLvl = self.getLevel()
 
-        bribeAmt = self._baseStatDict[self.getLevel()]['_bribeAmt']
+        bribeAmt = int(2 ** (creLvl + 7) / math.sqrt(creLvl) - 400)
+
         bribeAmt -= int((charChr - 12) * (100 * charLvl))
         bribeAmt = max(0, bribeAmt)
 
