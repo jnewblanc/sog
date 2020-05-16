@@ -52,10 +52,14 @@ class Editor(LocalIo, AttributeHelper):
             print('------------------------')
             print("custom - set up custom functions to assist in editing")
             print("history - view the last 20 commands")
+            print("list - show a tabular list of items of a certain type")
             print("quit - quit editor")
         elif cmd == "account":
             print("Not implemented")
         elif cmd == "list":
+            if len(cmdargs) < 3:
+                print("list <item> <start#>-<end#>")
+                return(True)
             targetStr, startNum, endNum = self.parseListArgs(cmdargs)
             if targetStr != '':
                 self.showList(targetStr, startNum, endNum)
@@ -72,6 +76,8 @@ class Editor(LocalIo, AttributeHelper):
         ''' parses the arguments for the list command '''
         startNum = 0
         endNum = 0
+
+        tmpobj = None
 
         if len(cmdargs) >= 2:
             targetStr = cmdargs[1]
