@@ -1,13 +1,15 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the Tax Office",
     "_encounterList": [],
     "_encounterRate": 0,
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
-    "_permanentList": [],
+    "_permanentList": [
+        "Treasure/51",
+        "Creature/46"
+    ],
     "_priceBonus": 0,
     "_roomNum": 285,
     "_safe": true,
