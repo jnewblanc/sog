@@ -24,9 +24,11 @@
     "_hidden": false,
     "_hostile": false,
     "_hp": 20,
+    "_inventory": [],
     "_invisible": false,
     "_itemCatalog": [
-        "Weapon/8"
+        "Weapon/9",
+        "Coins/1"
     ],
     "_kidnap": false,
     "_level": 1,

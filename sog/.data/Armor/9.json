@@ -10,7 +10,7 @@
     "_cooldown": 0,
     "_cursed": false,
     "_depleatable": true,
-    "_dodgeBonus": 0,
+    "_dodgeBonus": 8,
     "_enchanted": false,
     "_equippedSlotName": "_equippedArmor",
     "_gendersAllowed": [],

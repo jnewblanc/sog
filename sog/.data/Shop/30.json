@@ -6,7 +6,9 @@
     "_cantCarryTxt": "You're not strong enough to carry that.  Get rid of some items first.",
     "_catalog": [
         "Weapon/1",
-        "Armor/1"
+        "Armor/1",
+        "Weapon/26",
+        "Armor/25"
     ],
     "_dailyCoinLedger": {
         "sale": 60
