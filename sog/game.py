@@ -1478,7 +1478,7 @@ class GameCmd(cmd.Cmd):
 
     def do_list(self, line):
         ''' alias - file '''
-        return(self.do_catalog())
+        return(self.do_catalog(line))
 
     def do_lock(self, line):
         ''' lock an object with a key '''
