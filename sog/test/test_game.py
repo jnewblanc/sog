@@ -2,7 +2,7 @@
 import unittest
 
 from common.test import TestGameBase
-# from common.general import logger
+from common.general import logger
 # import room
 # import creature
 
@@ -47,6 +47,39 @@ class TestGameCmd(TestGameBase):
         gameCmdObj = self.getGameCmdObj()
         out = "Could not instanciate the gameCmd object"
         self.assertEqual(gameCmdObj._lastinput == '', True, out)
+
+    def testGameCmdGetObj(self):
+        gameCmdObj = self.getGameCmdObj()
+        roomObj = self.getRoomObj()
+        charObj = self.getCharObj()
+
+        obj = self.createObject(type='Weapon', name='laser')
+        obj._singledesc = "green laser"
+        roomObj.addToInventory(obj)
+        logger.info("\n" + roomObj.display(charObj))
+        logger.info("Before:\n" + charObj.inventoryInfo())
+        assert not gameCmdObj.do_get("laser")  # cmds always return False
+        logger.info("After:\n" + charObj.inventoryInfo())
+        assert obj not in roomObj.getInventory()
+        assert obj in charObj.getInventory()
+
+    def testGameCmdGetCoins(self):
+        gameCmdObj = self.getGameCmdObj()
+        roomObj = self.getRoomObj()
+        charObj = self.getCharObj()
+
+        charObj.setCoins(0)
+        assert charObj.getCoins() == 0
+        coinObj = self.createObject(type='Coins', name='coins')
+        coinObj._value = 50
+        roomObj.addToInventory(coinObj)
+        logger.info("\n" + roomObj.display(charObj))
+        logger.info("Before:\n" + charObj.financialInfo())
+        assert not gameCmdObj.do_get("coins")  # cmds always return False
+        logger.info("After:\n" + charObj.financialInfo())
+        assert coinObj not in roomObj.getInventory()
+        assert coinObj not in charObj.getInventory()
+        assert charObj.getCoins() == 50
 
 
 if __name__ == '__main__':
