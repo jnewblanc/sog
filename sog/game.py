@@ -1341,9 +1341,12 @@ class GameCmd(cmd.Cmd):
             if containerObj.withdraw(charObj, itemObj):
                 self.selfMsg("ok\n")
         else:
-            # Get item form room
+            # Get item from room
             roomObj.removeObject(itemObj)
-            charObj.addToInventory(itemObj)
+            if itemObj.getType() == "Coins":
+                charObj.addCoins(itemObj.getValue())
+            else:
+                charObj.addToInventory(itemObj)
             self.selfMsg("Ok\n")
 
     def do_go(self, line):
