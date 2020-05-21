@@ -1,10 +1,10 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "in the northern test room.  The room is long",
     "_encounterList": [],
     "_encounterRate": 130,
+    "_inventory": [],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],

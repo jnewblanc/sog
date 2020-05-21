@@ -618,8 +618,6 @@ class Creature(Item):
         if not self.getHitPoints():
             self.setHitPoints()  # set hp to the maxHP for this creature
         self.autoPopulateInventory()
-        if self.isPermanent():
-            self.attributesThatShouldntBeSaved += ['_inventory']
 
     def getAttributeCount(self, which='primary'):
         ''' Returns the number of attributes set to True.

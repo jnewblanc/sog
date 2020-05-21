@@ -59,28 +59,5 @@
     "_value": 0,
     "_watch": false,
     "_weight": 20,
-    "attributesThatShouldntBeSaved": [
-        "_creationDate",
-        "_currentlyAttacking",
-        "_enterRoomTime",
-        "_instanceDebug",
-        "_invWeight",
-        "_invValue",
-        "_attackPlayer",
-        "_lastAttackDate",
-        "_secondsUntilNextAttack",
-        "_vulnerable",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory",
-        "_inventory"
-    ],
     "py/object": "creature.Creature"
 }

@@ -179,12 +179,12 @@ class TestRoom(TestGameBase):
         assert roomObj.adjustPrice(1000) == 1000
         obj = self.createObject(num=99999, type='Weapon', name='knife')
         logger.debug(roomObj.debug())
-        roomObj.recordTransaction(obj, saveRoom=False)
+        roomObj.recordTransaction(obj, saveRoomFlag=False)
         logger.debug(roomObj.debug())
         assert roomObj.displayTransactions() != ''
         assert not roomObj.displayLedger() != ''
         roomObj._bank = True
-        roomObj.recordTransaction('deposit/5000', saveRoom=False)
+        roomObj.recordTransaction('deposit/5000', saveRoomFlag=False)
         assert roomObj.displayLedger() != ''
 
     def testRoomGuild(self):

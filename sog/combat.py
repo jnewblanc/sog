@@ -707,6 +707,7 @@ class Combat():
                     # Transfer players inventory to room
                     for item in charObj.getInventory():
                         charObj.unEquip(item)
+                        item.setPersistThroughOneRoomLoad(True)
                         if charObj.getRoom().addToInventory(item):
                             charObj.removeFromInventory(item)
                 # death is handled in charObj.takeDamage

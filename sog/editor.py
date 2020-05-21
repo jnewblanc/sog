@@ -513,7 +513,7 @@ class Editor(LocalIo, AttributeHelper):
                 if attName in (["client", "gameObj", "acctObj", "_datafile",
                                 "py/object"] +
                                obj.obsoleteAttributes +
-                               obj.attributesThatShouldntBeSaved):
+                               obj.getAttributesThatShouldntBeSaved()):
                     pass  # don't want these
                 else:
                     attValue = getattr(obj, attName)

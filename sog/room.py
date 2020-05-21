@@ -55,7 +55,7 @@ class Room(Item):
 
     attributesThatShouldntBeSaved = ["_creatureList", '_instanceDebug',
                                      '_characterList', '_objectList',
-                                     '_inventory', '_timeOfLastAttack',
+                                     '_timeOfLastAttack',
                                      '_creatureCache', '_timeOfLastEncounter',
                                      '_invWeight', '_maxweight', '_invValue',
                                      ]
@@ -174,7 +174,8 @@ class Room(Item):
     def initTmpAttributes(self):
         ''' Reset attributes that are not supposed to persist '''
         self._characterList = []
-        self._inventory = []
+        self.removeNonPermanents()
+        # self._inventory = []
         self._creatureCache = []
         # Accelerate first encounter by mucking with the last encounter time
         secsToReduceLastEncounter = random.randint(0, 60)
@@ -510,10 +511,17 @@ class Room(Item):
 
     def loadPermanents(self):
         ''' Load/instanciate permanents, and add them to the tmp lists '''
+        idsOfPermsInRoom = [x.getItemId() for x in self.getInventory()]
         permList = self.getPermanentList()
         for perm in self.getPermanents(permList):
-            if perm not in self.getInventory():
+            permId = perm.getItemId()
+            if permId not in idsOfPermsInRoom:
+                dLog('loadPermanents: loading perm =' + str(permId),
+                     self._instanceDebug)
                 self.addToInventory(perm)
+            else:
+                dLog('loadPermanents: perm ' + str(permId) +
+                     " already exists in room", self._instanceDebug)
         return(True)
 
     def getPermanents(self, idList=[]):
@@ -552,19 +560,32 @@ class Room(Item):
 
         return(None)
 
-    def savePermanents(self):
-        ''' save permanents to disk '''
-        for obj in self.getInventory():
-            if obj.isPermanent():
-                obj.save()
-        return(True)
-
     def reloadPermanent(self, objId):
         ''' reload a permanent from disk, replacing the original
             * if a door changes state, we'll need to reload it '''
         for oneObj in self.getInventory():
             if oneObj.getId() == objId:
                 oneObj.load()
+        return(True)
+
+    def removeNonPermanents(self):
+        ''' remove any non permanents from inventory '''
+        for obj in self.getInventory():
+
+            if obj.persistsThroughOneRoomLoad():
+                # Do not remove object - let it be for one room load, but
+                # remove the property that permits this.
+                obj.setPersistThroughOneRoomLoad(False)
+            elif obj.isPermanent():
+                # Object is permanent.  Don't remove it.
+                dLog("removeNonPermanents: Preserving " +
+                     str(obj.getItemId()) + " in room " + str(self.getId()),
+                     self._instanceDebug)
+            else:
+                dLog("removeNonPermanents: Removing " + obj.describe() +
+                     " from room " + str(self.getItemId()),
+                     self._instanceDebug)
+                self.removeFromInventory(obj)
         return(True)
 
     def closeSpringDoors(self):
@@ -731,6 +752,26 @@ class Shop(Room):
     def isBank(self):
         return(self._bank)
 
+    def getAttributesThatShouldntBeSaved(self):
+        atts = []
+        if hasattr(self, 'attributesThatShouldntBeSaved'):
+            atts += self.attributesThatShouldntBeSaved
+
+        # Dont save empty inventories for rooms
+        if self.getType() != 'Room':
+            return(atts)
+
+        if hasattr(self, '_inventory'):
+            if len(self.getInventory()) == 0:
+                dLog("getAttributesThatShouldntBeSaved: adding _inventory " +
+                     "to unsaved attributes", self._instanceDebug)
+                atts.append('_inventory')
+            else:
+                dLog("getAttributesThatShouldntBeSaved: preserving room " +
+                     "inventory (count=" + str(len(self.getInventory())) +
+                     ")", self._instanceDebug)
+        return(atts)
+
     def getCatalog(self):
         return(self._catalog)
 
@@ -814,7 +855,7 @@ class Shop(Room):
         taxes = int(int(amount) * self.getTaxRate())
         return(taxes)
 
-    def recordTransaction(self, item, saveRoom=True):
+    def recordTransaction(self, item, saveRoomFlag=True):
         ''' Everytime a buy/sell/repair is done, use this to update stats '''
         if differentDay(datetime.now(), self._lastTransactionDate):
             self._dailyTransactionCount = {}         # reset daily counts
@@ -850,7 +891,7 @@ class Shop(Room):
 
         self._lastTransactionDate = datetime.now()  # store date of transaction
 
-        if saveRoom:
+        if saveRoomFlag:
             self.save()                             # save the room
 
     def adjustPrice(self, price):

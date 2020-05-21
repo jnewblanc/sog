@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "at a wide intersection on Island Drive",
     "_encounterList": [
         9,
@@ -13,6 +12,411 @@
         15
     ],
     "_encounterRate": 200,
+    "_inventory": [
+        {
+            "_ac": 0,
+            "_alignment": "neutral",
+            "_antiMagic": false,
+            "_article": "a",
+            "_assistCreature": [],
+            "_attackIfPietyLessThan": 3,
+            "_attackIfPietyMoreThan": 0,
+            "_attackLastAttacker": true,
+            "_attackRate": 100,
+            "_blockFromLeaving": false,
+            "_carry": false,
+            "_creationDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYRHwvnrw=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_creatureId": 15,
+            "_currentlyAttacking": null,
+            "_damagePct": 100,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Creature\\15.json",
+            "_defend": true,
+            "_defendCreature": [],
+            "_dodge": 0,
+            "_drain": false,
+            "_enterRoomTime": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYRHwwG7A=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_exp": 60,
+            "_fleeIfAttacked": false,
+            "_follow": false,
+            "_frequency": 40,
+            "_guardTreasure": false,
+            "_hidden": false,
+            "_hostile": false,
+            "_hp": 50,
+            "_instanceDebug": false,
+            "_invValue": 20,
+            "_invWeight": 20,
+            "_inventory": [
+                {
+                    "_ac": 1,
+                    "_alignmentsAllowed": [],
+                    "_article": "some",
+                    "_breakable": true,
+                    "_broken": false,
+                    "_carry": true,
+                    "_charges": 150,
+                    "_classesAllowed": [],
+                    "_cooldown": 0,
+                    "_cursed": false,
+                    "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Armor\\5.json",
+                    "_depleatable": true,
+                    "_dodgeBonus": 5,
+                    "_enchanted": false,
+                    "_equippedSlotName": "_equippedArmor",
+                    "_gendersAllowed": [],
+                    "_hasMetal": true,
+                    "_hidden": false,
+                    "_instanceDebug": false,
+                    "_invisible": false,
+                    "_isObject": true,
+                    "_lastUse": null,
+                    "_longdesc": "These scratchy breeches do a reasonable job protecting the wearer from the elements",
+                    "_magic": false,
+                    "_maxCharges": 150,
+                    "_maxLevelAllowed": 100,
+                    "_minLevelAllowed": 0,
+                    "_name": "breeches",
+                    "_permanent": false,
+                    "_pluraldesc": "scratchy breeches",
+                    "_singledesc": "scratchy breeches",
+                    "_timesRepaired": 0,
+                    "_value": 20,
+                    "_weight": 20,
+                    "objId": 5,
+                    "py/object": "object.Armor"
+                }
+            ],
+            "_invisible": false,
+            "_itemCatalog": [
+                "Weapon/21",
+                "Coins/3",
+                "Armor/5"
+            ],
+            "_kidnap": false,
+            "_lastAttackDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYRHwvnrw=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_level": 1,
+            "_longdesc": "This is a typical resident of Boldholm.",
+            "_magicImmunity": false,
+            "_maxhp": 50,
+            "_name": "commoner",
+            "_noKill": false,
+            "_numOfItemsCarried": [
+                0,
+                1,
+                2
+            ],
+            "_offensiveSpells": [],
+            "_parleyAction": "Positive",
+            "_parleyTeleportRooms": [],
+            "_parleyTxt": [
+                "Hello there, friend.",
+                "Well, hello!"
+            ],
+            "_permanent": false,
+            "_pluraldesc": "commoners",
+            "_poison": false,
+            "_regenerate": false,
+            "_rust": false,
+            "_secondsUntilNextAttack": 5,
+            "_sendToJail": false,
+            "_singledesc": "commoner",
+            "_steal": false,
+            "_timeToFirstAttack": 10,
+            "_tohit": 0,
+            "_undead": false,
+            "_unique": false,
+            "_value": 0,
+            "_vulnerable": false,
+            "_watch": false,
+            "_weight": 20,
+            "py/object": "creature.Creature"
+        },
+        {
+            "_ac": 0,
+            "_alignment": "neutral",
+            "_antiMagic": false,
+            "_article": "a",
+            "_assistCreature": [],
+            "_attackIfPietyLessThan": 3,
+            "_attackIfPietyMoreThan": 0,
+            "_attackLastAttacker": true,
+            "_attackRate": 100,
+            "_blockFromLeaving": false,
+            "_carry": false,
+            "_creationDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYROQ2IGw=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_creatureId": 13,
+            "_currentlyAttacking": null,
+            "_damagePct": 100,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Creature\\13.json",
+            "_defend": true,
+            "_defendCreature": [],
+            "_dodge": 0,
+            "_drain": false,
+            "_enterRoomTime": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYROQ3SRQ=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_exp": 35,
+            "_fleeIfAttacked": false,
+            "_follow": false,
+            "_frequency": 60,
+            "_guardTreasure": false,
+            "_hidden": false,
+            "_hostile": false,
+            "_hp": 25,
+            "_instanceDebug": false,
+            "_invValue": 75,
+            "_invWeight": 12,
+            "_inventory": [
+                {
+                    "_alignmentsAllowed": [],
+                    "_article": "a",
+                    "_breakable": true,
+                    "_broken": false,
+                    "_carry": true,
+                    "_charges": 200,
+                    "_classesAllowed": [],
+                    "_cooldown": 0,
+                    "_cursed": false,
+                    "_damageType": "slash",
+                    "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Weapon\\19.json",
+                    "_depleatable": true,
+                    "_enchanted": false,
+                    "_equippedSlotName": "_equippedWeapon",
+                    "_gendersAllowed": [],
+                    "_hidden": false,
+                    "_instanceDebug": false,
+                    "_invisible": false,
+                    "_isObject": true,
+                    "_lastUse": null,
+                    "_longdesc": "a sturdy double headed axe that can easily be wielded in one hand",
+                    "_magic": false,
+                    "_maxCharges": 200,
+                    "_maxLevelAllowed": 100,
+                    "_maximumDamage": 6,
+                    "_minLevelAllowed": 0,
+                    "_minimumDamage": 3,
+                    "_name": "axe",
+                    "_permanent": false,
+                    "_pluraldesc": "handaxes",
+                    "_singledesc": "handaxe",
+                    "_timesRepaired": 0,
+                    "_toHitBonus": 0,
+                    "_value": 75,
+                    "_weight": 12,
+                    "objId": 19,
+                    "py/object": "object.Weapon"
+                }
+            ],
+            "_invisible": false,
+            "_itemCatalog": [
+                "Weapon/19",
+                "Coins/2",
+                "Armor/4"
+            ],
+            "_kidnap": false,
+            "_lastAttackDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYROQ2IGw=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_level": 1,
+            "_longdesc": "This is a typical resident of Boldholm.",
+            "_magicImmunity": false,
+            "_maxhp": 25,
+            "_name": "commoner",
+            "_noKill": false,
+            "_numOfItemsCarried": [
+                0,
+                1,
+                2
+            ],
+            "_offensiveSpells": [],
+            "_parleyAction": "Positive",
+            "_parleyTeleportRooms": [],
+            "_parleyTxt": [
+                "Hello there, friend.",
+                "Well, hello!"
+            ],
+            "_permanent": false,
+            "_pluraldesc": "commoners",
+            "_poison": false,
+            "_regenerate": false,
+            "_rust": false,
+            "_secondsUntilNextAttack": 5,
+            "_sendToJail": false,
+            "_singledesc": "commoner",
+            "_steal": false,
+            "_timeToFirstAttack": 10,
+            "_tohit": 0,
+            "_undead": false,
+            "_unique": false,
+            "_value": 0,
+            "_vulnerable": false,
+            "_watch": false,
+            "_weight": 20,
+            "py/object": "creature.Creature"
+        },
+        {
+            "_ac": 0,
+            "_alignment": "neutral",
+            "_antiMagic": false,
+            "_article": "a",
+            "_assistCreature": [],
+            "_attackIfPietyLessThan": 3,
+            "_attackIfPietyMoreThan": 0,
+            "_attackLastAttacker": true,
+            "_attackRate": 100,
+            "_blockFromLeaving": false,
+            "_carry": false,
+            "_creationDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYSDw6CXw=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_creatureId": 12,
+            "_currentlyAttacking": null,
+            "_damagePct": 100,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Creature\\12.json",
+            "_defend": true,
+            "_defendCreature": [],
+            "_dodge": 0,
+            "_drain": false,
+            "_enterRoomTime": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYSDw7MdA=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_exp": 25,
+            "_fleeIfAttacked": false,
+            "_follow": false,
+            "_frequency": 70,
+            "_guardTreasure": false,
+            "_hidden": false,
+            "_hostile": false,
+            "_hp": 15,
+            "_instanceDebug": false,
+            "_inventory": [],
+            "_invisible": false,
+            "_itemCatalog": [
+                "Coins/1",
+                "Armor/4"
+            ],
+            "_kidnap": false,
+            "_lastAttackDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFBYSDw6CXw=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_level": 1,
+            "_longdesc": "This is a typical resident of Boldholm.",
+            "_magicImmunity": false,
+            "_maxhp": 15,
+            "_name": "commoner",
+            "_noKill": false,
+            "_numOfItemsCarried": [
+                0,
+                1,
+                2
+            ],
+            "_offensiveSpells": [],
+            "_parleyAction": "Positive",
+            "_parleyTeleportRooms": [],
+            "_parleyTxt": [
+                "Hello there, friend.",
+                "Well, hello!"
+            ],
+            "_permanent": false,
+            "_pluraldesc": "commoners",
+            "_poison": false,
+            "_regenerate": false,
+            "_rust": false,
+            "_secondsUntilNextAttack": 5,
+            "_sendToJail": false,
+            "_singledesc": "commoner",
+            "_steal": false,
+            "_timeToFirstAttack": 10,
+            "_tohit": 0,
+            "_undead": false,
+            "_unique": false,
+            "_value": 0,
+            "_vulnerable": false,
+            "_watch": false,
+            "_weight": 20,
+            "py/object": "creature.Creature"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],

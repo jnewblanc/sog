@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "at the end of Walnut Street",
     "_encounterList": [
         9,
@@ -13,6 +12,7 @@
         31
     ],
     "_encounterRate": 90,
+    "_inventory": [],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],
