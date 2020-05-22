@@ -174,7 +174,6 @@ class Room(Item):
     def initTmpAttributes(self):
         ''' Reset attributes that are not supposed to persist '''
         self._characterList = []
-        self.removeNonPermanents()
         # self._inventory = []
         self._creatureCache = []
         # Accelerate first encounter by mucking with the last encounter time
@@ -388,6 +387,7 @@ class Room(Item):
         ''' Called by the loader - can be used for room initialization '''
 
         self.initTmpAttributes()
+        self.removeNonPermanents(removeTmpPermFlag=True)
         self.loadPermanents()
         self.closeSpringDoors()
         return(True)
@@ -562,25 +562,34 @@ class Room(Item):
                 oneObj.load()
         return(True)
 
-    def removeNonPermanents(self):
+    def removeNonPermanents(self, removeTmpPermFlag=False):
         ''' remove any non permanents from inventory '''
-        for obj in self.getInventory():
+        logPrefix = ("removeNonPermanents: " + str(self) +
+                     str(self.getItemId()) + ": ")
+        itemsInRoom = self.getInventory().copy()
 
+        if removeTmpPermFlag:
+            dLog(logPrefix + "inv= " +
+                 ' ,'.join([x.getItemId() + "(" +
+                            str(x.persistsThroughOneRoomLoad()) +
+                            ")" for x in itemsInRoom]),
+                 self._instanceDebug)
+
+        for obj in itemsInRoom:
             if obj.persistsThroughOneRoomLoad():
-                # Do not remove object - let it be for one room load, but
-                # remove the property that permits this.
-                obj.setPersistThroughOneRoomLoad(False)
-                dLog("removeNonPermanents: Preserving tmpPermanent " +
-                     str(obj.getItemId()) + " in room " + str(self.getId()) +
-                     " but removing persist flag", self._instanceDebug)
+                if removeTmpPermFlag:
+                    # Do not remove object - let it be for one room load, but
+                    # remove the property that permits this.
+                    obj.setPersistThroughOneRoomLoad(False)
+                    dLog(logPrefix + "Preserving tmpPermanent " +
+                         str(obj.getItemId()) +
+                         " but removing persist flag", self._instanceDebug)
             elif obj.isPermanent():
                 # Object is permanent.  Don't remove it.
-                dLog("removeNonPermanents: Preserving permanent " +
-                     str(obj.getItemId()) + " in room " + str(self.getId()),
+                dLog(logPrefix + "Preserving permanent " + obj.getItemId(),
                      self._instanceDebug)
             else:
-                dLog("removeNonPermanents: Removing non-permanent" +
-                     obj.describe() + " from room " + str(self.getItemId()),
+                dLog(logPrefix + "Removing non-permanent " + obj.getItemId(),
                      self._instanceDebug)
                 self.removeFromInventory(obj)
                 self.save()

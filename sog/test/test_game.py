@@ -142,35 +142,38 @@ class TestGameCmd(TestGameBase):
         roomObj._inventory = []
         self.joinRoom(room=roomObj)
         creObj = self.createCreature()
-        logger.debug('Testing character death')
+        logger.info('Testing character death')
         self.addFiveItemsToCharacter(charObj)
 
-        logger.debug(gameObj.activeRoomInfo())
-        logger.debug("\nroom ID: " + charObj.getRoom().getItemId() +
-                     " " + str(charObj.getRoom()) + "\n" +
-                     charObj.getRoom().display(charObj) + '\n' +
-                     str(charObj.getRoom().getInventory()))
+        logger.info("\nroom ID: " + charObj.getRoom().getItemId() +
+                    " " + str(charObj.getRoom()) + "\n" +
+                    charObj.getRoom().display(charObj) +
+                    str(charObj.getRoom().getInventory()))
         assert len(charObj.getInventory()) == 5
         assert len(roomObj.getInventory()) == 0
 
         gameObj.applyPlayerDamage(charObj, creObj, 11)
 
-        logger.debug(gameObj.activeRoomInfo())
-        logger.debug("\nroom ID: " + charObj.getRoom().getItemId() +
-                     " " + str(charObj.getRoom()) + "\n" +
-                     charObj.getRoom().display(charObj) + '\n' +
-                     str(charObj.getRoom().getInventory()))
+        logger.info("\nroom ID: " + charObj.getRoom().getItemId() +
+                    " " + str(charObj.getRoom()) + "\n" +
+                    charObj.getRoom().display(charObj) +
+                    str(charObj.getRoom().getInventory()))
         assert len(charObj.getInventory()) == 0
         assert len(charObj.getRoom().getInventory()) == 0
 
         self.joinRoom(room=99999)
-        logger.debug(gameObj.activeRoomInfo())
-        logger.debug("\nroom ID: " + charObj.getRoom().getItemId() +
-                     " " + str(charObj.getRoom()) + "\n" +
-                     charObj.getRoom().display(charObj) + '\n' +
-                     str(charObj.getRoom().getInventory()))
+        logger.info("\nroom ID: " + charObj.getRoom().getItemId() +
+                    " " + str(charObj.getRoom()) + "\n" +
+                    charObj.getRoom().display(charObj) +
+                    str(charObj.getRoom().getInventory()))
         assert len(charObj.getRoom().getInventory()) == 5
         logger.info(str(charObj.getRoom().getInventory()))
+
+        filename = os.path.abspath(DATADIR + '/Room/99999.json')
+        try:
+            os.remove(filename)
+        except OSError:
+            pass
 
 
 if __name__ == '__main__':

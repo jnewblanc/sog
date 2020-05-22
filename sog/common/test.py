@@ -132,8 +132,8 @@ class TestGameBase(unittest.TestCase):
 
     def createRoom(self, num=99999):
         room = RoomFactory('room', num)
-        room._shortDesc = 'Its a test room - short'
-        room._desc = 'Its a test room - long'
+        room._shortDesc = 'in a short test room'
+        room._desc = 'in a long test room'
         return(room)
 
     def joinGame(self):

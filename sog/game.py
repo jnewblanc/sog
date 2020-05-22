@@ -273,7 +273,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         # if room's character list is empty, remove room from activeRoomList
         if len(charObj.getRoom().getCharacterList()) == 0:
             self.removeFromActiveRooms(charObj.getRoom())
-            charObj.getRoom().removeNonPermanents()
+            charObj.getRoom().removeNonPermanents(removeTmpPermFlag=False)
         charObj.getRoom().save()
         charObj.removeRoom()                       # Remove room from character
         return(True)

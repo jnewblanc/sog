@@ -288,10 +288,5 @@ class Inventory():
                     roomMsgFunct(roomObj, item.describe() +
                                  "falls to the floor and rolls away")
 
-        # This is to trigger the debug logging for getInventory
-        Inventory._instanceDebug = True
-        roomObj.getInventory()
-        Inventory._instanceDebug = False
-
         roomObj.save()
         # end transferInventoryToRoom
