@@ -39,7 +39,8 @@ class Object(Item):
                           'equippedSlotName', 'damageReduction',
                           '_multiplier', '_depletable']
 
-    attributesThatShouldntBeSaved = ['_instanceDebug']
+    attributesThatShouldntBeSaved = ['_instanceDebug',
+                                     'self._persistThroughOneRoomLoad']
 
     wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
                         "_longdesc", "_weight", "_value"]
@@ -47,48 +48,51 @@ class Object(Item):
     validSkills = ['_slash', '_bludgeon', '_pierce', '_magic', '_dodge']
 
     attributeInfo = {
-        "_name": "single word that you use when interacting with item",
+        "_ac": "the amount of damage this prevents - Range is 0 (none) to 10.",
         "_article": "the article of speech.  For example: a, an, some.",
-        "_singledesc": "the description for one of these, minus the article.",
-        "_pluraldesc": "the description for two or more of these.",
-        "_longdesc": "full description when item is examined.",
-        "_weight": "how much the item weighs.  Range 0-80 lbs.",
-        "_value": "the base amount used when calculating the sale value.",
+        "_correspondingDoorId": "The id of the corresponding door i.e. Door/5",
+        "_dodgeBonus": "increases chance that player is not hit when attacked",
         "_spell": "the spell that is cast when using this item.",
+        "_hasMetal": "metal can't be used by some classes.",
+        "_lockId": "The id of the lock used to connects a key with a lock",
+        "_longdesc": "full description when item is examined.",
         "_maxCharges": "the number of times that item can be used when full.",
         "_maxAmount": "the maximum number of coins in this batch.",
-        "_ac": "the amount of damage this prevents - Range is 0 (none) to 10.",
-        "_dodgeBonus": "increases chance that player is not hit when attacked",
-        "_hasMetal": "metal can't be used by some classes.",
-        "_minimumDamage": "minimim amount of damage inflicted.  Range 0-50.",
         "_maximumDamage": "maximum amount of damage inflicted.  Range 0-80.",
+        "_minimumDamage": "minimim amount of damage inflicted.  Range 0-50.",
+        "_name": "single word that you use when interacting with item",
+        "_pluraldesc": "the description for two or more of these.",
+        "_singledesc": "the description for one of these, minus the article.",
+        "_persistThroughOneRoomLoad": "don't remove during next room load.",
+        "_spell": "the spell that is cast when using this item.",
+        "_toHitBonus": "Increase the chance of hitting target.  0 = normal",
         "_toWhere": "The room that this item takes you to i.e. 35 or Shop/30",
-        "_correspondingDoorId": "The id of the corresponding door i.e. Door/5",
-        "_lockId": "The id of the lock used to connects a key with a lock",
+        "_value": "the base amount used when calculating the sale value.",
         "_worksInRoomId": "The id of the room where this item works",
-        "_toHitBonus": "Increase the chance of hitting target.  0 = normal"}
+        "_weight": "how much the item weighs.  Range 0-80 lbs.",
+        }
 
     def __init__(self, objId=0):
         self.objId = objId
-        self._name = ''
         self._article = 'a'
+        self._longdesc = ''
+        self._name = ''
         self._singledesc = ''
         self._pluraldesc = ''
-        self._longdesc = ''
 
         self._carry = True
+        self._cursed = False
+        self._enchanted = False    # typially, enchanting is done by players
         self._hidden = False
         self._invisible = False
         self._magic = False
         self._permanent = False
-        self._cursed = False
-        self._enchanted = False    # typially, enchanting is done by players
 
-        self._weight = 1
         self._value = 1
+        self._weight = 1
 
-        self._classesAllowed = []
         self._alignmentsAllowed = []
+        self._classesAllowed = []
         self._gendersAllowed = []
         self._minLevelAllowed = 0
         self._maxLevelAllowed = 100
@@ -134,9 +138,6 @@ class Object(Item):
     def examine(self):
         return(self._longdesc)
 
-    def setName(self, name):
-        self._name = str(name)
-
     def identify(self):
         ROW_FORMAT = "{0:9}: {1:<30}\n"
         buf = ''
@@ -144,9 +145,6 @@ class Object(Item):
             attValue = getattr(self, attName)
             buf += ROW_FORMAT.format(attName, str(attValue))
         return(buf)
-
-    def getId(self):
-        return(self.objId)
 
     def fixAttributes(self):
         ''' Sometimes we change attributes, and need to fix them in rooms
@@ -161,6 +159,45 @@ class Object(Item):
 
         AttributeHelper.fixAttributes(self)
         return(True)
+
+    def adjustPrice(self, price):
+        ''' adjust price based on object attributes '''
+        return(price)
+
+    def getAc(self):
+        ''' This is meant to be overridden if needed '''
+        return(0)
+
+    def getArticle(self):
+        return(self._article)
+
+    def getDodgeBonus(self):
+        ''' This is meant to be overridden if needed '''
+        return(0)
+
+    def getId(self):
+        return(self.objId)
+
+    def getName(self):
+        return(self._name)
+
+    def getPlural(self):
+        return(self._pluraldesc)
+
+    def getSingular(self):
+        return(self._singledesc)
+
+    def getType(self):
+        return(self.__class__.__name__)
+
+    def getValue(self):
+        value = self._value
+        if self.isCursed():
+            value = 6
+        return(max(0, value))
+
+    def getWeight(self):
+        return(max(0, self._weight))
 
     def isCarryable(self):
         return(self._carry)
@@ -179,42 +216,6 @@ class Object(Item):
 
     def isMagic(self):
         return(self._magic)
-
-    def getAc(self):
-        ''' This is meant to be overridden if needed '''
-        return(0)
-
-    def getArticle(self):
-        return(self._article)
-
-    def getDodgeBonus(self):
-        ''' This is meant to be overridden if needed '''
-        return(0)
-
-    def getPlural(self):
-        return(self._pluraldesc)
-
-    def getName(self):
-        return(self._name)
-
-    def getSingular(self):
-        return(self._singledesc)
-
-    def getType(self):
-        return(self.__class__.__name__)
-
-    def getValue(self):
-        value = self._value
-        if self.isCursed():
-            value = 6
-        return(max(0, value))
-
-    def getWeight(self):
-        return(max(0, self._weight))
-
-    def adjustPrice(self, price):
-        ''' adjust price based on object attributes '''
-        return(price)
 
     def limitationsAreSatisfied(self, charObj):
         ''' Return True if an items limitations are met '''
@@ -241,6 +242,27 @@ class Object(Item):
             return(False)
         return(True)
 
+    def persistsThroughOneRoomLoad(self):
+        if hasattr(self, '_persistThroughOneRoomLoad'):
+            return(self._persistThroughOneRoomLoad)
+        return(False)
+
+    def postLoad(self):
+        # When a player dies, their inventory is dropped and made "temporarily
+        # permanent", meaning that the permanancy is removed after the next
+        # load of the object or room.
+        if self.persistsThroughOneRoomLoad():
+            self.setPersistThroughOneRoomLoad(False)
+
+    def setName(self, name):
+        self._name = str(name)
+
+    def setPermanent(self, val=True):
+        self._permanent = val
+
+    def setPersistThroughOneRoomLoad(self, val=True):
+        self._persistThroughOneRoomLoad = val
+
 
 class Exhaustible(Object):
     ''' superclass of objects that have a limited lifespan '''
@@ -259,22 +281,10 @@ class Exhaustible(Object):
         self._depleatable = True
         self._lastUse = None
 
-    def setLastUse(self):
-        self._lastUse = datetime.now()
-
-    def getLastUse(self):
-        return(self._lastUse)
-
-    def isCool(self):
-        ''' Return True if object cooldown is complete '''
-        if self._cooldown == 0:
-            return(True)    # No cooldown is required
-        if (self._lastUse - datetime.now()).total_seconds() > self._cooldown:
-            return(True)
-        return(False)
-
-    def percentOfChargesRemaining(self):
-        return (self._charges * 100 / self._maxCharges)
+    def adjustPrice(self, price):
+        ''' adjust price based on percentage of charges remaining'''
+        price *= (self.percentOfChargesRemaining() / 100)
+        return(int(price))
 
     def canBeRepaired(self):
         ''' Return True if an item can be repaired '''
@@ -285,6 +295,46 @@ class Exhaustible(Object):
         elif self._maxCharges <= 10 and self._charges > 1:
             return(False)              # Small items need to be on last charge
         return(True)
+
+    def decrementChargeCounter(self, num=1):
+        if self._depleatable:
+            self._charges -= num
+        if self._charges <= 0:
+            if self._breakable:
+                self._broken = True
+
+    def getCharges(self):
+        return(self._charges)
+
+    def getLastUse(self):
+        return(self._lastUse)
+
+    def getMaxCharges(self):
+        return(self._maxCharges)
+
+    def isBroken(self):
+        return(self._broken)
+
+    def isCool(self):
+        ''' Return True if object cooldown is complete '''
+        if self._cooldown == 0:
+            return(True)    # No cooldown is required
+        if (self._lastUse - datetime.now()).total_seconds() > self._cooldown:
+            return(True)
+        return(False)
+
+    def isDepleated(self):
+        if self._charges <= 0:
+            return(True)
+        return(False)
+
+    def isUsable(self):
+        if not self.isBroken() and not self.isDepleated():
+            return(True)
+        return(False)
+
+    def percentOfChargesRemaining(self):
+        return (self._charges * 100 / self._maxCharges)
 
     def repair(self):
         ''' add charges back onto item
@@ -299,42 +349,14 @@ class Exhaustible(Object):
         self._charges = int(self._maxCharges * newChargePercentage)
         self._timesRepaired += 1
 
-    def setMaxCharges(self, num):
-        self._maxCharges = int(num)
-
-    def getMaxCharges(self):
-        return(self._maxCharges)
-
     def setCharges(self, num):
         self._charges = int(num)
 
-    def getCharges(self):
-        return(self._charges)
+    def setLastUse(self):
+        self._lastUse = datetime.now()
 
-    def decrementChargeCounter(self, num=1):
-        if self._depleatable:
-            self._charges -= num
-        if self._charges <= 0:
-            if self._breakable:
-                self._broken = True
-
-    def isBroken(self):
-        return(self._broken)
-
-    def isDepleated(self):
-        if self._charges <= 0:
-            return(True)
-        return(False)
-
-    def isUsable(self):
-        if not self.isBroken() and not self.isDepleated():
-            return(True)
-        return(False)
-
-    def adjustPrice(self, price):
-        ''' adjust price based on percentage of charges remaining'''
-        price *= (self.percentOfChargesRemaining() / 100)
-        return(int(price))
+    def setMaxCharges(self, num):
+        self._maxCharges = int(num)
 
 
 class Equippable(Object):
@@ -518,7 +540,7 @@ class Closable(Object):
             return(False)
         return(True)
 
-    def smash(self, charObj):
+    def smash(self, charObj, saveItem=True):
         ''' Smash open object - return True if object is opened.
             Smash does not trigger traps, but does cause damage
         '''
@@ -537,7 +559,8 @@ class Closable(Object):
             charObj.client.spoolOut(self.smashTxt(damage, True, charHp))
             charObj.takeDamage(damage)
             self._closed = 'False'
-            self.save()
+            if saveItem:
+                charObj.getRoom().save()
             return(True)
         else:
             damage = self.smashDamage(charObj, self.getWeight(), False)
@@ -545,7 +568,7 @@ class Closable(Object):
             charObj.takeDamage(damage)
         return(False)
 
-    def pick(self, charObj):
+    def pick(self, charObj, saveItem=True):
         ''' Pick lock on an object (also opens it)
            * return True if object is opened
            * Damage is delt only on failed attempts when there are traps
@@ -565,7 +588,8 @@ class Closable(Object):
         if self.pickSuccess(charObj):
             self._locked = 'False'
             self._closed = 'False'
-            self.save()
+            if saveItem:
+                charObj.getRoom().save()
             return(True)
         elif self.traplevel > 0:
             if not self.avoidTrap(charObj):
@@ -582,13 +606,14 @@ class Closable(Object):
             return(False)
         return(False)
 
-    def open(self, charObj):
+    def open(self, charObj, saveItem=True):
         ''' Open an object - Returns true if opened '''
         if not self.isOpenable():
             return(False)
 
         self._closed = 'False'
-        self.save()
+        if saveItem:
+            charObj.getRoom().save()
 
         if self._traplevel > 0:
             if not self.avoidTrap(charObj):
@@ -599,9 +624,10 @@ class Closable(Object):
                 charObj.takeDamage(damage)
         return(True)
 
-    def close(self):
+    def close(self, charObj, saveItem=True):
         self._closed = 'True'
-        self.save()
+        if saveItem:
+            charObj.getRoom().save()
 
     def smashSucceds(self, charObj):
         ''' Returns True if smash calculations succeed
@@ -957,8 +983,9 @@ class Container(Closable):
                    ' will be truncated on when you leave the room.')
             charObj.client.spoolOut(msg + '\n')
         self._weight = self.getWeight()
+
         if saveItem:
-            self.save()
+            charObj.getRoom().save()
         return(True)
 
     def withdraw(self, charObj, item, saveItem=True):
@@ -978,13 +1005,8 @@ class Container(Closable):
         charObj.addToInventory(item)
         self._weight = self.getWeight()
         if saveItem:
-            self.save()
+            charObj.getRoom().save()
         return(True)
-
-    def dmTxt(self, msg):
-        ''' inventory wants this to be defined.  For now, let's just define
-            it '''
-        return('')
 
 
 class Key(Exhaustible):

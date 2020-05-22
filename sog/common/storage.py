@@ -158,7 +158,7 @@ class Storage():
         # store the values before we save, then we will restore them
         # immediately after.
         tmpStore = {}
-        for attName in (self.attributesThatShouldntBeSaved +
+        for attName in (self.getAttributesThatShouldntBeSaved() +
                         ['_datafile', '_instanceDebug']):
             try:
                 tmpStore[attName] = getattr(self, attName)
@@ -210,7 +210,7 @@ class Storage():
     def writeJSonFile(self, filename):
         jsonpickle.set_encoder_options('json', sort_keys=True, indent=4,
                                        ensure_ascii=False)
-        frozen = jsonpickle.encode(self)
+        frozen = jsonpickle.encode(self, max_depth=10)
         with open(filename, 'w') as filehandle:
             try:
                 filehandle.write(frozen)
@@ -231,7 +231,7 @@ class Storage():
                             " that it was saved or loaded incorrectly")
 
                 # filter out attributes that should be excluded
-                for onevar in self.attributesThatShouldntBeSaved:
+                for onevar in self.getAttributesThatShouldntBeSaved():
                     if hasattr(thawedDict, onevar):
                         if self._debugStorage:
                             logger.debug(logPrefix + " ignoring " + logStr +
@@ -254,7 +254,7 @@ class Storage():
     def attributeShouldBeIgnored(self, attName, logStr=''):
         ''' Return True if given attribute should be ignored '''
         logPrefix = 'attributeShouldBeIgnored: '
-        if attName in self.attributesThatShouldntBeSaved:
+        if attName in self.getAttributesThatShouldntBeSaved():
             if self._debugStorage:
                 logger.debug(logPrefix + " ignoring " + logStr +
                              "attribute " + attName + " during import")

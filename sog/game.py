@@ -16,6 +16,7 @@ from common.ipc import Ipc
 from common.general import isIntStr, dateStr, logger, dLog
 from common.general import splitTargets, targetSearch, itemSort
 from common.general import getRandomItemFromList
+from common.globals import maxCreaturesInRoom
 from common.help import enterHelp
 from magic import Spell, SpellList, spellCanTargetSelf
 from room import RoomFactory, isRoomFactoryType, getRoomTypeFromFile
@@ -154,6 +155,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 return(roomObj)
         return(None)
 
+    def activeRoomInfo(self):
+        msg = ("Active rooms: " +
+               ', '.join([x.getItemId() + '(' + str(x) + ")"
+                          for x in self.getActiveRoomList()]))
+        return(msg)
+
     def deActivateEmptyRoom(self, roomObj):
         ''' deactiveates room if empty.  Returns true if deactiveated '''
         if len(roomObj.getCharacterList()) == 0:
@@ -262,12 +269,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
         if charObj.getRoom().getId() == 0:   # Not a real room - just loaded?
             return(True)
 
-        charObj.getRoom().savePermanents()
-
         charObj.getRoom().removeCharacter(charObj)  # remove charact from room
         # if room's character list is empty, remove room from activeRoomList
         if len(charObj.getRoom().getCharacterList()) == 0:
             self.removeFromActiveRooms(charObj.getRoom())
+            charObj.getRoom().removeNonPermanents(removeTmpPermFlag=False)
+        charObj.getRoom().save()
         charObj.removeRoom()                       # Remove room from character
         return(True)
 
@@ -307,10 +314,9 @@ class _Game(cmd.Cmd, Combat, Ipc):
             for obj in roomObj.getInventory():
                 if obj.getId() == doorObj.getCorresspondingDoorId():
                     if doorObj.isClosed():
-                        obj.close()
+                        obj.close(charObj)
                     else:
-                        obj.open()
-                    obj.save()
+                        obj.open(charObj)
             return(True)
         else:
             roomObj = RoomFactory("room", doorObj.getToWhere())
@@ -405,7 +411,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
             #      self._instanceDebug)
             return(False)
 
-        if len(roomObj.getInventoryByType('Creature')) >= 6:
+        if len(roomObj.getInventoryByType('Creature')) >= maxCreaturesInRoom:
             self.roomMsg(roomObj, 'Others arrive, but wander off.\n',
                          allowDupMsgs=False)
             return(False)
@@ -1062,7 +1068,7 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("This is not closable!\n")
             return(False)
 
-        if targetObj.close():
+        if targetObj.close(charObj):
             self.selfMsg("Ok\n")
             if targetObj.gettype() == "Door":
                 self.gameObj.modifyCorrespondingDoor(targetObj)
@@ -1538,7 +1544,10 @@ class GameCmd(cmd.Cmd):
                          "don't see that here\n")
             return(False)
 
-        self.selfMsg(itemList[0].examine() + "\n")  # display the object
+        msg = itemList[0].examine()
+        if not re.search('\n$', msg):
+            msg += "\n"    # append newline if needed
+        self.selfMsg(msg)  # display the object
         return(False)
 
     def do_lose(self, line):

@@ -32,3 +32,10 @@ STOP_STR = "=-o-= STOP =-o-="
 # These are shared vars that are populated at runtime
 connections = []
 totalConnections = 0
+
+
+#################
+# game settings #
+#################
+
+maxCreaturesInRoom = 6

@@ -132,8 +132,8 @@ class TestGameBase(unittest.TestCase):
 
     def createRoom(self, num=99999):
         room = RoomFactory('room', num)
-        room._shortDesc = 'Its a test room - short'
-        room._desc = 'Its a test room - long'
+        room._shortDesc = 'in a short test room'
+        room._desc = 'in a long test room'
         return(room)
 
     def joinGame(self):
@@ -142,9 +142,12 @@ class TestGameBase(unittest.TestCase):
         self._gameCmdObj = GameCmd(self._client)
     #    self._gameCmdObj.postcmd = [lambda *args: None]
 
-    def joinRoom(self, roomnum=_testRoomNum):
-        self._client.gameObj.joinRoom(roomnum, self.getCharObj())
-        assert self.getRoomObj().isValid()
+    def joinRoom(self, room=_testRoomNum):
+        # room can be an id or an object
+        self._client.gameObj.joinRoom(room, self.getCharObj())
+        assert self.getRoomObj().isValid(), (
+            "To be valid, rooms require a _roomnum, a _shortDesc, and a " +
+            "self._desc\n" + self.getRoomObj().debug())
 
     def banner(self, status='start', testName=''):
         if not hasattr(self, "_testName"):

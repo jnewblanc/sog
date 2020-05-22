@@ -10,6 +10,7 @@
         20
     ],
     "_encounterRate": 20,
+    "_inventory": [],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],

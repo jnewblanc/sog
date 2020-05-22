@@ -397,6 +397,9 @@ class Account(Storage, AttributeHelper):
     def getId(self):
         return(self.email)
 
+    def getAttributesThatShouldntBeSaved(self):
+        return(self.attributesThatShouldntBeSaved)
+
     def isAdmin(self):
         if (self.admin):
             return(True)

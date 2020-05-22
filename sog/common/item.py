@@ -23,6 +23,10 @@ class Item(Storage, AttributeHelper, Inventory, EditWizard):
     def canBeRepaired(self):
         return(False)
 
+    def dmTxt(self, msg):
+        ''' inventory wants this to be defined. '''
+        return('')
+
     def getId(self):
         return(0)
 
@@ -31,6 +35,12 @@ class Item(Storage, AttributeHelper, Inventory, EditWizard):
 
     def getWeight(self):
         return(0)
+
+    def getAttributesThatShouldntBeSaved(self):
+        atts = []
+        if hasattr(self, 'attributesThatShouldntBeSaved'):
+            atts += self.attributesThatShouldntBeSaved
+        return(atts)
 
     def isBlessed(self):
         return(False)
@@ -98,6 +108,9 @@ class Item(Storage, AttributeHelper, Inventory, EditWizard):
     def isVulnerable(self):
         return(False)
 
+    def getItemId(self):
+        return(self.getType() + "/" + str(self.getId()))
+
     def getNextUnusedFileNumber(self, type):
         ''' return the next unused item number, by looking through the
             corresponding files for the last one used.  This is typically
@@ -125,3 +138,6 @@ class Item(Storage, AttributeHelper, Inventory, EditWizard):
             sortedlist = sorted(numberlist)
             returnNum = sortedlist[-1] + 1
         return(returnNum)
+
+    def persistsThroughOneRoomLoad(self):
+        return(False)
