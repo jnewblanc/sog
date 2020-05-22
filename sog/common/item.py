@@ -23,6 +23,10 @@ class Item(Storage, AttributeHelper, Inventory, EditWizard):
     def canBeRepaired(self):
         return(False)
 
+    def dmTxt(self, msg):
+        ''' inventory wants this to be defined. '''
+        return('')
+
     def getId(self):
         return(0)
 

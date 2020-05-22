@@ -238,3 +238,54 @@ class Inventory():
 
     def autoPopulateInventory(self):
         ''' should be overridden if needed '''
+
+    def transferInventoryToRoom(self, roomObj, roomMsgFunct,
+                                persist=False, verbose=True):
+        logPrefix = "transferInventoryToRoom(" + str(roomObj.getId()) + "): "
+
+        Inventory._instanceDebug = True
+
+        # We are madifying the inventory as we iterate through it, so we need
+        # a copy of the list.
+        selfInventory = self.getInventory().copy()
+        selfInventoryCount = len(selfInventory)
+        truncsize = self.getInventoryTruncSize()
+
+        if selfInventoryCount == 0:
+            return(None)
+
+        dLog(logPrefix + 'inventory of  ' + self.getItemId() + " -- " +
+             str(selfInventory), Inventory._instanceDebug)
+
+        for item in selfInventory:
+            dLog(logPrefix + "------------ item - " + item.describe(),
+                 Inventory._instanceDebug)
+
+            if persist:
+                # On death, we want player's items to temporarily persist
+                item.setPersistThroughOneRoomLoad(True)
+                dLog(logPrefix + 'Adding persist attribute to ' +
+                     item.describe(), Inventory._instanceDebug)
+
+            if self.getType() == 'Character':
+                self.unEquip(item)
+                self.removeFromInventory(item)
+                dLog(logPrefix + 'Removing item ' + item.describe() +
+                     " from " + self.getItemId() + "inventory",
+                     Inventory._instanceDebug)
+                truncsize = 100   # don't want dead character items truncated
+
+            if roomObj.addToInventory(item, maxSize=truncsize):
+                dLog(logPrefix + 'Adding item ' + item.describe() +
+                     " to room inventory", Inventory._instanceDebug)
+                if verbose:
+                    roomMsgFunct(roomObj, item.describe() +
+                                 " falls to the floor\n")
+            else:
+                dLog(logPrefix + 'Discarding item ' + item.describe() +
+                     " instead of adding it to room inventory (trunc)",
+                     Inventory._instanceDebug)
+                if verbose:
+                    roomMsgFunct(roomObj, item.describe() +
+                                 "falls to the floor and rolls away")
+        Inventory._instanceDebug = False

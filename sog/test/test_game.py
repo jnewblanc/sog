@@ -3,6 +3,7 @@ import unittest
 
 from common.test import TestGameBase
 from common.general import logger
+import object
 # import room
 # import creature
 
@@ -80,6 +81,51 @@ class TestGameCmd(TestGameBase):
         assert coinObj not in roomObj.getInventory()
         assert coinObj not in charObj.getInventory()
         assert charObj.getCoins() == 50
+
+    def testTransferInventoryToRoom(self):
+        gameObj = self.getGameObj()
+        charObj = self.createCharacter()
+        charObj.setName('deadGuy')
+        charObj.setHitPoints(10)
+        roomObj = self.createRoom(num=99999)
+        roomObj._inventory = []
+        charObj.setRoom(roomObj)
+        logger.debug('Testing inventory on death')
+        obj1 = object.Armor(99999)
+        obj1._singledesc = "good armor"
+        charObj.addToInventory(obj1)
+        obj2 = object.Weapon(99999)
+        obj2._singledesc = "good weapon"
+        charObj.addToInventory(obj2)
+        obj3 = object.Shield(99999)
+        obj3._singledesc = "good shield"
+        charObj.addToInventory(obj3)
+        obj4 = object.Treasure(99999)
+        obj4._singledesc = "treasure1"
+        charObj.addToInventory(obj4)
+        obj5 = object.Treasure(99998)
+        obj5._singledesc = "treasure2"
+        charObj.addToInventory(obj5)
+
+        logger.debug('Char Before: ' + str(charObj.describeInventory()))
+        logger.debug('Room Before: ' + str(roomObj.describeInventory()))
+        assert len(roomObj.getInventory()) == 0
+        assert len(charObj.getInventory()) == 5
+        charObj.transferInventoryToRoom(charObj.getRoom(),
+                                        gameObj.roomMsg,
+                                        persist=True,
+                                        verbose=False)
+        logger.debug('Room After: ' + str(roomObj.describeInventory()))
+        logger.debug('Char After: ' + str(charObj.describeInventory()))
+        assert len(roomObj.getInventory()) == 5
+        assert len(charObj.getInventory()) == 0
+        for obj in roomObj.getInventory():
+            assert obj.persistsThroughOneRoomLoad()
+        roomObj.removeNonPermanents()
+        logger.debug('Room PostRemove: ' + str(roomObj.describeInventory()))
+        assert len(roomObj.getInventory()) == 5
+        for obj in roomObj.getInventory():
+            assert not obj.persistsThroughOneRoomLoad()
 
 
 if __name__ == '__main__':

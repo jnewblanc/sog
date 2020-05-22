@@ -1008,11 +1008,6 @@ class Container(Closable):
             charObj.getRoom().save()
         return(True)
 
-    def dmTxt(self, msg):
-        ''' inventory wants this to be defined.  For now, let's just define
-            it '''
-        return('')
-
 
 class Key(Exhaustible):
 

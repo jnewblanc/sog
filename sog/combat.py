@@ -377,6 +377,7 @@ class Combat():
         damage = self.applyCritOrDD(damage, opponentObj,
                                     [attackerObj, opponentObj])
 
+        damage = int(damage)
         dLog(logPrefix + "Total damage(" + str(damage) + ")",
              self._instanceDebug)
         return(damage)
@@ -461,14 +462,20 @@ class Combat():
 
         if roomObj.isSafe():
             self.charMsg(charObj, "A unknown force prevents combat here.\n")
+            dLog(logPrefix + roomObj.getItemId() + " is safe",
+                 self._instanceDebug)
             return(False)
 
         if target.isUnKillable():
             self.charMsg(charObj, "Aw.  Don't hurt the poor " +
                          target.describe(article='') + '\n')
+            dLog(logPrefix + target.describe() + " is unkillable",
+                 self._instanceDebug)
             return(False)
 
         if not charObj.canAttack():
+            dLog(logPrefix + charObj.getItemId() + "cant attack",
+                 self._instanceDebug)
             return(False)
 
         charObj.setHidden(False)
@@ -660,14 +667,7 @@ class Combat():
                          target.describe(article='the') + "\n")
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() +
                                  " kills " + target.describe() + "\n")
-            truncsize = roomObj.getInventoryTruncSize()
-            for item in target.getInventory():
-                if roomObj.addToInventory(item, maxSize=truncsize):
-                    self.roomMsg(roomObj, item.describe() +
-                                 " falls to the floor\n")
-                else:
-                    self.roomMsg(roomObj, item.describe() +
-                                 "falls to the floor and rolls away")
+            target.transferInventoryToRoom(roomObj, self.roomMsg)
 
             # dole out experience
             self.allocateExp(charObj, roomObj, target)
@@ -704,13 +704,11 @@ class Combat():
                                              roomNum=self._kidnapRoomNum)
             else:
                 if not charObj.isDm():
-                    # Transfer players inventory to room
-                    for item in charObj.getInventory():
-                        charObj.unEquip(item)
-                        item.setPersistThroughOneRoomLoad(True)
-                        if charObj.getRoom().addToInventory(item):
-                            charObj.removeFromInventory(item)
-                # death is handled in charObj.takeDamage
+                    charObj.transferInventoryToRoom(charObj.getRoom(),
+                                                    self.roomMsg,
+                                                    persist=True,
+                                                    verbose=True)
+            # death is handled in charObj.takeDamage
 
         charObj.takeDamage(damage)
 

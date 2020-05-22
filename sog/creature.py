@@ -10,6 +10,7 @@ import re
 from common.attributes import AttributeHelper
 from common.general import getNeverDate, getRandomItemFromList, secsSinceDate
 from common.general import dLog
+from common.inventory import Inventory
 # from common.general import logger
 from common.item import Item
 from object import ObjectFactory
@@ -213,6 +214,8 @@ class Creature(Item):
 
     def __init__(self, id=0):
         super().__init__()
+        Inventory.__init__(self)
+
         self._creatureId = id
         self._name = ''
 

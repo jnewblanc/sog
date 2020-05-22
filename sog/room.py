@@ -286,12 +286,6 @@ class Room(Item):
             buf += "Obvious exits are " + exitTxt + "." + '\n'
         return(buf)
 
-    def dmTxt(self, charObj, msg):
-        ''' return the given msg only if the character is a DM '''
-        if charObj.isDm():
-            return(msg)
-        return('')
-
     def displayExtra(self, charObj):
         ''' Subclasses can override this, to get their messages inserted '''
         msg = ''
@@ -576,16 +570,20 @@ class Room(Item):
                 # Do not remove object - let it be for one room load, but
                 # remove the property that permits this.
                 obj.setPersistThroughOneRoomLoad(False)
+                dLog("removeNonPermanents: Preserving tmpPermanent " +
+                     str(obj.getItemId()) + " in room " + str(self.getId()) +
+                     " but removing persist flag", self._instanceDebug)
             elif obj.isPermanent():
                 # Object is permanent.  Don't remove it.
-                dLog("removeNonPermanents: Preserving " +
+                dLog("removeNonPermanents: Preserving permanent " +
                      str(obj.getItemId()) + " in room " + str(self.getId()),
                      self._instanceDebug)
             else:
-                dLog("removeNonPermanents: Removing " + obj.describe() +
-                     " from room " + str(self.getItemId()),
+                dLog("removeNonPermanents: Removing non-permanent" +
+                     obj.describe() + " from room " + str(self.getItemId()),
                      self._instanceDebug)
                 self.removeFromInventory(obj)
+                self.save()
         return(True)
 
     def closeSpringDoors(self):
@@ -761,6 +759,7 @@ class Shop(Room):
         if self.getType() != 'Room':
             return(atts)
 
+        # everything below is for rooms only
         if hasattr(self, '_inventory'):
             if len(self.getInventory()) == 0:
                 dLog("getAttributesThatShouldntBeSaved: adding _inventory " +
