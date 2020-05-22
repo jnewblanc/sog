@@ -19,6 +19,171 @@
     "_desc": "at the bar of the inn.  Here the criss-cross of the wallpapered walls is broken by a large mirror and several lanterns.   Behind the bar are decanter filled shelves and trays of glassware.  The bartender keeps a tidy bartop with only a few pitchers and bottles along the back edge.",
     "_encounterList": [],
     "_encounterRate": 0,
+    "_inventory": [
+        {
+            "_ac": 7,
+            "_alignment": "neutral",
+            "_antiMagic": true,
+            "_article": "a",
+            "_assistCreature": [],
+            "_attackIfPietyLessThan": 3,
+            "_attackIfPietyMoreThan": 0,
+            "_attackLastAttacker": true,
+            "_attackRate": 100,
+            "_blockFromLeaving": false,
+            "_carry": false,
+            "_creationDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFgwuIQ8qiQ=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_creatureId": 40,
+            "_currentlyAttacking": null,
+            "_damagePct": 100,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Creature\\40.json",
+            "_defend": false,
+            "_defendCreature": [],
+            "_dodge": 20,
+            "_drain": false,
+            "_enterRoomTime": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFgwuIQ8qiQ=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_exp": 84010,
+            "_fleeIfAttacked": false,
+            "_follow": false,
+            "_frequency": 50,
+            "_guardTreasure": false,
+            "_hidden": false,
+            "_hostile": false,
+            "_hp": 30000,
+            "_instanceDebug": false,
+            "_invValue": 0,
+            "_invWeight": 0,
+            "_inventory": [],
+            "_inventoryTruncSize": 12,
+            "_invisible": false,
+            "_itemCatalog": [],
+            "_kidnap": false,
+            "_lastAttackDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QFFgwuIQ8qiQ=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_level": 12,
+            "_longdesc": "The tall, slender barkeep looks you straight in the eye, trying to guess what sort of spirit you prefer.",
+            "_magicImmunity": false,
+            "_maxhp": 30000,
+            "_maxweight": 0,
+            "_name": "barkeep",
+            "_noKill": true,
+            "_numOfItemsCarried": [
+                0,
+                1,
+                2
+            ],
+            "_offensiveSpells": [],
+            "_parleyAction": "Custom",
+            "_parleyTeleportRooms": [],
+            "_parleyTxt": [
+                "What can I get you?",
+                "What's your poison?",
+                "I haven't seen you around here before.",
+                "Have you tried the Grog?"
+            ],
+            "_permanent": true,
+            "_pluraldesc": "barkeeps",
+            "_poison": false,
+            "_regenerate": false,
+            "_rust": false,
+            "_secondsUntilNextAttack": 5,
+            "_sendToJail": false,
+            "_singledesc": "barkeep",
+            "_steal": false,
+            "_timeToFirstAttack": 10,
+            "_tohit": 50,
+            "_undead": false,
+            "_unique": false,
+            "_value": 0,
+            "_vulnerable": false,
+            "_watch": false,
+            "_weight": 20,
+            "py/object": "creature.Creature"
+        },
+        {
+            "_alignmentsAllowed": [],
+            "_article": "a",
+            "_carry": false,
+            "_classesAllowed": [],
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Treasure\\46.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": false,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_longdesc": "Back off, says a patron wearing a black hat...  unless you want to lose a hand.",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "glass",
+            "_permanent": true,
+            "_pluraldesc": "half filled glasses of beer",
+            "_singledesc": "half filled glass of beer",
+            "_value": 20,
+            "_weight": 3,
+            "objId": 46,
+            "py/object": "object.Treasure"
+        },
+        {
+            "_alignmentsAllowed": [],
+            "_article": "the",
+            "_carry": false,
+            "_classesAllowed": [],
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Portal\\7.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": false,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_longdesc": "It's a wooden staircase with a thick polished handrail",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "staircase",
+            "_permanent": true,
+            "_pluraldesc": "staircases",
+            "_singledesc": "staircase",
+            "_toWhere": "227",
+            "_toll": 0,
+            "_value": 1,
+            "_weight": 1,
+            "objId": 7,
+            "py/object": "object.Portal"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_isShop": true,
     "_lastTransactionDate": {

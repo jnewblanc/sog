@@ -12,6 +12,36 @@
         15
     ],
     "_encounterRate": 100,
+    "_inventory": [
+        {
+            "_alignmentsAllowed": [],
+            "_article": "the",
+            "_carry": false,
+            "_classesAllowed": [],
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Portal\\17.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": false,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_longdesc": "Decorative steds, hinges, and pulls cover the tall, Baroque style gates, which are set into the facade at the top of the stone stairs.",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "gate",
+            "_permanent": true,
+            "_pluraldesc": "gates to the monastery",
+            "_singledesc": "gates to the monastery",
+            "_toWhere": "245",
+            "_toll": 0,
+            "_value": 1,
+            "_weight": 1,
+            "objId": 17,
+            "py/object": "object.Portal"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [

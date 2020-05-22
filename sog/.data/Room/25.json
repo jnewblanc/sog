@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "on Middlefield Road",
     "_encounterList": [
         9,
@@ -13,6 +12,36 @@
         15
     ],
     "_encounterRate": 100,
+    "_inventory": [
+        {
+            "_alignmentsAllowed": [],
+            "_article": "a",
+            "_carry": false,
+            "_classesAllowed": [],
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Portal\\8.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": false,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_longdesc": "Normally submerged by water, the recent dry spell has left this dirty grate exposed.  A missing bar leaves a gap that you could squeeze between.",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "grate",
+            "_permanent": true,
+            "_pluraldesc": "dirty grates",
+            "_singledesc": "dirty grate",
+            "_toWhere": "24",
+            "_toll": 0,
+            "_value": 1,
+            "_weight": 1,
+            "objId": 8,
+            "py/object": "object.Portal"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [

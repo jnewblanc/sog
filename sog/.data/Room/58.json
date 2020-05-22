@@ -1,10 +1,10 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "floating on a cloud.  Is this a dream?",
     "_encounterList": [],
     "_encounterRate": 0,
+    "_inventory": [],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],

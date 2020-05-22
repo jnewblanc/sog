@@ -13,6 +13,36 @@
         "33"
     ],
     "_encounterRate": 60,
+    "_inventory": [
+        {
+            "_alignmentsAllowed": [],
+            "_article": "a",
+            "_carry": false,
+            "_classesAllowed": [],
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Portal\\20.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": true,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_longdesc": "This gap in the wall at the bottom of the slope leads back to town square.",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "gap",
+            "_permanent": true,
+            "_pluraldesc": "gaps in the wall at the bottom of the slope",
+            "_singledesc": "gap in the wall at the bottom of the slope",
+            "_toWhere": "1",
+            "_toll": 0,
+            "_value": 1,
+            "_weight": 1,
+            "objId": 20,
+            "py/object": "object.Portal"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [
