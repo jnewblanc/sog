@@ -155,6 +155,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 return(roomObj)
         return(None)
 
+    def activeRoomInfo(self):
+        msg = ("Active rooms: " +
+               ', '.join([x.getItemId() + '(' + str(x) + ")"
+                          for x in self.getActiveRoomList()]))
+        return(msg)
+
     def deActivateEmptyRoom(self, roomObj):
         ''' deactiveates room if empty.  Returns true if deactiveated '''
         if len(roomObj.getCharacterList()) == 0:

@@ -28,8 +28,8 @@ class Inventory():
         return(None)
 
     def getInventory(self):
-        dLog("inv getInventory: " + str(self._inventory),
-             Inventory._instanceDebug)
+        dLog("inv getInventory: " + self.getItemId() + ' ' + str(self) +
+             " -- " + str(self._inventory), Inventory._instanceDebug)
         return(self._inventory)
 
     def getInventoryByType(self, type):
@@ -243,8 +243,6 @@ class Inventory():
                                 persist=False, verbose=True):
         logPrefix = "transferInventoryToRoom(" + str(roomObj.getId()) + "): "
 
-        Inventory._instanceDebug = True
-
         # We are madifying the inventory as we iterate through it, so we need
         # a copy of the list.
         selfInventory = self.getInventory().copy()
@@ -277,7 +275,8 @@ class Inventory():
 
             if roomObj.addToInventory(item, maxSize=truncsize):
                 dLog(logPrefix + 'Adding item ' + item.describe() +
-                     " to room inventory", Inventory._instanceDebug)
+                     " to room inventory",
+                     Inventory._instanceDebug)
                 if verbose:
                     roomMsgFunct(roomObj, item.describe() +
                                  " falls to the floor\n")
@@ -288,4 +287,11 @@ class Inventory():
                 if verbose:
                     roomMsgFunct(roomObj, item.describe() +
                                  "falls to the floor and rolls away")
+
+        # This is to trigger the debug logging for getInventory
+        Inventory._instanceDebug = True
+        roomObj.getInventory()
         Inventory._instanceDebug = False
+
+        roomObj.save()
+        # end transferInventoryToRoom

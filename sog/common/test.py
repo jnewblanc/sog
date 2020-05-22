@@ -142,8 +142,9 @@ class TestGameBase(unittest.TestCase):
         self._gameCmdObj = GameCmd(self._client)
     #    self._gameCmdObj.postcmd = [lambda *args: None]
 
-    def joinRoom(self, roomnum=_testRoomNum):
-        self._client.gameObj.joinRoom(roomnum, self.getCharObj())
+    def joinRoom(self, room=_testRoomNum):
+        # room can be an id or an object
+        self._client.gameObj.joinRoom(room, self.getCharObj())
         assert self.getRoomObj().isValid()
 
     def banner(self, status='start', testName=''):
