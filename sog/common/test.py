@@ -145,7 +145,9 @@ class TestGameBase(unittest.TestCase):
     def joinRoom(self, room=_testRoomNum):
         # room can be an id or an object
         self._client.gameObj.joinRoom(room, self.getCharObj())
-        assert self.getRoomObj().isValid()
+        assert self.getRoomObj().isValid(), (
+            "To be valid, rooms require a _roomnum, a _shortDesc, and a " +
+            "self._desc\n" + self.getRoomObj().debug())
 
     def banner(self, status='start', testName=''):
         if not hasattr(self, "_testName"):

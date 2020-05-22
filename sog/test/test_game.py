@@ -127,11 +127,19 @@ class TestGameCmd(TestGameBase):
         for obj in roomObj.getInventory():
             assert not obj.persistsThroughOneRoomLoad()
 
+    def logRoomInventory(self, charObj):
+        logger.info("----- room ID: " + charObj.getRoom().getItemId() +
+                    " " + str(charObj.getRoom()) + ' -----')
+        logger.info(charObj.getRoom().display(charObj))
+        logger.info(str(charObj.getRoom().getInventory()))
+        logger.info("")
+
     def testPlayerDeath(self):
         # clean up the test room before we start
-        filename = os.path.abspath(DATADIR + '/Room/99999.json')
+        testRoomFilename = os.path.abspath(DATADIR + '/Room/99999.json')
         try:
-            os.remove(filename)
+            os.remove(testRoomFilename)
+            logger.info("Removing test datafile " + testRoomFilename)
         except OSError:
             pass
         gameObj = self.getGameObj()
@@ -145,33 +153,32 @@ class TestGameCmd(TestGameBase):
         logger.info('Testing character death')
         self.addFiveItemsToCharacter(charObj)
 
-        logger.info("\nroom ID: " + charObj.getRoom().getItemId() +
-                    " " + str(charObj.getRoom()) + "\n" +
-                    charObj.getRoom().display(charObj) +
-                    str(charObj.getRoom().getInventory()))
         assert len(charObj.getInventory()) == 5
         assert len(roomObj.getInventory()) == 0
 
         gameObj.applyPlayerDamage(charObj, creObj, 11)
 
-        logger.info("\nroom ID: " + charObj.getRoom().getItemId() +
-                    " " + str(charObj.getRoom()) + "\n" +
-                    charObj.getRoom().display(charObj) +
-                    str(charObj.getRoom().getInventory()))
-        assert len(charObj.getInventory()) == 0
+        self.logRoomInventory(charObj)
+        assert len(charObj.getInventory()) == 0, (
+            "player's belongings should be removed as they are dumped to room")
         assert len(charObj.getRoom().getInventory()) == 0
 
         self.joinRoom(room=99999)
-        logger.info("\nroom ID: " + charObj.getRoom().getItemId() +
-                    " " + str(charObj.getRoom()) + "\n" +
-                    charObj.getRoom().display(charObj) +
-                    str(charObj.getRoom().getInventory()))
-        assert len(charObj.getRoom().getInventory()) == 5
+        self.logRoomInventory(charObj)
+        assert len(charObj.getRoom().getInventory()) == 5, (
+            "player's belongings should have persisted in room inventory")
         logger.info(str(charObj.getRoom().getInventory()))
 
-        filename = os.path.abspath(DATADIR + '/Room/99999.json')
+        self.joinRoom(room=self._testRoomNum)
+        self.logRoomInventory(charObj)
+        self.joinRoom(room=99999)
+        self.logRoomInventory(charObj)
+        assert len(charObj.getRoom().getInventory()) == 0, (
+            "player's belongings in room inventory should only persist once")
+
         try:
-            os.remove(filename)
+            os.remove(testRoomFilename)
+            logger.info("Removed test datafile " + testRoomFilename)
         except OSError:
             pass
 
