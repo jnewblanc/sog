@@ -1,0 +1,18 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0
+    hooks:
+    - id: check-yaml
+    - id: check-json
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.2
+    hooks:
+    - id: flake8
+-   repo: local
+    hooks:
+    -   id: tests
+        name: run tests
+        entry: pytest -v
+        language: system
+        types: [python]
+        stages: [commit]

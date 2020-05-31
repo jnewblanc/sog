@@ -301,7 +301,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 roomObj = None
         return(roomObj)
 
-    def modifyCorrespondingDoor(self, doorObj):
+    def modifyCorrespondingDoor(self, doorObj, charObj):
         ''' When a door is opened/closed on one side, the corresponing door
             needs to be updated '''
 
@@ -1071,11 +1071,11 @@ class GameCmd(cmd.Cmd):
         if targetObj.close(charObj):
             self.selfMsg("Ok\n")
             if targetObj.gettype() == "Door":
-                self.gameObj.modifyCorrespondingDoor(targetObj)
+                self.gameObj.modifyCorrespondingDoor(targetObj, charObj)
             return(False)
         else:
-            self.selfMsg("You can not close" +
-                         targetObj.describe(article="The") + "\n")
+            self.selfMsg("You can not close " +
+                         targetObj.describe(article="the") + "\n")
 
         return(False)
 
@@ -1294,7 +1294,7 @@ class GameCmd(cmd.Cmd):
         ''' set the prompt and room descriptions to maximum verbosity '''
         self.charObj.setPromptSize("full")
 
-    def do_get(self, line):
+    def do_get(self, line):  # noqa: C901
         ''' pick up an item '''
         charObj = self.charObj
         roomObj = charObj.getRoom()
@@ -1605,7 +1605,7 @@ class GameCmd(cmd.Cmd):
             self.othersMsg(roomObj, charObj.getName() + " opens the " +
                            itemObj.getSingular(), charObj.isHidden() + '\n')
             if itemObj.gettype() == "Door":
-                self.gameObj.modifyCorrespondingDoor(itemObj)
+                self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             return(False)
         else:
             self.selfMsg("You fail to open the door.\n")
@@ -1955,7 +1955,7 @@ class GameCmd(cmd.Cmd):
                 self.gameObj.roomMsg(otherRoom, itemObj.getSingular() +
                                      " smashes open\n")
             if itemObj.gettype() == "Door":
-                self.gameObj.modifyCorrespondingDoor(itemObj)
+                self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             return(False)
         else:
             self.othersMsg(roomObj, charObj.getName() + " fails to smash " +

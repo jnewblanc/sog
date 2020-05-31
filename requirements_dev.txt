@@ -6,6 +6,8 @@
 # See also: runtime requirements in requirements.txt
 
 black
+flake8
 mock
 pre-commit
+pylama
 pytest

@@ -7,7 +7,7 @@ import pickle
 import re
 import traceback
 
-from common.general import logger
+from common.general import logger, dLog
 from common.globals import DATADIR
 
 
@@ -68,8 +68,7 @@ class Storage():
             # set data file name to name provided
             self._datafile = os.path.abspath(str(dfStr))
 
-        if self._debugStorage:
-            logger.debug(logPrefix + "_datafile = " + self._datafile)
+        dLog(logPrefix + "_datafile = " + self._datafile, self._debugStorage)
         return(True)
 
     def getId(self):
@@ -97,8 +96,7 @@ class Storage():
                          "filename for loading " + logStr)
             return(False)
 
-        if self._debugStorage:
-            logger.debug(logPrefix + "Loading " + filename + "...")
+        dLog(logPrefix + "Loading " + filename + "...", self._debugStorage)
 
         if self.dataFileExists():
             # read the persisted content
@@ -113,9 +111,9 @@ class Storage():
             # Add attributes to current class object, based on revised list
             self.addAttributesToSelf(loadedDict, requestedAttNames, logStr)
 
-            if self._debugStorage:
-                logger.debug(logPrefix + " loaded " + logStr +
-                             str(self.getId()) + " - " + self.describe())
+            dLog(logPrefix + " loaded " + logStr +
+                 str(self.getId()) + " - " + self.describe(),
+                 self._debugStorage)
 
             self.initTmpAttributes()
             self.fixAttributes()
@@ -164,13 +162,11 @@ class Storage():
                 tmpStore[attName] = getattr(self, attName)
                 if hasattr(self, attName):
                     delattr(self, attName)
-                if self._debugStorage:
-                    logger.debug(logPrefix + "Ignoring " + attName +
-                                 " during save")
+                dLog(logPrefix + "Ignoring " + attName + " during save",
+                     self._debugStorage)
             except AttributeError:
-                if self._debugStorage:
-                    logger.debug(logPrefix + "Could not ignore " + attName +
-                                 " during save")
+                dLog(logPrefix + "Could not ignore " + attName +
+                                 " during save", self._debugStorage)
 
         # persist content - create data file
         if re.search('\\.json$', filename):
@@ -182,9 +178,8 @@ class Storage():
         for attName in tmpStore.keys():
             setattr(self, attName, tmpStore[attName])
 
-        if self._debugStorage:
-            logger.debug(logPrefix + "saved " + logStr + " - " +
-                         str(self.getId()))
+        dLog(logPrefix + "saved " + logStr + " - " + str(self.getId()),
+             self._debugStorage)
         return(True)
 
     def writePickleFile(self, filename):
@@ -192,7 +187,7 @@ class Storage():
             try:
                 pickle.dump(self, outputfilehandle, pickle.DEFAULT_PROTOCOL)
             except TypeError:
-                logger.debug(self.debug())
+                dLog(self.debug(), self._debugStorage)
                 traceback.print_exc()
 
     def readPickleFile(self, filename, logStr=''):
@@ -216,7 +211,7 @@ class Storage():
                 filehandle.write(frozen)
                 # json.dump(frozen, filehandle)
             except TypeError:
-                logger.debug(self.debug())
+                dLog(self.debug(), self._debugStorage)
                 traceback.print_exc()
 
     def readJsonFile(self, filename, logStr=''):
@@ -233,10 +228,8 @@ class Storage():
                 # filter out attributes that should be excluded
                 for onevar in self.getAttributesThatShouldntBeSaved():
                     if hasattr(thawedDict, onevar):
-                        if self._debugStorage:
-                            logger.debug(logPrefix + " ignoring " + logStr +
-                                         "attribute " + onevar +
-                                         " during import")
+                        dLog(logPrefix + " ignoring " + logStr + "attribute " +
+                             onevar + " during import", self._debugStorage)
                         thawedDict = list(filter((onevar).__ne__, thawedDict))
 
             else:  # imported content is a known object (Creature, Char, etc)
@@ -255,9 +248,8 @@ class Storage():
         ''' Return True if given attribute should be ignored '''
         logPrefix = 'attributeShouldBeIgnored: '
         if attName in self.getAttributesThatShouldntBeSaved():
-            if self._debugStorage:
-                logger.debug(logPrefix + " ignoring " + logStr +
-                             "attribute " + attName + " during import")
+            dLog(logPrefix + " ignoring " + logStr + "attribute " + attName +
+                 " during import", self._debugStorage)
             return(True)
         return(False)
 
@@ -281,8 +273,7 @@ class Storage():
             if ((isinstance(value, str) or isinstance(value, int) or
                  isinstance(value, list))):
                 buf += '=' + str(value)
-            if self._debugStorage:
-                logger.debug(logPrefix + " " + buf + '\n')
+            dLog(logPrefix + " " + buf + '\n', self._debugStorage)
 
     def delete(self, logStr=''):
         logPrefix = self.__class__.__name__ + " delete: "

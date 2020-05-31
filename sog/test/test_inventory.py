@@ -18,6 +18,10 @@ class TestPlayerInventory1(TestGameBase, Inventory):
         self.banner('start', testName=__class__.__name__)
         Inventory.__init__(self)
 
+    def getItemId(self):
+        ''' inventory needs this for logging - usually in item.py '''
+        return('testInventory')
+
     def populateInventory(self, iList):
         for itemName in iList:
             iType, iNum = itemName.split('/')
@@ -67,6 +71,10 @@ class TestRoomInventory1(TestGameBase, Inventory):
     def setUp(self):
         self.banner('start', testName=__class__.__name__)
         Inventory.__init__(self)
+
+    def getItemId(self):
+        ''' inventory needs this for logging - usually in item.py '''
+        return('testInventory')
 
     def populateInventory(self, iList):
         for itemName in iList:

@@ -911,14 +911,19 @@ class Door(Portal, Closable):
     def getCorresspondingDoorId(self):
         return(self._correspondingDoorId)
 
-    def describe(self, count=1, article=''):
+    def describe(self, count=1, article='none'):
+        if article == 'none':
+            article = self._article + ' '
+        elif article != '':
+            article += ' '
+
         if self.isClosed():
-            return(self._article + " closed " + self._singledesc)
+            return(article + "closed " + self._singledesc)
         else:
-            if self._article == "a":
+            if article == "a":
                 return("an open " + self._singledesc)
             else:
-                return(self._article + " open " + self._singledesc)
+                return(article + "open " + self._singledesc)
 
 
 class Container(Closable):
