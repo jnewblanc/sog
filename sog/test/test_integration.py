@@ -1,4 +1,4 @@
-''' test_integration '''
+""" test_integration """
 import unittest
 
 from common.testLib import TestGameBase
@@ -18,8 +18,8 @@ class TestIntegration(TestGameBase):
         super().tearDown()
 
     def testTravelSouthAndThroughPortal(self):
-        ''' Use known test area which has a room to the south that contains
-            a portal back to the start room '''
+        """ Use known test area which has a room to the south that contains
+            a portal back to the start room """
         startRoom = 320
         southRoom = 319
         portalDestination = startRoom
@@ -32,25 +32,25 @@ class TestIntegration(TestGameBase):
         self.joinRoom(startRoom)
         assert self.getCharObj().getRoom().getId() == startRoom
         logger.info("Command: s")
-        assert not gameCmdObj.runcmd('s')
+        assert not gameCmdObj.runcmd("s")
         assert self.getCharObj().getRoom().getId() == southRoom
         logger.info("Command: go portal")
-        assert not gameCmdObj.runcmd('go portal')
+        assert not gameCmdObj.runcmd("go portal")
         assert self.getCharObj().getRoom().getId() == portalDestination
 
     def testEquip(self):
-        equipmentList = ['Armor/1', 'Weapon/1']
+        equipmentList = ["Armor/1", "Weapon/1"]
 
         gameCmdObj = self.getGameCmdObj()
 
         for itemId in equipmentList:
-            objType, objId = itemId.split('/')
+            objType, objId = itemId.split("/")
             obj = ObjectFactory(objType, objId)
             name = obj.getName()
             self.getCharObj().addToInventory(obj)
             logger.info("Command: use " + name)
-            assert not gameCmdObj.runcmd('use ' + name)
+            assert not gameCmdObj.runcmd("use " + name)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-''' SoG client
+""" SoG client
 
    * runs a simple client that connect to a SoG server
    * connection is persistent
@@ -8,7 +8,7 @@
    * improve connection timeout
    * offiscate/encode password input??
    *
- '''
+ """
 
 import getpass
 import time
@@ -23,8 +23,8 @@ from common.globals import NOOP_STR, TERM_STR, STOP_STR
 class Client(AttributeHelper):
     def __init__(self):
         self.socket = None
-        self.input = ''
-        self.output = ''
+        self.input = ""
+        self.output = ""
         self.listenTimeout = 10
         self.socketTimeout = 30
         self._debugIO = False
@@ -40,7 +40,7 @@ class Client(AttributeHelper):
         self.disconnect()
 
     def receiveData(self):
-        self.output = ''
+        self.output = ""
         try:
             if self.getDebug():
                 print("Client: REC: Waiting to receive data")
@@ -48,16 +48,16 @@ class Client(AttributeHelper):
             if self.getDebug():
                 print("Client: REC: Data received")
             self.output = str(data.decode("utf-8"))
-            return(True)
+            return True
         except OSError:
             if self.getDebug():
                 print("Client: OSError")
                 traceback.print_last()
-            return(False)
-        return(True)
+            return False
+        return True
 
     def sendData(self):
-        if str(self.input) == '':
+        if str(self.input) == "":
             self.input = NOOP_STR
         try:
             if self.getDebug():
@@ -65,11 +65,11 @@ class Client(AttributeHelper):
             self.socket.sendall(str.encode(self.input))
             if self.getDebug():
                 print("Client: SEND: Data Sent")
-            self.input = ''
-            return(True)
+            self.input = ""
+            return True
         except OSError:
-            return(False)
-        return(True)
+            return False
+        return True
 
     def disconnect(self):
         if self.socket:
@@ -81,7 +81,7 @@ class Client(AttributeHelper):
         self.socket = None
 
     def connect(self):
-        ''' Set up the connection '''
+        """ Set up the connection """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(self.socketTimeout)
         try:
@@ -90,26 +90,28 @@ class Client(AttributeHelper):
                 print("Client: Connection established")
         except ConnectionRefusedError:
             print("Client: Server is refusing connections")
-            return(False)
-        return(True)
+            return False
+        return True
 
     def dataLoop(self, args):
-        ''' Recieve data, get input, send data '''
+        """ Recieve data, get input, send data """
         while self.isRunning:
             time.sleep(1)
             if self.receiveData():
                 if not self.postProcessOutput(args):
                     break
-                print(self.output, end='', flush=True)
+                print(self.output, end="", flush=True)
             else:
                 print("Client: No data received from server")
 
             if self.isRunning():
-                if ((self.output == 'Enter Password: ' or
-                     self.output == 'Verify Password: ' or
-                     self.output == 'Enter Account Password: ')):
+                if (
+                    self.output == "Enter Password: "
+                    or self.output == "Verify Password: "
+                    or self.output == "Enter Account Password: "
+                ):
                     time.sleep(1)
-                    self.input = getpass.getpass('')
+                    self.input = getpass.getpass("")
                 else:
                     self.input = input()
                     self._receivedInput = True
@@ -121,7 +123,7 @@ class Client(AttributeHelper):
                 break
 
     def isRunning(self):
-        return(self._running)
+        return self._running
 
     def terminate(self, outStr):
         self.sendData()
@@ -133,36 +135,36 @@ class Client(AttributeHelper):
         self._debugIO = bool(debugBool)
 
     def getDebug(self):
-        return(self._debugIO)
+        return self._debugIO
 
     def preProcessInput(self):
-        ''' process user input before sending to the server
-            * used for client side input processing '''
-        if self.input == 'term':
-            self.input = TERM_STR   # set input as final term string
+        """ process user input before sending to the server
+            * used for client side input processing """
+        if self.input == "term":
+            self.input = TERM_STR  # set input as final term string
             self.terminate("Client: termination by client")
-        if self.input == 'stopsvr':
-            self.input = STOP_STR   # set input as final term string
+        if self.input == "stopsvr":
+            self.input = STOP_STR  # set input as final term string
             self.terminate("Client: termination by client")
 
     def postProcessOutput(self, args):
-        ''' process server output before displaying to the user
-            * used for client side output processing and/or canned response '''
+        """ process server output before displaying to the user
+            * used for client side output processing and/or canned response """
         if self.output == TERM_STR:
             self.terminate("Client: termination by server")
-            return(False)
+            return False
         elif args.username and not self._receivedInput:
             self.input = args.username
             self.sendData()
             time.sleep(1)
             self.receiveData()
             print("Autofilled username")
-            args.username = ''  # single use
+            args.username = ""  # single use
             if args.password:
                 self.input = args.password
                 self.sendData()
                 time.sleep(1)
                 self.receiveData()
                 print("Autofilled password")
-                args.password = ''  # single use
-        return(True)
+                args.password = ""  # single use
+        return True

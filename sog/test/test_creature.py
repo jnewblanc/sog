@@ -1,4 +1,4 @@
-''' test_creature '''
+""" test_creature """
 import unittest
 
 from common.testLib import TestGameBase
@@ -10,36 +10,36 @@ class TestCreature(TestGameBase):
     testCreatureNumber = 99999
     testRoomNumber = 99999
 
-    def setTestName(self, name=''):
+    def setTestName(self, name=""):
         self._testName = __class__.__name__
 
     def testCreatureBasics(self):
         creObj = self.createCreature(num=self.testCreatureNumber, name="bug")
         assert creObj.attacksBack()
         assert not creObj.blocksFromLeaving()
-        assert creObj.describe() != ''
-        assert creObj.debug() != ''
+        assert creObj.describe() != ""
+        assert creObj.debug() != ""
         assert not creObj.canBeEntered()
-        assert creObj.examine() != ''
+        assert creObj.examine() != ""
         assert not creObj.fleesIfAttacked()
         assert creObj.getAc() >= 0
-        assert creObj.getAlignment() != ''
-        assert creObj.getArticle() != ''
+        assert creObj.getAlignment() != ""
+        assert creObj.getArticle() != ""
         assert creObj.getAttackRate() >= 0
         assert creObj.getCumulativeDodge() >= 0
         assert not creObj.getCurrentlyAttacking()
-        assert creObj.getId() != ''
+        assert creObj.getId() != ""
         assert creObj.getEquippedWeaponToHit() >= 0
         assert creObj.getExp() >= 0
         assert creObj.getFrequency() >= 0
         assert creObj.getHitPoints() >= 0
         assert creObj.getLevel() >= 0
-        assert creObj.getMaxHP() != ''
-        assert creObj.getName() != ''
-        assert creObj.getPlural() != ''
-        assert creObj.getSingular() != ''
+        assert creObj.getMaxHP() != ""
+        assert creObj.getName() != ""
+        assert creObj.getPlural() != ""
+        assert creObj.getSingular() != ""
         assert creObj.getToHit() >= 0
-        assert creObj.getType() != ''
+        assert creObj.getType() != ""
         assert creObj.getWeight() >= 0
         assert creObj.getValue() >= 0
         assert not creObj.guardsTreasure()
@@ -78,9 +78,9 @@ class TestCreature(TestGameBase):
         assert creObj.getHitPointPercent() == 40
 
         creObj._follow = True
-        assert creObj.getAttributeCount(which='primary') == 2
+        assert creObj.getAttributeCount(which="primary") == 2
         creObj._antiMagic = True
-        assert creObj.getAttributeCount(which='secondary') == 1
+        assert creObj.getAttributeCount(which="secondary") == 1
 
         creObj._level = 3
         creObj._exp = 5555
@@ -94,7 +94,7 @@ class TestCreature(TestGameBase):
         assert creObj.isAttacking()
         assert creObj.getCurrentlyAttacking() == charObj
         creObj._ac = 2
-        assert creObj.acDamageReduction(100) == 90   # dmg - (.05 * ac * dmg)
+        assert creObj.acDamageReduction(100) == 90  # dmg - (.05 * ac * dmg)
         assert creObj.fumbles(basePercent=500, secsToWait=20)
         assert creObj.getSecondsUntilNextAttack() > 10
         assert not creObj.fumbles(basePercent=0)
@@ -113,26 +113,26 @@ class TestCreature(TestGameBase):
 
     def testCreatureParley(self):
         creObj = self.createCreature(num=self.testCreatureNumber, name="bug")
-        creObj._parleyAction = 'None'
+        creObj._parleyAction = "None"
         creObj._parleyTeleportRooms = [320]
-        creObj._parleyTxt = ['eats your eyeballs']
-        assert creObj.getParleyAction() == 'None'
+        creObj._parleyTxt = ["eats your eyeballs"]
+        assert creObj.getParleyAction() == "None"
         assert creObj.getParleyTeleportRoomNum() == 320
         # Test that the none type doesn't say "says"
-        assert creObj.getParleyTxt() == 'The bug eats your eyeballs'
-        creObj._parleyTxt = ['bzzt']
+        assert creObj.getParleyTxt() == "The bug eats your eyeballs"
+        creObj._parleyTxt = ["bzzt"]
         # Test that other types say "says"
-        creObj._parleyAction = 'Custom'
-        assert creObj.getParleyTxt() == 'The bug says, Bzzt'
+        creObj._parleyAction = "Custom"
+        assert creObj.getParleyTxt() == "The bug says, Bzzt"
         # Test that no message is correct
-        creObj._parleyTxt = ['']
-        assert creObj.getParleyTxt() == 'The bug does not respond'
+        creObj._parleyTxt = [""]
+        assert creObj.getParleyTxt() == "The bug does not respond"
 
         # Test that parly sale item works
-        creObj._itemCatalog = ['Weapon/1']
+        creObj._itemCatalog = ["Weapon/1"]
         creObj._numOfItemsCarried = [1]
         creObj.autoPopulateInventory()
-        assert creObj.getParleySaleItem().getType() == 'Weapon'
+        assert creObj.getParleySaleItem().getType() == "Weapon"
 
         charObj = self.getCharObj()
         charObj.setLevel(1)
@@ -141,8 +141,12 @@ class TestCreature(TestGameBase):
 
         for onelvl in range(1, 10):
             creObj._level = onelvl
-            logger.info("bribe amount for lvl " + str(creObj.getLevel()) +
-                        " = " + str(creObj.getDesiredBribe(charObj)))
+            logger.info(
+                "bribe amount for lvl "
+                + str(creObj.getLevel())
+                + " = "
+                + str(creObj.getDesiredBribe(charObj))
+            )
         creObj._level = 6
 
         # Test char does not have enough coins
@@ -164,7 +168,7 @@ class TestCreature(TestGameBase):
         assert charObj.getCoins() == 9900
         resultMsg = charObj.client.popOutSpool()
         logger.debug(resultMsg)
-        assert '3144' not in resultMsg.split(' ')
+        assert "3144" not in resultMsg.split(" ")
 
         # Test unsucessful bribe, coins are not taken
         charObj.setCoins(10000)
@@ -172,7 +176,7 @@ class TestCreature(TestGameBase):
         assert charObj.getCoins() == 10000
         resultMsg = charObj.client.popOutSpool()
         logger.debug(resultMsg)
-        assert '3144' in resultMsg.split(' ')
+        assert "3144" in resultMsg.split(" ")
 
         # Test unsucessful bribe, coins taken, but amount is shown
         charObj.setCoins(10000)
@@ -180,7 +184,7 @@ class TestCreature(TestGameBase):
         assert charObj.getCoins() == 9500
         resultMsg = charObj.client.popOutSpool()
         logger.debug(resultMsg)
-        assert '3144' in resultMsg.split(' ')
+        assert "3144" in resultMsg.split(" ")
 
     def testCreatureLoad(self):
         creatureNumber = 2
@@ -188,5 +192,5 @@ class TestCreature(TestGameBase):
         creObj.load()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,4 @@
-''' test_account '''
+""" test_account """
 import re
 import unittest
 
@@ -12,13 +12,13 @@ class TestAccount(TestGameBase):
     _instanceDebug = False
 
     def setUp(self):
-        self.banner('start', testName=__class__.__name__)
+        self.banner("start", testName=__class__.__name__)
         self._testAcctName = self.testAccountId
         self._client = self.createClientAndAccount()
         self._acctObj = self.getAcctObj()
 
     def testAccountInstanciation(self):
-        testCharName1 = 'TestAcctChar1'
+        testCharName1 = "TestAcctChar1"
         acctObj = self._acctObj
         acctObj.setDisplayName(testCharName1)
         assert acctObj.getName() == testCharName1
@@ -30,17 +30,17 @@ class TestAccount(TestGameBase):
         assert acctObj.getLastLogoutDate()
         assert acctObj.isValid()
         assert not acctObj.isAdmin()
-        assert acctObj.describe() != ''
-        assert acctObj.getInfo() != ''
+        assert acctObj.describe() != ""
+        assert acctObj.getInfo() != ""
         assert not acctObj.adminFileExists()
 
     def testChangeEmail(self):
-        assert self._acctObj.setUserEmailAddress('acctTest@test.com')
-        assert not self._acctObj.setUserEmailAddress('badEmail.com')
+        assert self._acctObj.setUserEmailAddress("acctTest@test.com")
+        assert not self._acctObj.setUserEmailAddress("badEmail.com")
 
     def testCharacterList(self):
-        testCharName1 = 'TestAcctChar2'
-        testCharName2 = 'TestAcctChar3'
+        testCharName1 = "TestAcctChar2"
+        testCharName2 = "TestAcctChar3"
         self._acctObj.addCharacterToAccount(testCharName1)
         assert testCharName1 in self._acctObj.getCharacterList()
         self._acctObj.addCharacterToAccount(testCharName2)
@@ -53,5 +53,5 @@ class TestAccount(TestGameBase):
         assert self._acctObj.getCharacterList() == [testCharName2]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
