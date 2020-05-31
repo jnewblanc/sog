@@ -5,7 +5,7 @@ import unittest
 
 from common.inventory import Inventory
 from common.general import logger
-from common.test import TestGameBase
+from common.testLib import TestGameBase
 import creature
 import object
 
@@ -17,6 +17,10 @@ class TestPlayerInventory1(TestGameBase, Inventory):
     def setUp(self):
         self.banner('start', testName=__class__.__name__)
         Inventory.__init__(self)
+
+    def getItemId(self):
+        ''' inventory needs this for logging - usually in item.py '''
+        return('testInventory')
 
     def populateInventory(self, iList):
         for itemName in iList:
@@ -67,6 +71,10 @@ class TestRoomInventory1(TestGameBase, Inventory):
     def setUp(self):
         self.banner('start', testName=__class__.__name__)
         Inventory.__init__(self)
+
+    def getItemId(self):
+        ''' inventory needs this for logging - usually in item.py '''
+        return('testInventory')
 
     def populateInventory(self, iList):
         for itemName in iList:

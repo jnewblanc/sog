@@ -1,0 +1,21 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0
+    hooks:
+    - id: check-yaml
+    - id: check-json
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.2
+    hooks:
+    - id: flake8
+# -   repo: local
+#     hooks:
+#     -   id: run-pytest
+#         name: run pytest unit tests
+#         entry: python -m pytest -v sog/test
+#         language: python
+#         types: [python]
+#         stages: [commit]
+#         additional_dependencies: [pre-commit, pytest]
+#         always_run: true
+#         pass_filenames: false

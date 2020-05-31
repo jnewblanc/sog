@@ -1,7 +1,7 @@
 ''' test_room '''
 import unittest
 
-from common.test import TestGameBase
+from common.testLib import TestGameBase
 from common.general import logger, targetSearch, getNeverDate
 from room import RoomFactory
 

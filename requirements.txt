@@ -1,3 +1,7 @@
+# Packages required for SoG runtime.
+#   Install packages by running:
+#     pip install -r requirements.txt
+# See also: development requirements in requirements_dev.txt
+
 inflect
 jsonpickle
-mock
