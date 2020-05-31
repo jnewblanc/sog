@@ -8,11 +8,14 @@ repos:
     rev: 3.8.2
     hooks:
     - id: flake8
--   repo: local
-    hooks:
-    -   id: tests
-        name: run tests
-        entry: pytest -v
-        language: system
-        types: [python]
-        stages: [commit]
+# -   repo: local
+#     hooks:
+#     -   id: run-pytest
+#         name: run pytest unit tests
+#         entry: python -m pytest -v sog/test
+#         language: python
+#         types: [python]
+#         stages: [commit]
+#         additional_dependencies: [pre-commit, pytest]
+#         always_run: true
+#         pass_filenames: false

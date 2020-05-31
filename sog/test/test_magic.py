@@ -4,7 +4,7 @@ import unittest
 
 # from common.general import logger
 import character
-from common.test import TestGameBase
+from common.testLib import TestGameBase
 import creature
 import object
 import room

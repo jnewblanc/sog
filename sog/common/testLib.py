@@ -5,6 +5,7 @@
                        the test numbers
 '''
 # import doctest
+import os
 import unittest
 
 import account
@@ -12,8 +13,9 @@ import character
 import creature
 from object import ObjectFactory
 from room import RoomFactory
-import common.serverLib
+from common.globals import DATADIR
 from common.general import logger
+import common.serverLib
 import threads
 from game import GameCmd
 
@@ -42,6 +44,8 @@ class TestGameBase(unittest.TestCase):
     _testRoomNum2 = 319
     _testRoomShop = 318
     _testRoomGuild = 317
+
+    _tmpTestRoomNumbers = list(range(99990, 100000))
 
     def getClientObj(self):
         return(self._client)
@@ -157,6 +161,7 @@ class TestGameBase(unittest.TestCase):
                     str(masterTestNum) + " " + status + " " + dashes)
 
     def setUp(self, testName="TestGameBase"):
+        self.purgeTestRoomData()
         self.setTestName(testName)
         self.banner('start')
         self._client = self.createClientAndAccount()
@@ -166,11 +171,26 @@ class TestGameBase(unittest.TestCase):
         # self.startAsyncThread()
         self.joinRoom()
 
+    def purgeTestRoomData(self, roomNums=[]):
+        if len(roomNums) == 0:
+            roomNums = self._tmpTestRoomNumbers
+        # Clean up any saved room data
+        for testRoomNum in roomNums:
+            testRoomFilename = os.path.abspath(DATADIR + '/Room/' +
+                                               str(testRoomNum) + '.json')
+            if os.path.isfile(testRoomFilename):
+                try:
+                    os.remove(testRoomFilename)
+                    logger.info("Removing test datafile " + testRoomFilename)
+                except OSError:
+                    pass
+
     def tearDown(self):
         if hasattr(self, '_asyncThread'):
             self.stopAsyncThread()
         self.banner('end')
         incrementTestNum()
+        self.purgeTestRoomData()
 
 
 # Set masterTestNum if it's not already set

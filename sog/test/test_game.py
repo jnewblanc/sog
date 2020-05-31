@@ -1,10 +1,8 @@
 ''' test_game '''
-import os
 import unittest
 
-from common.test import TestGameBase
+from common.testLib import TestGameBase
 from common.general import logger
-from common.globals import DATADIR
 # import object
 # import room
 # import creature
@@ -102,7 +100,7 @@ class TestGameCmd(TestGameBase):
         charObj = self.getCharObj()
         charObj.setName('deadGuy')
         charObj.setHitPoints(10)
-        roomObj = self.createRoom(num=99999)
+        roomObj = self.createRoom(num=99990)
         roomObj._inventory = []
         charObj.setRoom(roomObj)
         logger.debug('Testing inventory transfer')
@@ -136,19 +134,16 @@ class TestGameCmd(TestGameBase):
         logger.info("")
 
     def testPlayerDeath(self):
+        tmpRoomNum = 99980
         # clean up the test room before we start
-        testRoomFilename = os.path.abspath(DATADIR + '/Room/99999.json')
-        try:
-            os.remove(testRoomFilename)
-            logger.info("Removing test datafile " + testRoomFilename)
-        except OSError:
-            pass
+        self.purgeTestRoomData(roomNums=[tmpRoomNum])
         gameObj = self.getGameObj()
         charObj = self.getCharObj()
         charObj.setName('deadGuy')
         charObj.setHitPoints(10)
-        roomObj = self.createRoom(num=99999)
+        roomObj = self.createRoom(num=tmpRoomNum)
         roomObj._inventory = []
+        roomObj.save()
         self.joinRoom(room=roomObj)
         creObj = self.createCreature()
         logger.info('Testing character death')
@@ -164,7 +159,7 @@ class TestGameCmd(TestGameBase):
             "player's belongings should be removed as they are dumped to room")
         assert len(charObj.getRoom().getInventory()) == 0
 
-        self.joinRoom(room=99999)
+        self.joinRoom(room=tmpRoomNum)
         self.logRoomInventory(charObj)
         assert len(charObj.getRoom().getInventory()) == 5, (
             "player's belongings should have persisted in room inventory")
@@ -172,16 +167,12 @@ class TestGameCmd(TestGameBase):
 
         self.joinRoom(room=self._testRoomNum)
         self.logRoomInventory(charObj)
-        self.joinRoom(room=99999)
+        self.joinRoom(room=tmpRoomNum)
         self.logRoomInventory(charObj)
         assert len(charObj.getRoom().getInventory()) == 0, (
             "player's belongings in room inventory should only persist once")
 
-        try:
-            os.remove(testRoomFilename)
-            logger.info("Removed test datafile " + testRoomFilename)
-        except OSError:
-            pass
+        self.purgeTestRoomData(roomNums=[tmpRoomNum])
 
     def testDoors(self):
         ''' Set up a pair of doors and verify that door actions work '''
@@ -191,17 +182,17 @@ class TestGameCmd(TestGameBase):
         charObj.setName('doorOpener')
         charObj.setHitPoints(10)
         doorObj1 = self.createObject(num=99997, type='Door', name='door1')
-        doorObj1._toWhere = 99991
+        doorObj1._toWhere = 99993
         doorObj1._correspondingDoorId = 99996
         doorObj1._closed = False
         doorObj2 = self.createObject(num=99996, type='Door', name='door2')
-        doorObj2._toWhere = 99990
+        doorObj2._toWhere = 99992
         doorObj2._correspondingDoorId = 99997
         doorObj2._closed = False
-        roomObj1 = self.createRoom(num=99990)
+        roomObj1 = self.createRoom(num=99992)
         roomObj1._inventory = []
         roomObj1.addToInventory(doorObj1)
-        roomObj2 = self.createRoom(num=99991)
+        roomObj2 = self.createRoom(num=99993)
         roomObj2._inventory = []
         roomObj2.addToInventory(doorObj2)
 
@@ -241,6 +232,7 @@ class TestGameCmd(TestGameBase):
         #
         # ''' test toll '''
         # # self._toll = 0       # 0=no toll, amount to deduct to open
+        self.purgeTestRoomData(roomNums=[99992, 99993])
 
 
 if __name__ == '__main__':

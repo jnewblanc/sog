@@ -5,7 +5,7 @@ import unittest
 
 from common.inventory import Inventory
 from common.general import logger
-from common.test import TestGameBase
+from common.testLib import TestGameBase
 import creature
 import object
 

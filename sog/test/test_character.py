@@ -3,7 +3,7 @@ from collections import Counter
 import unittest
 
 # from character import Character
-from common.test import TestGameBase
+from common.testLib import TestGameBase
 from common.general import logger
 import object
 
@@ -319,7 +319,7 @@ class TestCharacter(TestGameBase):
                      + str(firstStatCount) + ' --> ' + str(statTotalPostDown))
         # after level up and then level down x times, postDown should
         # generally be lower, but extremely lucky cases may improve stats
-        assert firstStatCount + 2 >= statTotalPostDown
+        assert firstStatCount + 5 >= statTotalPostDown
 
         charObj._doubleUpStatLevels = [2, 3, 7]
         charObj.setLevel(1)
