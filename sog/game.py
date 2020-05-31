@@ -383,13 +383,17 @@ class _Game(cmd.Cmd, Combat, Ipc):
         """
         debugPrefix = "game.populateRoomCreatureCache (" + str(roomObj.getId()) + "): "
         if len(roomObj.getCreatureCache()) == 0:
-            dLog(debugPrefix + "Populating room creature cache", self._instanceDebug)
+            dLog(
+                debugPrefix + "Populating room creature cache", self._instanceDebug,
+            )
             # loop through all possible creatures for room and fill cache
             for ccNum in roomObj.getEncounterList():
                 ccObj = Creature(ccNum)
                 ccObj.load()
                 roomObj.creatureCachePush(ccObj)
-                dLog(debugPrefix + "Cached " + ccObj.describe(), self._instanceDebug)
+                dLog(
+                    debugPrefix + "Cached " + ccObj.describe(), self._instanceDebug,
+                )
 
     def getEligibleCreatureList(self, roomObj):
         """ Determine which creatures, from the cache, can be encountered, by
@@ -404,7 +408,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 cObj.load()
                 eligibleCreatureList.append(cObj)
                 dLog(
-                    debugPrefix + cObj.describe() + " is eligible", self._instanceDebug
+                    debugPrefix + cObj.describe() + " is eligible", self._instanceDebug,
                 )
         return eligibleCreatureList
 
@@ -681,7 +685,8 @@ class GameCmd(cmd.Cmd):
                 return False
 
             dLog(
-                "GAME move through obj = " + itemList[0].describe(), self._instanceDebug
+                "GAME move through obj = " + itemList[0].describe(),
+                self._instanceDebug,
             )
 
             roomnum = itemList[0].getToWhere()
@@ -699,7 +704,9 @@ class GameCmd(cmd.Cmd):
                 logger.error("Could not create roomObj " + roomnum)
 
         if moved:
-            dLog("GAME move obj = " + str(roomObj.describe()), self._instanceDebug)
+            dLog(
+                "GAME move obj = " + str(roomObj.describe()), self._instanceDebug,
+            )
             # creatures in old room should stop attacking player
             self.gameObj.unAttack(oldRoom, charObj)
             # character possibly loses hidden

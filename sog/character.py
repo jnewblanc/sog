@@ -1809,7 +1809,9 @@ class Character(Item):
         if nokill and self.getHitPoints() <= 0:
             self.setNearDeathExperience()
         condition = self.condition()
-        dLog(self.getName() + " takes " + str(damage) + " damage", self._instanceDebug)
+        dLog(
+            self.getName() + " takes " + str(damage) + " damage", self._instanceDebug,
+        )
         self.save()
         if self.getHitPoints() <= 0:
             if self.isDm():
@@ -1860,7 +1862,9 @@ class Character(Item):
         logPrefix = __class__.__name__ + " searchSucceeds: "
 
         if self.canSeeHidden():
-            dLog(logPrefix + "Pass - Character can see hidden", self._instanceDebug)
+            dLog(
+                logPrefix + "Pass - Character can see hidden", self._instanceDebug,
+            )
             return True
 
         percentChance = (
@@ -1990,7 +1994,9 @@ class Character(Item):
         fumbleRoll = random.randint(1, 100)
         percentage = basePercent - self.getDexterity()
         if fumbleRoll == 1:  # always a 1% change of fumbling
-            dLog(logPrefix + "Bad luck - 1% fumble triggered", self._instanceDebug)
+            dLog(
+                logPrefix + "Bad luck - 1% fumble triggered", self._instanceDebug,
+            )
             fumbles = True
         elif fumbleRoll < percentage:
             dLog(

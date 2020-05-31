@@ -301,11 +301,15 @@ class Creature(Item):
 
         self._instanceDebug = Creature._instanceDebug
 
-        dLog("Creature init called for " + str(self.getId()), self._instanceDebug)
+        dLog(
+            "Creature init called for " + str(self.getId()), self._instanceDebug,
+        )
         return None
 
     def __del__(self):
-        dLog("Creature destructor called for " + str(self.getId()), self._instanceDebug)
+        dLog(
+            "Creature destructor called for " + str(self.getId()), self._instanceDebug,
+        )
 
     def addHP(self, num=0):
         self._hp = min((self._hp + num), self.getMaxHP())
@@ -735,7 +739,9 @@ class Creature(Item):
 
         # Creature has no attack speed.  Will never be ready
         if not self.getAttackRate():
-            dLog(debugPrefix + "Creature has no attack rate", self._instanceDebug)
+            dLog(
+                debugPrefix + "Creature has no attack rate", self._instanceDebug,
+            )
             return False
 
         # Check if the appropriate amount of time has pased

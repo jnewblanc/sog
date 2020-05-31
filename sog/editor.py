@@ -174,7 +174,9 @@ class Editor(LocalIo, AttributeHelper):
 
         if hasattr(itemObj, "_isNew"):
             delattr(itemObj, "_isNew")
-            print("WARN:", str(cmdargs[0]), str(itemId), "doesn't exist - Creating")
+            print(
+                "WARN:", str(cmdargs[0]), str(itemId), "doesn't exist - Creating",
+            )
             self.wizard(cmdargs[0], itemObj)
             changeFlag = True
 

@@ -26,9 +26,25 @@ class Object(Item):
     # integer attributes
     intAttributes = ["_weight", "_value"]
     # boolean attributes
-    boolAttributes = ["_carry", "_hidden", "_invisible", "_magic", "_permanent"]
-    strAttributes = ["_name", "_article", "_singledesc", "_pluraldesc", "_longdesc"]
-    listAttributes = ["_classesAllowed", "_alignmentsAllowed", "_gendersAllowed"]
+    boolAttributes = [
+        "_carry",
+        "_hidden",
+        "_invisible",
+        "_magic",
+        "_permanent",
+    ]
+    strAttributes = [
+        "_name",
+        "_article",
+        "_singledesc",
+        "_pluraldesc",
+        "_longdesc",
+    ]
+    listAttributes = [
+        "_classesAllowed",
+        "_alignmentsAllowed",
+        "_gendersAllowed",
+    ]
     # obsolete attributes (to be removed)
     obsoleteAttributes = [
         "",
@@ -637,7 +653,7 @@ class Closable(Object):
                 damage = self.trapDamage(charObj, self.getTrapLevel())
 
                 trapTxt = self.trapTxt(
-                    damage, poison=self._poison, currenthealth=charObj.getHitPoints()
+                    damage, poison=self._poison, currenthealth=charObj.getHitPoints(),
                 )
                 charObj.client.spoolOut(trapTxt)
                 charObj.takeDamage(damage)
@@ -661,7 +677,7 @@ class Closable(Object):
             if not self.avoidTrap(charObj):
                 damage = self.trapDamage(charObj, self.getTrapLevel())
                 trapTxt = self.trapTxt(
-                    damage, poison=self._poison, currenthealth=charObj.getHitPoints()
+                    damage, poison=self._poison, currenthealth=charObj.getHitPoints(),
                 )
                 charObj.client.spoolOut(trapTxt)
                 charObj.takeDamage(damage)
@@ -1014,7 +1030,13 @@ class Door(Portal, Closable):
 
 class Container(Closable):
 
-    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc", "_longdesc"]
+    wizardAttributes = [
+        "_name",
+        "_article",
+        "_singledesc",
+        "_pluraldesc",
+        "_longdesc",
+    ]
 
     def __init__(self, objId=0):
         super().__init__(objId)

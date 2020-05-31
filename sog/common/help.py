@@ -59,8 +59,16 @@ gameCommands = {
             "detailed": "limited ability obtained through experience",
         },
         "file": {"alt": "", "shortdesc": "show my list of characters", "detailed": ""},
-        "clock": {"alt": "now", "shortdesc": "Get the real world time", "detailed": ""},
-        "who": {"alt": "", "shortdesc": "Show who else is in the game", "detailed": ""},
+        "clock": {
+            "alt": "now",
+            "shortdesc": "Get the real world time",
+            "detailed": "",
+        },
+        "who": {
+            "alt": "",
+            "shortdesc": "Show who else is in the game",
+            "detailed": "",
+        },
     },
     "combat": {
         "attack": {

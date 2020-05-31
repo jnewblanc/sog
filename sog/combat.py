@@ -209,13 +209,17 @@ class Combat:
         # level bonus/penalty = %5 per level
         levelAdj = (attackerObj.getLevel() - defenderObj.getLevel()) * 5
         hitPercentage += levelAdj
-        dLog(logPrefix + "  " + str(levelAdj) + "% level adj", self._instanceDebug)
+        dLog(
+            logPrefix + "  " + str(levelAdj) + "% level adj", self._instanceDebug,
+        )
 
         # dex bonus/penalty = +/- %3 per dex above/below 12
         if isinstance(attackerObj, Character):
             dexAdj = (attackerObj.getDexterity() - 12) * 3
             hitPercentage += dexAdj
-            dLog(logPrefix + "  " + str(dexAdj) + "% dex adj", self._instanceDebug)
+            dLog(
+                logPrefix + "  " + str(dexAdj) + "% dex adj", self._instanceDebug,
+            )
 
         # hidden bonus
         if attackerObj.isHidden():
@@ -225,7 +229,9 @@ class Combat:
         # attack command bonus/penalty
         attackCmdAdj = self.getToHit(attackCmd)
         hitPercentage += attackCmdAdj
-        dLog(logPrefix + "  " + str(attackCmdAdj) + "% cmd adj", self._instanceDebug)
+        dLog(
+            logPrefix + "  " + str(attackCmdAdj) + "% cmd adj", self._instanceDebug,
+        )
 
         if attackCmd in SpellList:
             # magic skill
@@ -247,7 +253,9 @@ class Combat:
         # armor bonus/penalty
         defenceAdj = defenderObj.getCumulativeDodge()
         hitPercentage -= defenceAdj
-        dLog(logPrefix + "  " + str(defenceAdj) + "% defence adj", self._instanceDebug)
+        dLog(
+            logPrefix + "  " + str(defenceAdj) + "% defence adj", self._instanceDebug,
+        )
 
         hitRoll = random.randint(1, 100)
 
@@ -327,7 +335,9 @@ class Combat:
         # significantly less damage dealt to unseen opponents
         if opponentObj.isHidden() or opponentObj.isInvisible():
             damagePercent -= 40
-            dLog(logPrefix + "  " + "-40% hidden target penalty", self._instanceDebug)
+            dLog(
+                logPrefix + "  " + "-40% hidden target penalty", self._instanceDebug,
+            )
 
         # backstab bonus/penalty - risk = reward
         if attackCmd == "backstab":
@@ -429,7 +439,9 @@ class Combat:
         damage = self.applyCritOrDD(damage, opponentObj, [attackerObj, opponentObj])
 
         damage = int(damage)
-        dLog(logPrefix + "Total damage(" + str(damage) + ")", self._instanceDebug)
+        dLog(
+            logPrefix + "Total damage(" + str(damage) + ")", self._instanceDebug,
+        )
         return damage
 
     def stopPlayerAtk(self):
@@ -513,7 +525,9 @@ class Combat:
 
         if roomObj.isSafe():
             self.charMsg(charObj, "A unknown force prevents combat here.\n")
-            dLog(logPrefix + roomObj.getItemId() + " is safe", self._instanceDebug)
+            dLog(
+                logPrefix + roomObj.getItemId() + " is safe", self._instanceDebug,
+            )
             return False
 
         if target.isUnKillable():
@@ -521,11 +535,15 @@ class Combat:
                 charObj,
                 "Aw.  Don't hurt the poor " + target.describe(article="") + "\n",
             )
-            dLog(logPrefix + target.describe() + " is unkillable", self._instanceDebug)
+            dLog(
+                logPrefix + target.describe() + " is unkillable", self._instanceDebug,
+            )
             return False
 
         if not charObj.canAttack():
-            dLog(logPrefix + charObj.getItemId() + "cant attack", self._instanceDebug)
+            dLog(
+                logPrefix + charObj.getItemId() + "cant attack", self._instanceDebug,
+            )
             return False
 
         charObj.setHidden(False)
@@ -557,7 +575,7 @@ class Combat:
                 charObj.setVulnerable(attackVuln)
         elif attackCmd != "slay" and charObj.fumbles():
             self.charMsg(
-                charObj, "Fumble!  You trip and need a moment to " + " recover.\n"
+                charObj, "Fumble!  You trip and need a moment to " + " recover.\n",
             )
             self.othersInRoomMsg(charObj, roomObj, charObj.getName() + " stumbles.\n")
             damage = 0
@@ -632,9 +650,11 @@ class Combat:
             return False
 
         secs = random.randint(
-            self._creatureMinSecsBetweenAttacks, self._creatureMaxSecsBetweenAttacks
+            self._creatureMinSecsBetweenAttacks, self._creatureMaxSecsBetweenAttacks,
         )
-        dLog(logPrefix + "setting creature secs to  " + str(secs), self._instanceDebug)
+        dLog(
+            logPrefix + "setting creature secs to  " + str(secs), self._instanceDebug,
+        )
 
         creatureObj.setSecondsUntilNextAttack(secs)
         creatureObj.setLastAttack()
@@ -788,7 +808,7 @@ class Combat:
             else:
                 if not charObj.isDm():
                     charObj.transferInventoryToRoom(
-                        charObj.getRoom(), self.roomMsg, persist=True, verbose=True
+                        charObj.getRoom(), self.roomMsg, persist=True, verbose=True,
                     )
             # death is handled in charObj.takeDamage
 
@@ -862,7 +882,9 @@ class Combat:
 
     def panicIfNeeded(self, charObj):
         """ If character has less than X percent health remaining, run away """
-        dLog("panicIfNeeded: " + str(charObj.getHitPointPercent()) + " <? 10", True)
+        dLog(
+            "panicIfNeeded: " + str(charObj.getHitPointPercent()) + " <? 10", True,
+        )
         if charObj.getHitPoints() < 30 and charObj.getHitPointPercent() <= 10:
             self.charMsg(charObj, "Panic!  ")
             self.run(charObj)
@@ -876,7 +898,7 @@ class Combat:
 
         if len(roomNumList) == 0:
             self.charMsg(
-                charObj, "You try to run, but " + "there are no escape routes.\n"
+                charObj, "You try to run, but " + "there are no escape routes.\n",
             )
             return False
 
