@@ -1,0 +1,25 @@
+[flake8]
+exclude =
+  # ignore git directory
+  .git,
+  # ignore pycache
+  __pycache__,
+  # No need to check tmp files/scripts - these do not get checked in
+  tmp
+
+# Set the maximum allowed McCabe complexity value for a block of code.
+max-complexity = 12
+
+# Set the maximum allowed line length
+max-line-length = 127
+
+# Print the total number of errors.
+count = True
+
+# Count the number of occurrences of each error/warning code and print a report.
+statistics = True
+
+# Log the flake8 output
+# How do we set this path relative to the project directory?
+# output-file = sog/.logs/flake8.log
+# tee = True

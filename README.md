@@ -14,18 +14,23 @@ While I'm hoping to have a playable game in the end, my primary goal is to obtai
 1. Install python 3.x
 2. Clone sog repo
 3. Install python modules in requirement.txt
+  ```
+  pip install -r requirements.txt
+  ```
 
 ### To play ###
 1. Run the server
    1. Run the server script in sog/bin OR
    2. Open a command shell and run:
-```cd to sog/sog
+```
+cd to sog/sog
 python server.py
 ```
 2. Run the client
    1. Run the client script in sob/bin OR
    2. Open a command shell and run:
-```cd sog/sog
+```
+cd sog/sog
 python client.py
 ```
 
@@ -64,5 +69,15 @@ python client.py
   6. User can 'quit' to go back to the lobby
 
 ### Developer Info ###
+* Install Runtime and Dev packages
+```
+pip install -r requirements.txt
+pip install -r requirements_dev.txt
+```
+* set up the git hooks
+```
+pre-commit install
+```
 * Run pytest to test
-* While designed to be a centralized server, at present, everything is run locally and content is checked in via github.  This means that you can run your own server, make your own changes and make modifications without fear of breaking everything/anyone else.  Contributions can be made via pull requests.
+* While designed to be a centralized server, at present, everything is run locally and content is checked in via github.  This means that you can run your own server, make your own changes and make modifications without fear of breaking anything or affecting anyone else.
+* Contributions can be made via pull requests in github.

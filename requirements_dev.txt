@@ -1,0 +1,11 @@
+# Packages required for SoG development.
+#   Install packages by running:
+#     pip install -r requirements_dev.txt
+#   Set up project git hooks by running:
+#     precommit-install
+# See also: runtime requirements in requirements.txt
+
+black
+mock
+pre-commit
+pytest
