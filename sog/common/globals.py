@@ -1,4 +1,4 @@
-''' Set up global paths '''
+""" Set up global paths """
 
 #########
 # Paths #
@@ -16,8 +16,8 @@ LOGDIR = os.path.join(ROOTDIR, ".logs")
 ###########
 # Network #
 ###########
-HOST = '127.0.0.1'       # The server's hostname or IP address
-PORT = 8888              # The port used by the server
+HOST = "127.0.0.1"  # The server's hostname or IP address
+PORT = 8888  # The port used by the server
 BYTES_TO_TRANSFER = 2048
 
 NOOP_STR = "=-o-= NOOP =-o-="

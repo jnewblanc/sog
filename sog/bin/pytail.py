@@ -2,11 +2,11 @@
 import sys
 import os
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logfile = os.path.abspath("../.logs/" + sys.argv[1])
 
     if not os.path.isfile(logfile):
-        print('Error: logfile ' + logfile + "doesn't exist")
+        print("Error: logfile " + logfile + "doesn't exist")
         sys.exit(1)
 
     # Implement log tailer here.

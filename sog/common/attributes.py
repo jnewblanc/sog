@@ -1,10 +1,10 @@
-''' common attribute superClass '''
+""" common attribute superClass """
 
 from common.general import logger
 
 
-class AttributeHelper():
-    ''' SuperClass for attribute maintenance and testing '''
+class AttributeHelper:
+    """ SuperClass for attribute maintenance and testing """
 
     # Default lists of attributes, by type - override in SubClass
     intAttributes = []
@@ -21,13 +21,13 @@ class AttributeHelper():
         for attName in self.boolAttributes:
             setattr(self, attName, False)
         for attName in self.strAttributes:
-            setattr(self, attName, '')
+            setattr(self, attName, "")
 
-    def fixAttributes(self):          # noqa C901
-        ''' Sometimes we change attributes, and need to fix them in rooms
+    def fixAttributes(self):  # noqa C901
+        """ Sometimes we change attributes, and need to fix them in rooms
             that are saved.  This method lets us do that.  This is the
             generic case, but subClasses may choose to do more class
-            specific fixes '''
+            specific fixes """
         logPrefix = "fixAttributes: "
         changed = False
 
@@ -37,8 +37,11 @@ class AttributeHelper():
                     newVal = int(getattr(self, attName, 0))
                     setattr(self, attName, newVal)
                     changed = True
-                    logger.warning(logPrefix + "Changed " + attName +
-                                   " to int for " + self.describe())
+                    logger.warning(
+                        "{} Changed {} to int for {}".format(
+                            logPrefix, attName, self.describe()
+                        )
+                    )
             except ValueError:
                 setattr(self, attName, 0)
                 logger.warning(logPrefix + "Set " + attName + "= 0")
@@ -48,8 +51,11 @@ class AttributeHelper():
                     newVal = bool(getattr(self, attName, False))
                     setattr(self, attName, newVal)
                     changed = True
-                    logger.warning(logPrefix + "Changed " + attName +
-                                   " to bool for " + self.describe())
+                    logger.warning(
+                        "{} Changed {} to bool for {}".format(
+                            logPrefix, attName, self.describe()
+                        )
+                    )
             except ValueError:
                 setattr(self, attName, False)
                 logger.warning(logPrefix + "Set " + attName + "= False")
@@ -59,28 +65,34 @@ class AttributeHelper():
                     newVal = str(getattr(self, attName, False))
                     setattr(self, attName, newVal)
                     changed = True
-                    logger.warning(logPrefix + "Changed " + attName +
-                                   " to str for " + self.describe())
+                    logger.warning(
+                        "{} Changed {} to str for {}".format(
+                            logPrefix, attName, self.describe()
+                        )
+                    )
             except ValueError:
-                setattr(self, attName, '')
+                setattr(self, attName, "")
                 logger.warning(logPrefix + "Set " + attName + "= ''")
-        for attName in (self.obsoleteAttributes):
+        for attName in self.obsoleteAttributes:
             try:
                 if hasattr(self, attName):
                     delattr(self, attName)
                     changed = True
-                    logger.warning(logPrefix + "Removed '" + attName +
-                                   "' from " + self.describe())
+                    logger.warning(
+                        "{} Removed {} from {}".format(
+                            logPrefix, attName, self.describe()
+                        )
+                    )
             except AttributeError:
                 pass
-        return(changed)
+        return changed
 
     def testAttributes(self):
-        ''' Generic test to check attribute types '''
+        """ Generic test to check attribute types """
         RF = "Attribute {0} should be a {1}\n"
 
         passed = True
-        msg = ''
+        msg = ""
 
         for attName in self.intAttributes:
             attVal = getattr(self, attName)
@@ -110,4 +122,4 @@ class AttributeHelper():
                 passed = False
                 msg += RF.format(attName, "list")
 
-        return(passed, msg)
+        return (passed, msg)

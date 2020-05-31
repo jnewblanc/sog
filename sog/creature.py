@@ -1,7 +1,8 @@
-''' creature Class '''     # noqa
+""" creature Class """  # noqa
 
 from datetime import datetime
 import math
+
 # import os
 import pprint
 import random
@@ -11,12 +12,13 @@ from common.attributes import AttributeHelper
 from common.general import getNeverDate, getRandomItemFromList, secsSinceDate
 from common.general import dLog
 from common.inventory import Inventory
+
 # from common.general import logger
 from common.item import Item
 from object import ObjectFactory
 
 
-'''
+"""
 
 4.5.1 Basic
 
@@ -29,166 +31,173 @@ from object import ObjectFactory
             weapon (deducts strikes or hits)
 
 
-'''
+"""
 
 
 class Creature(Item):
 
     _instanceDebug = False
 
-    _fileextension = '.json'
+    _fileextension = ".json"
 
-    creatureSpellList = ['poison', 'fireball', 'lightning', 'befuddle']
+    creatureSpellList = ["poison", "fireball", "lightning", "befuddle"]
 
     # obsolete attributes (to be removed)
-    obsoleteAttributes = ['_parleyNone', '_spellCaster', '_parleyNone',
-                          '_parleyPositive', '_parleyNegative',
-                          '_parleyCustom', '_parleyTeleport' '_parleySell',
-                          '_spellCaster', '_objDropList', '_numOfItemsDropped',
-                          '_parleySellItems', '_attackSpeed',
-                          '_TimeToFirstAttack', '_damage']
+    obsoleteAttributes = [
+        "_parleyNone",
+        "_spellCaster",
+        "_parleyNone",
+        "_parleyPositive",
+        "_parleyNegative",
+        "_parleyCustom",
+        "_parleyTeleport" "_parleySell",
+        "_spellCaster",
+        "_objDropList",
+        "_numOfItemsDropped",
+        "_parleySellItems",
+        "_attackSpeed",
+        "_TimeToFirstAttack",
+        "_damage",
+    ]
 
-    attributesThatShouldntBeSaved = ['_creationDate', '_currentlyAttacking',
-                                     '_enterRoomTime', '_instanceDebug',
-                                     '_invWeight', '_invValue',
-                                     '_attackPlayer', '_lastAttackDate',
-                                     '_secondsUntilNextAttack', '_vulnerable']
+    attributesThatShouldntBeSaved = [
+        "_creationDate",
+        "_currentlyAttacking",
+        "_enterRoomTime",
+        "_instanceDebug",
+        "_invWeight",
+        "_invValue",
+        "_attackPlayer",
+        "_lastAttackDate",
+        "_secondsUntilNextAttack",
+        "_vulnerable",
+    ]
 
-    intAttributes = ['_weight', '_value', '_level', '_exp', '_ac',
-                     '_damagePct', '_tohit', '_dodge', '_frequency',
-                     '_timeToFirstAttack', '_attackRate',
-                     '_attackIfPietyLessThan', '_attackIfPietyMoreThan']
+    intAttributes = [
+        "_weight",
+        "_value",
+        "_level",
+        "_exp",
+        "_ac",
+        "_damagePct",
+        "_tohit",
+        "_dodge",
+        "_frequency",
+        "_timeToFirstAttack",
+        "_attackRate",
+        "_attackIfPietyLessThan",
+        "_attackIfPietyMoreThan",
+    ]
 
-    boolAttributes = ['_regenerate', '_hostile', '_defend', '_follow',
-                      '_blockFromLeaving', '_guardTreasure', '_sendToJail',
-                      '_noKill', '_kidnap', '_hidden', '_invisible', '_drain',
-                      '_poison', '_undead', '_rust', '_steal', '_carry',
-                      '_antiMagic', '_magicImmunity', '_fleeIfAttacked',
-                      '_attackLastAttacker', '_permanent', '_unique', '_watch']
+    boolAttributes = [
+        "_regenerate",
+        "_hostile",
+        "_defend",
+        "_follow",
+        "_blockFromLeaving",
+        "_guardTreasure",
+        "_sendToJail",
+        "_noKill",
+        "_kidnap",
+        "_hidden",
+        "_invisible",
+        "_drain",
+        "_poison",
+        "_undead",
+        "_rust",
+        "_steal",
+        "_carry",
+        "_antiMagic",
+        "_magicImmunity",
+        "_fleeIfAttacked",
+        "_attackLastAttacker",
+        "_permanent",
+        "_unique",
+        "_watch",
+    ]
 
-    strAttributes = ['_name', '_article', '_pluraldesc', '_longdesc',
-                     '_alignment', '_parleyAction']
+    strAttributes = [
+        "_name",
+        "_article",
+        "_pluraldesc",
+        "_longdesc",
+        "_alignment",
+        "_parleyAction",
+    ]
 
-    listAttributes = ['_assistCreature', '_defendCreature', '_offensiveSpells',
-                      '_itemCatalog', '_numOfItemsCarried', '_parleyTxt',
-                      '_parleyTeleportRooms']
+    listAttributes = [
+        "_assistCreature",
+        "_defendCreature",
+        "_offensiveSpells",
+        "_itemCatalog",
+        "_numOfItemsCarried",
+        "_parleyTxt",
+        "_parleyTeleportRooms",
+    ]
 
-    primaryAttributes = ['_blockFromLeaving', '_follow', '_guardTreasure',
-                         '_hostile', '_attackLastAttacker', '_fleeIfAttacked',
-                         '_undead', '_rust', '_steal']
-    secondaryAttributes = ['_magicImmunity', '_antiMagic',
-                           '_hidden', '_regenerate', '_steal', '_drain',
-                           '_poison', '_kidnap', '_invisible', '_sendToJail']
+    primaryAttributes = [
+        "_blockFromLeaving",
+        "_follow",
+        "_guardTreasure",
+        "_hostile",
+        "_attackLastAttacker",
+        "_fleeIfAttacked",
+        "_undead",
+        "_rust",
+        "_steal",
+    ]
+    secondaryAttributes = [
+        "_magicImmunity",
+        "_antiMagic",
+        "_hidden",
+        "_regenerate",
+        "_steal",
+        "_drain",
+        "_poison",
+        "_kidnap",
+        "_invisible",
+        "_sendToJail",
+    ]
 
     _levelDefaultsDict = {
-        1: {
-            '_exp': 10,
-            '_ac': 0,
-            '_maxhp': 30,
-            '_tohit': 0,
-            '_dodge': 0
-        },
-        2: {
-            '_exp': 20,
-            '_ac': 0,
-            '_maxhp': 50,
-            '_tohit': 0,
-            '_dodge': 0
-        },
-        3: {
-            '_exp': 30,
-            '_ac': 1,
-            '_maxhp': 70,
-            '_tohit': 10,
-            '_dodge': 0
-        },
-        4: {
-            '_exp': 40,
-            '_ac': 1,
-            '_maxhp': 100,
-            '_tohit': 10,
-            '_dodge': 0
-        },
-        5: {
-            '_exp': 50,
-            '_ac': 2,
-            '_maxhp': 150,
-            '_tohit': 10,
-            '_dodge': 0
-        },
-        6: {
-            '_exp': 90,
-            '_ac': 2,
-            '_maxhp': 200,
-            '_tohit': 10,
-            '_dodge': 0
-        },
-        7: {
-            '_exp': 200,
-            '_ac': 3,
-            '_maxhp': 500,
-            '_tohit': 10,
-            '_dodge': 0
-        },
-        8: {
-            '_exp': 300,
-            '_ac': 3,
-            '_maxhp': 700,
-            '_tohit': 20,
-            '_dodge': 0
-        },
-        9: {
-            '_exp': 1000,
-            '_ac': 4,
-            '_maxhp': 1000,
-            '_tohit': 20,
-            '_dodge': 10
-        },
-        10: {
-            '_exp': 3000,
-            '_ac': 5,
-            '_maxhp': 3000,
-            '_tohit': 30,
-            '_dodge': 10
-
-        },
-        11: {
-            '_exp': 4000,
-            '_ac': 6,
-            '_maxhp': 4000,
-            '_tohit': 40,
-            '_dodge': 20
-        },
-        12: {
-            '_exp': 5000,
-            '_ac': 7,
-            '_maxhp': 5000,
-            '_tohit': 50,
-            '_dodge': 20
-        },
-        99: {
-            '_exp': 8000,
-            '_ac': 8,
-            '_maxhp': 10000,
-            '_tohit': 60,
-            '_dodge': 30
-        }
+        1: {"_exp": 10, "_ac": 0, "_maxhp": 30, "_tohit": 0, "_dodge": 0},
+        2: {"_exp": 20, "_ac": 0, "_maxhp": 50, "_tohit": 0, "_dodge": 0},
+        3: {"_exp": 30, "_ac": 1, "_maxhp": 70, "_tohit": 10, "_dodge": 0},
+        4: {"_exp": 40, "_ac": 1, "_maxhp": 100, "_tohit": 10, "_dodge": 0},
+        5: {"_exp": 50, "_ac": 2, "_maxhp": 150, "_tohit": 10, "_dodge": 0},
+        6: {"_exp": 90, "_ac": 2, "_maxhp": 200, "_tohit": 10, "_dodge": 0},
+        7: {"_exp": 200, "_ac": 3, "_maxhp": 500, "_tohit": 10, "_dodge": 0},
+        8: {"_exp": 300, "_ac": 3, "_maxhp": 700, "_tohit": 20, "_dodge": 0},
+        9: {"_exp": 1000, "_ac": 4, "_maxhp": 1000, "_tohit": 20, "_dodge": 10},
+        10: {"_exp": 3000, "_ac": 5, "_maxhp": 3000, "_tohit": 30, "_dodge": 10},
+        11: {"_exp": 4000, "_ac": 6, "_maxhp": 4000, "_tohit": 40, "_dodge": 20},
+        12: {"_exp": 5000, "_ac": 7, "_maxhp": 5000, "_tohit": 50, "_dodge": 20},
+        99: {"_exp": 8000, "_ac": 8, "_maxhp": 10000, "_tohit": 60, "_dodge": 30},
     }
 
     _parleyDefaultsDict = {
-        'None': ['does not respond', 'says nothing', 'has no reaction'],
-        'Positive': ["Hello there, friend.", "Well, hello!"],
-        'Negative': ["Buzz off, scumbag!", 'Leave me alone.'],
-        'Custom': ["Have you heard about the burried treasure?"],
-        'Teleport': ["recites some exotic words and you are whisked away.",
-                     "whispers something incomprehendible before you vanish " +
-                     "into thin air"],
-        'Sell': ["Hey buddy.  Check this out"]
-        }
+        "None": ["does not respond", "says nothing", "has no reaction"],
+        "Positive": ["Hello there, friend.", "Well, hello!"],
+        "Negative": ["Buzz off, scumbag!", "Leave me alone."],
+        "Custom": ["Have you heard about the burried treasure?"],
+        "Teleport": [
+            "recites some exotic words and you are whisked away.",
+            "whispers something incomprehendible before you vanish " + "into thin air",
+        ],
+        "Sell": ["Hey buddy.  Check this out"],
+    }
 
-    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc",
-                        "_longdesc", "_level", "_maxhp", "_hostile",
-                        "_parleyAction"]
+    wizardAttributes = [
+        "_name",
+        "_article",
+        "_singledesc",
+        "_pluraldesc",
+        "_longdesc",
+        "_level",
+        "_maxhp",
+        "_hostile",
+        "_parleyAction",
+    ]
 
     attributeInfo = {
         "_name": "the single work noun you use when interacting with this",
@@ -202,282 +211,283 @@ class Creature(Item):
         "_damagePct": "multiplier for default damage - 100% = normal, +/-10%",
         "_tohit": "additional chance to hit/miss target - 10% increments",
         "_hostile": "whether the creature attacks on sight or not",
-        "_parleyAction": ("What the creature does when it's talked to.\n" +
-                          "  Active values: Sell, Teleport, Attack\n" +
-                          "  Canned Responses: None, Positive, Negative"),
+        "_parleyAction": (
+            "What the creature does when it's talked to.\n"
+            + "  Active values: Sell, Teleport, Attack\n"
+            + "  Canned Responses: None, Positive, Negative"
+        ),
         "_itemCatalog": "Which items the creature can be carrying",
         "_numOfItemsCarried": "Possible number of objects carried",
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
         "_frequency": "How often its encountered.  Range 1 (rare) to 100",
         "_timeToFirstAttack": "# of seconds to wait before hostile atk",
-        "_attackRate": "speed of creature attacks.  100%=normal - 50%=slow"}
+        "_attackRate": "speed of creature attacks.  100%=normal - 50%=slow",
+    }
 
     def __init__(self, id=0):
         super().__init__()
         Inventory.__init__(self)
 
         self._creatureId = id
-        self._name = ''
+        self._name = ""
 
-        self._article = ''
-        self._pluraldesc = ''
-        self._singledesc = ''
-        self._longdesc = ''
-        self._weight = 20           # unloaded creature weight
-        self._value = 0             # unloaded creature value
+        self._article = ""
+        self._pluraldesc = ""
+        self._singledesc = ""
+        self._longdesc = ""
+        self._weight = 20  # unloaded creature weight
+        self._value = 0  # unloaded creature value
 
-        self._level = 1             # range 1..64
-        self._exp = 0               # auto-generated after load
-        self._ac = 0                # inital value auto-filled based on lvl
-        self._tohit = 0             # inital value auto-filled based on lvl
-        self._damagePct = 100       # inital value
-        self._dodge = 0             # inital value auto-filled based on lvl
+        self._level = 1  # range 1..64
+        self._exp = 0  # auto-generated after load
+        self._ac = 0  # inital value auto-filled based on lvl
+        self._tohit = 0  # inital value auto-filled based on lvl
+        self._damagePct = 100  # inital value
+        self._dodge = 0  # inital value auto-filled based on lvl
 
-        self._maxhp = 100           # Starting hit points - range 0..1023
-        self._hp = 100              # Current hit points - autoset if 0
-        self._regenerate = False    # Regenerates hit points during attack
+        self._maxhp = 100  # Starting hit points - range 0..1023
+        self._hp = 100  # Current hit points - autoset if 0
+        self._regenerate = False  # Regenerates hit points during attack
 
-        self._frequency = 50        # 0-100 with 100 being the most often
-        self._timeToFirstAttack = 10   # of seconds to wait before hostile atk
-        self._attackRate = 100     # how fast a monter attacks  100=normal
+        self._frequency = 50  # 0-100 with 100 being the most often
+        self._timeToFirstAttack = 10  # of seconds to wait before hostile atk
+        self._attackRate = 100  # how fast a monter attacks  100=normal
 
-        self._hostile = False        # attack player on sight
-        self._defend = True          # attack back if attacked?
-        self._follow = False         # chance to follow if player leaves room
+        self._hostile = False  # attack player on sight
+        self._defend = True  # attack back if attacked?
+        self._follow = False  # chance to follow if player leaves room
         self._blockFromLeaving = False  # 50% stop atking player frm lving room
         self._guardTreasure = False  # can't pick up treasure w/ creat in room
-        self._sendToJail = False     # if attacked player loses weapon & jailed
-        self._noKill = False         # players can't attack if set
-        self._kidnap = False         # Capture Instead of death
-        self._hidden = False         # Can't see monster until engaged
-        self._invisible = False      # Can’t see + “to hit” has 20% penalty
-        self._drain = False          # Chance to drain level (50% of the time)
-        self._poison = False         # On hit may poison player
-        self._undead = False         # can be turned by clerics and paladins
-        self._rust = False           # causes armor to rust and lose extra hits
-        self._steal = False          # chance to steal from player
-        self._carry = False          # creature is carryable (ultra-rare)
-        self._antiMagic = False      # immune to spells
+        self._sendToJail = False  # if attacked player loses weapon & jailed
+        self._noKill = False  # players can't attack if set
+        self._kidnap = False  # Capture Instead of death
+        self._hidden = False  # Can't see monster until engaged
+        self._invisible = False  # Can’t see + “to hit” has 20% penalty
+        self._drain = False  # Chance to drain level (50% of the time)
+        self._poison = False  # On hit may poison player
+        self._undead = False  # can be turned by clerics and paladins
+        self._rust = False  # causes armor to rust and lose extra hits
+        self._steal = False  # chance to steal from player
+        self._carry = False  # creature is carryable (ultra-rare)
+        self._antiMagic = False  # immune to spells
         self._magicImmunity = False  # immune to attacks from non-magic weapons
-        self._fleeIfAttacked = False     # chance to run away when attacked
+        self._fleeIfAttacked = False  # chance to run away when attacked
         self._attackLastAttacker = True  # If false attack first attacker
         self._attackIfPietyLessThan = 3  # 0=ignore
         self._attackIfPietyMoreThan = 0  # 0=ignore
-        self._assistCreature = []        # Which creatures it calls for help
-        self._defendCreature = []        # Which creatures it will defend
-        self._offensiveSpells = []       # Which spells it can cast
-        self._itemCatalog = []      # list of item nums that creature may drop
+        self._assistCreature = []  # Which creatures it calls for help
+        self._defendCreature = []  # Which creatures it will defend
+        self._offensiveSpells = []  # Which spells it can cast
+        self._itemCatalog = []  # list of item nums that creature may drop
         self._numOfItemsCarried = [0, 1, 2]  # number of items dropped - random
 
-        self._creationDate = datetime.now()   # ag - when creatObj was created
+        self._creationDate = datetime.now()  # ag - when creatObj was created
         self._enterRoomTime = datetime.now()  # ag - when creture entered room
-        self._currentlyAttacking = None       # ag - Who creature is attacking
+        self._currentlyAttacking = None  # ag - Who creature is attacking
         self._lastAttackDate = datetime.now()  # ag
         self._secondsUntilNextAttack = 5
 
-        self._permanent = False      # stays in room when room is not active
-        self._unique = False         # only one allowed in room at a time
-        self._watch = False          # notify dm if attacked
+        self._permanent = False  # stays in room when room is not active
+        self._unique = False  # only one allowed in room at a time
+        self._watch = False  # notify dm if attacked
 
-        self._parleyAction = 'None'    # Which of the parley actions to take
-        self._parleyTxt = self._parleyDefaultsDict['None']
+        self._parleyAction = "None"  # Which of the parley actions to take
+        self._parleyTxt = self._parleyDefaultsDict["None"]
         self._parleyTeleportRooms = []  # room to transport to.  empty=1-300
 
-        self._alignment = 'neutral'  # Values: neutral, good, evil
+        self._alignment = "neutral"  # Values: neutral, good, evil
 
-        self._vulnerable = False     # Target is vulnerable for DD next attack
+        self._vulnerable = False  # Target is vulnerable for DD next attack
 
         self._instanceDebug = Creature._instanceDebug
 
-        dLog("Creature init called for " + str(self.getId()),
-             self._instanceDebug)
-        return(None)
+        dLog("Creature init called for " + str(self.getId()), self._instanceDebug)
+        return None
 
     def __del__(self):
-        dLog("Creature destructor called for " + str(self.getId()),
-             self._instanceDebug)
+        dLog("Creature destructor called for " + str(self.getId()), self._instanceDebug)
 
     def addHP(self, num=0):
         self._hp = min((self._hp + num), self.getMaxHP())
 
     def attacksBack(self):
-        return(self._defend)
+        return self._defend
 
     def blocksFromLeaving(self):
-        return(self._blockFromLeaving)
+        return self._blockFromLeaving
 
     def damageIsLethal(self, num=0):
-        ''' return True if given damage would be enough to kill creature '''
+        """ return True if given damage would be enough to kill creature """
         if num >= self.getHitPoints():
-            return(True)
-        return(False)
+            return True
+        return False
 
     def debug(self):
-        return(pprint.pformat(vars(self)))
+        return pprint.pformat(vars(self))
 
     def delete(self):
-        return(None)
+        return None
 
-    def describe(self, count=1, article='none'):
+    def describe(self, count=1, article="none"):
         if count > 1:
-            return(count + " " + self._pluraldesc)
-        if article == 'none':
-            article = self._article + ' '
-        elif article != '':
-            article += ' '
-        return(article + self._singledesc)
+            return count + " " + self._pluraldesc
+        if article == "none":
+            article = self._article + " "
+        elif article != "":
+            article += " "
+        return article + self._singledesc
 
     def examine(self):
-        return(self._longdesc)
+        return self._longdesc
 
     def fleesIfAttacked(self):
-        return(self._fleeIfAttacked)
+        return self._fleeIfAttacked
 
     def getAc(self):
-        return(self._ac)
+        return self._ac
 
     def getAlignment(self):
-        return(self._alignment)
+        return self._alignment
 
     def getArticle(self):
-        return(self._article)
+        return self._article
 
     def getAttackRate(self):
-        return(self._attackRate)
+        return self._attackRate
 
     def getCumulativeDodge(self):
-        ''' return percentage to avoid a hit '''
-        return(self._dodge)
+        """ return percentage to avoid a hit """
+        return self._dodge
 
     def getCurrentlyAttacking(self):
-        ''' return player that creature is attacking, if any '''
+        """ return player that creature is attacking, if any """
         if self.isAttacking():
-            return(self._currentlyAttacking)
-        return(None)
+            return self._currentlyAttacking
+        return None
 
     def getExp(self):
-        return(self._exp)
+        return self._exp
 
     def getFrequency(self):
-        return(self._frequency)
+        return self._frequency
 
     def getHitPoints(self):
-        return(self._hp)
+        return self._hp
 
     def getHitPointPercent(self):
-        ''' returns the int percentage of health remaining '''
+        """ returns the int percentage of health remaining """
         percent = self.getHitPoints() * 100 / self.getMaxHP()
-        return(int(percent))
+        return int(percent)
 
     def getInstanceDebug(self):
-        return(self._instanceDebug)
+        return self._instanceDebug
 
     def getId(self):
-        return(self._creatureId)
+        return self._creatureId
 
     def getLastAttackDate(self):
-        return(self._lastAttackDate)
+        return self._lastAttackDate
 
     def getLevel(self):
-        return(self._level)
+        return self._level
 
     def getMaxHP(self):
-        return(self._maxhp)
+        return self._maxhp
 
     def getName(self):
-        return(self._name)
+        return self._name
 
     def getParleyAction(self):
-        return(self._parleyAction)
+        return self._parleyAction
 
     def getParleyTeleportRoomNum(self):
         if len(self._parleyTeleportRooms) == 0:
-            return(random.randint(1, 300))
-        return(getRandomItemFromList(self._parleyTeleportRooms))
+            return random.randint(1, 300)
+        return getRandomItemFromList(self._parleyTeleportRooms)
 
     def getParleySaleItem(self):
-        return(self.getRandomInventoryItem())
+        return self.getRandomInventoryItem()
 
     def getPlural(self):
-        return(self._pluraldesc)
+        return self._pluraldesc
 
     def getDamage(self, level=0):
-        ''' returns the damage dealt by a creature '''
+        """ returns the damage dealt by a creature """
         if not level:
             level = self.getLevel()
 
-        damage = int((level ** 2)/2 + 2 + level ** 1.7)
+        damage = int((level ** 2) / 2 + 2 + level ** 1.7)
         damage *= self._damagePct / 100
 
-        return(damage)
+        return damage
 
     def getToHit(self):
-        return(self._tohit)
+        return self._tohit
 
     def getSecondsUntilNextAttack(self):
-        return(self._secondsUntilNextAttack)
+        return self._secondsUntilNextAttack
 
     def getSingular(self):
-        return(self._singledesc)
+        return self._singledesc
 
     def getType(self):
-        return(self.__class__.__name__)
+        return self.__class__.__name__
 
-    def getWeight(self):    # set for objects, not usually useful for Creatures
-        return(self._weight)
+    def getWeight(self):  # set for objects, not usually useful for Creatures
+        return self._weight
 
-    def getValue(self):     # set for objects, not usually useful for Creatures
-        return(self._value)
+    def getValue(self):  # set for objects, not usually useful for Creatures
+        return self._value
 
     def guardsTreasure(self):
-        return(self._guardTreasure)
+        return self._guardTreasure
 
     def isAntiMagic(self):
-        return(self._antiMagic)
+        return self._antiMagic
 
     def isAttacking(self):
         if self._currentlyAttacking is not None:
-            return(True)
-        return(False)
+            return True
+        return False
 
     def isCarryable(self):  # set for objects, not usually useful for Creatures
-        return(self._carry)
+        return self._carry
 
     def isHidden(self):
-        return(self._hidden)
+        return self._hidden
 
     def isHostile(self):
-        return(self._hostile)
+        return self._hostile
 
     def isInvisible(self):
-        return(self._invisible)
+        return self._invisible
 
     def isMagic(self):
-        return(self._magicImmunity)
+        return self._magicImmunity
 
     def isPermanent(self):
-        return(self._permanent)
+        return self._permanent
 
     def isUndead(self):
-        return(self._undead)
+        return self._undead
 
     def isUnKillable(self):
-        return(self._noKill)
+        return self._noKill
 
     def isValid(self):
         for att in ["_name", "_article", "_singledesc", "_longdesc", "_level"]:
-            if getattr(self, att) == '':
-                return(False)
-        return(True)
+            if getattr(self, att) == "":
+                return False
+        return True
 
     def isVulnerable(self):
-        return(self._vulnerable)
+        return self._vulnerable
 
     def kidnaps(self):
-        return(self._kidnap)
+        return self._kidnap
 
     def sendsToJail(self):
-        return(self._sendToJail)
+        return self._sendToJail
 
     def setInstanceDebug(self, val):
         self._instanceDebug = bool(val)
@@ -513,68 +523,68 @@ class Creature(Item):
         self._instanceDebug = not self._instanceDebug
 
     def flees(self, percentChanceOfFleeing=20):
-        ''' Returns true if creature flees
+        """ Returns true if creature flees
             * creature must have _fleeIfAttacked attribute set
             * creature must be at 10% health or less
-            * after that, 20% (by default) chance of flee '''
+            * after that, 20% (by default) chance of flee """
         if not self.fleesIfAttacked():
-            return(False)
+            return False
 
-        if self.getHitPoints() <= (self.getMaxHP() * .10):
+        if self.getHitPoints() <= (self.getMaxHP() * 0.10):
             if random.randint(1, 100) <= percentChanceOfFleeing:
-                return(True)
-        return(False)
+                return True
+        return False
 
     def getEquippedWeaponToHit(self):
-        ''' wrapper for getToHit.  Returns _tohit value
+        """ wrapper for getToHit.  Returns _tohit value
             * creatures don't have weapons, but this method allows us to treat
               them like characters when calculateing toHit values.
-        '''
-        return(self.getToHit())
+        """
+        return self.getToHit()
 
     def getEquippedWeaponDamage(self, fluctuationPercent=15):
-        ''' calculate creature 'weapon' damage
+        """ calculate creature 'weapon' damage
             * creatures don't have weapons equipped.  Instead, we treat their
-              damage attribute as a weapon with some random fluctuation '''
+              damage attribute as a weapon with some random fluctuation """
         damage = self.getDamage()
         damageAdj = int(damage * fluctuationPercent / 100)
         damage += random.randint(-(damageAdj), damageAdj)
-        return(damage)
+        return damage
 
     def initiateAttack(self, charObj=None, alwaysNotices=False):
-        ''' Returns true if creature initiates attack on player '''
+        """ Returns true if creature initiates attack on player """
         if not charObj:
             charObj = self.getCurrentlyAttacking()
 
         if not charObj:
-            return(False)
+            return False
 
         if not alwaysNotices:
             if self.doesntNotice(charObj):
-                return(False)
+                return False
 
         if charObj != self.getCurrentlyAttacking():
-            self.setCurrentlyAttacking(charObj)        # initiate attack
-            return(True)
+            self.setCurrentlyAttacking(charObj)  # initiate attack
+            return True
 
-        return(False)
+        return False
 
     def acDamageReduction(self, damage):
-        ''' reduce damage based on AC '''
-        acReduction = int(damage * (.05 * self.getAc()))
+        """ reduce damage based on AC """
+        acReduction = int(damage * (0.05 * self.getAc()))
         damage -= acReduction
-        return(max(0, damage))
+        return max(0, damage)
 
     def hitsCharacter(self, charObj):
-        ''' return true if creature hits the character '''
+        """ return true if creature hits the character """
         # todo: figure out formula
         # fumble
-        return(True)
+        return True
 
     def fumbles(self, basePercent=20, secsToWait=20):
-        ''' Return true if creature fumbles.
+        """ Return true if creature fumbles.
             * creature must wait 20 seconds before attacking
-        '''
+        """
         fumbles = False
 
         fumbleRoll = random.randint(1, 100)
@@ -583,23 +593,23 @@ class Creature(Item):
         elif fumbleRoll < basePercent - (self.getLevel() * 2):
             fumbles = True
             self.setSecondsUntilNextAttack(secsToWait)
-        return(fumbles)
+        return fumbles
 
     def autoPopulateInventory(self):
-        ''' create creature inventory
+        """ create creature inventory
            * randomly pick the number of items from the numOfItemsDropped list
            * for each of those, randomly pick an objNum from the itemCatalog
            * for each of those, load the object and add it to the inventory
            * typically run at creature load time
-        '''
+        """
         if not self._permanent:
             self.clearInventory()
 
         # Randomly select the itemCount
         itemCount = int(getRandomItemFromList(self._numOfItemsCarried))
 
-        if not itemCount:   # 0 items carried
-            return(True)
+        if not itemCount:  # 0 items carried
+            return True
 
         for itemNum in range(1, itemCount + 1):  # +1 due to exclusive ranges
             itemId = getRandomItemFromList(self._itemCatalog)
@@ -609,24 +619,24 @@ class Creature(Item):
                 continue
 
             dLog("creature.autoPopulateInventory: obj = " + itemId)
-            oType, oNum = itemId.split('/')
+            oType, oNum = itemId.split("/")
             obj1 = ObjectFactory(oType, oNum)
             obj1.load()
             self.addToInventory(obj1)
-        return(True)
+        return True
 
     def postLoad(self):
-        ''' hook that runs after creature is loaded '''
-        self.setExp()            # calculate exp and set it
+        """ hook that runs after creature is loaded """
+        self.setExp()  # calculate exp and set it
         if not self.getHitPoints():
             self.setHitPoints()  # set hp to the maxHP for this creature
         self.autoPopulateInventory()
 
-    def getAttributeCount(self, which='primary'):
-        ''' Returns the number of attributes set to True.
-            Distinguishes between primary and secondary attribute types '''
+    def getAttributeCount(self, which="primary"):
+        """ Returns the number of attributes set to True.
+            Distinguishes between primary and secondary attribute types """
         count = 0
-        if which == 'primary':
+        if which == "primary":
             mylist = self.primaryAttributes
         else:
             mylist = self.secondaryAttributes
@@ -637,24 +647,25 @@ class Creature(Item):
             if getattr(self, att):
                 count += 1
 
-        return(count)
+        return count
 
     def setExp(self):
-        ''' Set the exp of a creature depending on it's stats
+        """ Set the exp of a creature depending on it's stats
             EXP = HP + Table(level) + monsterLevelBonus
 
             Todo: When there are multiple attackers, this exp should be
             split amoung them and the player with the kill receives a bonus.
-        '''
+        """
         exp = 0
 
         level = min(1, self.getLevel())
-        exp += self.getMaxHP() + self._levelDefaultsDict[level]['_exp']
+        exp += self.getMaxHP() + self._levelDefaultsDict[level]["_exp"]
 
         # Monster level	Bonus
-        monsterLevelBonus = (((self.getAttributeCount('primary') + 2) *
-                             self.getAttributeCount('secondary')) *
-                             (self.getMaxHP() / 10))
+        monsterLevelBonus = (
+            (self.getAttributeCount("primary") + 2)
+            * self.getAttributeCount("secondary")
+        ) * (self.getMaxHP() / 10)
 
         if self.getLevel() in range(6, 8 + 1):
             monsterLevelBonus *= 2
@@ -662,93 +673,105 @@ class Creature(Item):
             monsterLevelBonus *= 6
 
         self._exp = int(exp + monsterLevelBonus)
-        return(None)
+        return None
 
     def getParleyTxt(self):
-        ''' Returns a string containing the creatures response to a parley '''
-        buf = ''
+        """ Returns a string containing the creatures response to a parley """
+        buf = ""
 
         msg = getRandomItemFromList(self._parleyTxt)
         if not msg:
-            buf += self.describe(article='The') + " does not respond"
-        elif self._parleyAction.lower() == 'none':
+            buf += self.describe(article="The") + " does not respond"
+        elif self._parleyAction.lower() == "none":
             # None is special, because it doesn't add "says".  This is useful
             # for some responses where a different verb is desired.
-            buf += self.describe(article='The') + " " + msg
+            buf += self.describe(article="The") + " " + msg
         else:
-            buf += self.describe(article='The') + " says, " + msg.capitalize()
+            buf += self.describe(article="The") + " says, " + msg.capitalize()
 
-        if re.search('/W$', buf):
+        if re.search("/W$", buf):
             # Add punctuation if it's not already included
             buf += "."
-        return(buf)
+        return buf
 
     def notices(self, charObj):
-        ''' returns true if the creature notices the character '''
+        """ returns true if the creature notices the character """
         if charObj.isHidden() or charObj.isInvisible():
-            return(False)
+            return False
 
         # class/luck/alignment customization
         percentChanceOfBeingIgnored = charObj.getLuck() - 5
-        if charObj.getClassName() == 'ranger':
+        if charObj.getClassName() == "ranger":
             percentChanceOfBeingIgnored *= 2
 
-        if ((self.getAlignment() != 'neutral' and
-             self.getAlignment() == charObj.getAlignment())):
+        if (
+            self.getAlignment() != "neutral"
+            and self.getAlignment() == charObj.getAlignment()
+        ):
             percentChanceOfBeingIgnored *= 2
 
         if random.randint(1, 100) <= percentChanceOfBeingIgnored:
-            self.setEnterRoomTime()    # Reset this to delay attack
-            return(False)
+            self.setEnterRoomTime()  # Reset this to delay attack
+            return False
 
         if self._enterRoomTime == getNeverDate():
             self.setEnterRoomTime()
-            return(False)
+            return False
 
         if secsSinceDate(self._enterRoomTime) > self._timeToFirstAttack:
-            return(True)
+            return True
         else:
-            return(False)
+            return False
 
-        return(True)
+        return True
 
     def doesntNotice(self, charObj):
-        ''' wrapper around negated 'notices' method '''
-        return(not self.notices(charObj))
+        """ wrapper around negated 'notices' method """
+        return not self.notices(charObj)
 
     def canAttack(self, allowOptOut=True):
-        ''' returns true if the creature is ready for an attack '''
+        """ returns true if the creature is ready for an attack """
         debugPrefix = "Creature.canAttack (" + str(self.getId()) + "): "
 
         # Creature has no attack speed.  Will never be ready
         if not self.getAttackRate():
-            dLog(debugPrefix + "Creature has no attack rate",
-                 self._instanceDebug)
-            return(False)
+            dLog(debugPrefix + "Creature has no attack rate", self._instanceDebug)
+            return False
 
         # Check if the appropriate amount of time has pased
-        timeLeft = int((self.getSecondsUntilNextAttack() /
-                       (self.getAttackRate() / 100)) -
-                       secsSinceDate(self.getLastAttackDate()))
+        timeLeft = int(
+            (self.getSecondsUntilNextAttack() / (self.getAttackRate() / 100))
+            - secsSinceDate(self.getLastAttackDate())
+        )
         if timeLeft > 0:
-            dLog(debugPrefix + "Attack discarded due to time - " +
-                 str(timeLeft) + " secs left", self._instanceDebug)
-            return(False)
+            dLog(
+                debugPrefix
+                + "Attack discarded due to time - "
+                + str(timeLeft)
+                + " secs left",
+                self._instanceDebug,
+            )
+            return False
 
         # % chance that creature does not attack
         if allowOptOut:
             randX = random.randint(1, 10)
             if randX == 1:
                 self.setLastAttackDate()
-                dLog(debugPrefix + "Creature randomly chose not to attack (" +
-                     str(randX) + ' = 1)', self._instanceDebug)
-                return(False)
+                dLog(
+                    debugPrefix
+                    + "Creature randomly chose not to attack ("
+                    + str(randX)
+                    + " = 1)",
+                    self._instanceDebug,
+                )
+                return False
 
         dLog(debugPrefix + "Creature is ready for attack", self._instanceDebug)
-        return(True)
+        return True
 
     def getDesiredBribe(self, charObj):
-        ''' calculate the amount of money it would take to bribe creature '''
+        """ calculate the amount of money it would take to bribe creature """
         charLvl = charObj.getLevel()
         charChr = charObj.getCharisma()
         creLvl = self.getLevel()
@@ -758,39 +781,45 @@ class Creature(Item):
         bribeAmt -= int((charChr - 12) * (100 * charLvl))
         bribeAmt = max(0, bribeAmt)
 
-        return(bribeAmt)
+        return bribeAmt
 
     def acceptsBribe(self, charObj, amount):
-        ''' subtracts coins and returns true if bribe is accepted
+        """ subtracts coins and returns true if bribe is accepted
             * caller will need to remove instance from room
             * negative reponses are displayed.  Positive is left to the caller
-        '''
+        """
 
         amountDesired = self.getDesiredBribe(charObj)
 
-        rudeTxt = (str(amount) + " shillings?  That's an insult!  I'll take " +
-                   "your petty coins just for wasting my time.\n")
+        rudeTxt = (
+            str(amount)
+            + " shillings?  That's an insult!  I'll take "
+            + "your petty coins just for wasting my time.\n"
+        )
         closeTxt = "That's not enough, but we can work something out.\n"
-        offerTxt = ("It'll take at least " + str(amountDesired) +
-                    " shillings to get me to leave.\n")
+        offerTxt = (
+            "It'll take at least "
+            + str(amountDesired)
+            + " shillings to get me to leave.\n"
+        )
 
         if not charObj.canAffordAmount(amount):
             charObj.client.spoolOut("You can't afford that!\n")
-            return(False)
+            return False
 
         if amount >= amountDesired:
             charObj.subtractCoins(amount)
-            return(True)
+            return True
 
         if amount < random.randint(1, 10 * charObj.getLevel()):
             # Establish a minimum amount
             charObj.subtractCoins(amount)
             charObj.client.spoolOut(rudeTxt)
-        elif amount < amountDesired * .05:
+        elif amount < amountDesired * 0.05:
             # if offer is less than X%, then take money as insult
             charObj.subtractCoins(amount)
             charObj.client.spoolOut(rudeTxt)
-        elif amount < amountDesired * .30:
+        elif amount < amountDesired * 0.30:
             # if offer is less than X%, then take money and negotiate
             charObj.subtractCoins(amount)
             charObj.client.spoolOut(rudeTxt + offerTxt)
@@ -798,13 +827,13 @@ class Creature(Item):
             # if offer is more than X%, negotiate without taking money
             charObj.client.spoolOut(closeTxt + offerTxt)
 
-        return(False)
+        return False
 
     def fixAttributes(self):
-        ''' Sometimes we change attributes, and need to fix them in rooms
+        """ Sometimes we change attributes, and need to fix them in rooms
             that are saved.  This method lets us do that.  Typically this
             involves casting types or removing obsolete vars, but we could
-            also use this for copying values from one attribute to another '''
+            also use this for copying values from one attribute to another """
 
         try:
             self._attackRate = self._attackSpeed
