@@ -38,17 +38,7 @@ class Room(Item):
     }
 
     # int attributes
-    intAttributes = [
-        "n",
-        "s",
-        "e",
-        "w",
-        "u",
-        "d",
-        "o",
-        "_encounterRate",
-        "_roomNum",
-    ]
+    intAttributes = list(directionNameDict.keys()) + ["_encounterRate", "_roomNum"]
     # boolean attributes
     boolAttributes = ["_notifyDM", "_safe", "_antiMagic", "_dark"]
     # string attributes
