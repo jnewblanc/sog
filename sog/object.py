@@ -493,9 +493,11 @@ class Closable(Object):
         return(False)
 
     def isOpenable(self, charObj):
-        if self.isClosed() and not self.isLocked():
-            return(True)
-        return(False)
+        if self.isOpen():
+            return(False)
+        if self.isLocked():
+            return(False)
+        return(True)
 
     def isClosable(self, charObj):
         if self.isClosed():
@@ -526,9 +528,10 @@ class Closable(Object):
         return(self._spring)
 
     def isClosed(self):
-        if self._closed:
-            return(True)
-        return(False)
+        return(self._closed)
+
+    def isOpen(self):
+        return(not(self.isClosed()))
 
     def isLocked(self):
         if self._locked:
@@ -536,9 +539,7 @@ class Closable(Object):
         return(False)
 
     def isUnlocked(self):
-        if self._locked:
-            return(False)
-        return(True)
+        return(not(self.isLocked()))
 
     def smash(self, charObj, saveItem=True):
         ''' Smash open object - return True if object is opened.
@@ -558,7 +559,7 @@ class Closable(Object):
             damage = self.smashDamage(charObj, self.getWeight(), True)
             charObj.client.spoolOut(self.smashTxt(damage, True, charHp))
             charObj.takeDamage(damage)
-            self._closed = 'False'
+            self._closed = False
             if saveItem:
                 charObj.getRoom().save()
             return(True)
@@ -586,8 +587,8 @@ class Closable(Object):
             charObj.setLastAttackDate()
 
         if self.pickSuccess(charObj):
-            self._locked = 'False'
-            self._closed = 'False'
+            self._locked = False
+            self._closed = False
             if saveItem:
                 charObj.getRoom().save()
             return(True)
@@ -606,14 +607,10 @@ class Closable(Object):
             return(False)
         return(False)
 
-    def open(self, charObj, saveItem=True):
+    def open(self, charObj):
         ''' Open an object - Returns true if opened '''
-        if not self.isOpenable():
+        if not self.isOpenable(charObj):
             return(False)
-
-        self._closed = 'False'
-        if saveItem:
-            charObj.getRoom().save()
 
         if self._traplevel > 0:
             if not self.avoidTrap(charObj):
@@ -622,12 +619,17 @@ class Closable(Object):
                                        currenthealth=charObj.getHitPoints())
                 charObj.client.spoolOut(trapTxt)
                 charObj.takeDamage(damage)
+
+        self._closed = False
+
         return(True)
 
-    def close(self, charObj, saveItem=True):
-        self._closed = 'True'
-        if saveItem:
-            charObj.getRoom().save()
+    def close(self, charObj):
+        if not self.isClosable(charObj):
+            return(False)
+
+        self._closed = True
+        return(True)
 
     def smashSucceds(self, charObj):
         ''' Returns True if smash calculations succeed
@@ -910,6 +912,15 @@ class Door(Portal, Closable):
 
     def getCorresspondingDoorId(self):
         return(self._correspondingDoorId)
+
+    def examine(self):
+        buf = super().examine()
+        if self.isClosed():
+            buf += ".  It's closed."
+        return(buf)
+
+    def getSingular(self):
+        return(self.describe(article=''))
 
     def describe(self, count=1, article='none'):
         if article == 'none':

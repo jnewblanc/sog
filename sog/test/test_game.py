@@ -174,13 +174,7 @@ class TestGameCmd(TestGameBase):
 
         self.purgeTestRoomData(roomNums=[tmpRoomNum])
 
-    def testDoors(self):
-        ''' Set up a pair of doors and verify that door actions work '''
-        # gameObj = self.getGameObj()
-        gameCmdObj = self.getGameCmdObj()
-        charObj = self.getCharObj()
-        charObj.setName('doorOpener')
-        charObj.setHitPoints(10)
+    def doorTestSetUp(self):
         doorObj1 = self.createObject(num=99997, type='Door', name='door1')
         doorObj1._toWhere = 99993
         doorObj1._correspondingDoorId = 99996
@@ -195,8 +189,36 @@ class TestGameCmd(TestGameBase):
         roomObj2 = self.createRoom(num=99993)
         roomObj2._inventory = []
         roomObj2.addToInventory(doorObj2)
+        return roomObj1, roomObj2, doorObj1, doorObj2
+
+    def showDoors(self, doorList, attList=[]):
+        charObj = self.getCharObj()  # need any charObj, just to get txtBanner
+        gameCmdObj = self.getGameCmdObj()
+        gameCmdObj.do_look("door1")
+        for door in doorList:
+            if len(attList):
+                tmplist = []
+                for att in attList:
+                    tmplist.append(att + " = " + str(getattr(door, att)))
+                logger.info('\n' + charObj.client.txtBanner(door.getName()) +
+                            '\n' + '\n'.join(tmplist))
+            else:
+                logger.info(charObj.client.txtBanner(door.getName()) + '\n' +
+                            door.debug())
+
+    def testDoorsInActiveRooms(self):
+        ''' Set up a pair of doors and verify that door actions work '''
+        gameObj = self.getGameObj()
+        gameCmdObj = self.getGameCmdObj()
+        charObj = self.getCharObj()
+        charObj.setName('doorOpener')
+        charObj.setHitPoints(10)
+        (roomObj1, roomObj2, doorObj1, doorObj2) = self.doorTestSetUp()
 
         self.joinRoom(room=roomObj1)
+
+        # Add room with 2nd door to active rooms list
+        gameObj.addToActiveRooms(roomObj2)
 
         # test that doors are set up correctly
         assert doorObj1.getToWhere() == roomObj2.getId()
@@ -204,21 +226,31 @@ class TestGameCmd(TestGameBase):
         assert doorObj1.getCorresspondingDoorId() == doorObj2.getId()
         assert doorObj2.getCorresspondingDoorId() == doorObj1.getId()
 
+        logger.info("Test: Original State")
+        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
+
         # Open door1
         self.logRoomInventory(charObj)
+        logger.info("Test: Opening door")
         assert not gameCmdObj.do_open("door1")  # cmds always return False
 
+        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
+
         # close door1 - check that its closed, and corresponding door is closed
+        logger.info("Test: Closing door")
         assert not gameCmdObj.do_close("door1")  # cmds always return False
+        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
         assert doorObj1.isClosed()  # Door should be closed
-        # assert doorObj2.isClosed()  # Corresponding Door should be closed
-        #
-        # # Re-open door1 after being closed
-        # self.logRoomInventory(charObj)
-        # assert not gameCmdObj.do_open("door1")  # cmds always return False
-        # assert not doorObj1.isClosed()  # Door should be closed
-        # assert not doorObj2.isClosed()  # Corresponding Door should be closed
-        #
+        assert doorObj2.isClosed()  # Corresponding Door should be closed
+        self.logRoomInventory(charObj)
+
+        # Re-open door1 after being closed
+        logger.info("Test: Opening door after it was closed")
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
+        assert doorObj1.isOpen()  # Door should be open
+        assert doorObj2.isOpen()  # Corresponding Door should be open
+
         # # self._spring = True   # automatically close if nobody is in the room
         #
         # ''' test lock/unlock/locklevels/keys '''

@@ -305,10 +305,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         ''' When a door is opened/closed on one side, the corresponing door
             needs to be updated '''
 
-        # Persist the current door state to disk
-        doorObj.save()
-
-        roomObj = self.getCorrespondingRoomObj()
+        roomObj = self.getCorrespondingRoomObj(doorObj)
 
         if roomObj:
             for obj in roomObj.getInventory():
@@ -317,10 +314,8 @@ class _Game(cmd.Cmd, Combat, Ipc):
                         obj.close(charObj)
                     else:
                         obj.open(charObj)
+                    roomObj.save()
             return(True)
-        else:
-            roomObj = RoomFactory("room", doorObj.getToWhere())
-
         return(True)
 
     def buyTransaction(self, charObj, obj, price, prompt,
@@ -1065,12 +1060,15 @@ class GameCmd(cmd.Cmd):
         targetObj = itemList[0]
 
         if not targetObj.isClosable(charObj):
-            self.selfMsg("This is not closable!\n")
+            if targetObj.isClosed():
+                self.selfMsg("It's already closed.\n")
+            else:
+                self.selfMsg("You can not close that!\n")
             return(False)
 
         if targetObj.close(charObj):
             self.selfMsg("Ok\n")
-            if targetObj.gettype() == "Door":
+            if targetObj.getType() == "Door":
                 self.gameObj.modifyCorrespondingDoor(targetObj, charObj)
             return(False)
         else:
@@ -1597,14 +1595,17 @@ class GameCmd(cmd.Cmd):
         itemObj = itemList[0]
 
         if not itemObj.isOpenable(charObj):
-            self.selfMsg("You can't open that.\n")
+            if itemObj.isOpen():
+                self.selfMsg("It's already open.\n")
+            else:
+                self.selfMsg("You can't open that.\n")
             return(False)
 
         if itemObj.open(charObj):
-            self.selfMsg("It opens.")
+            self.selfMsg("Ok")
             self.othersMsg(roomObj, charObj.getName() + " opens the " +
-                           itemObj.getSingular(), charObj.isHidden() + '\n')
-            if itemObj.gettype() == "Door":
+                           itemObj.getSingular() + '\n', charObj.isHidden())
+            if itemObj.getType() == "Door":
                 self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             return(False)
         else:
@@ -1954,7 +1955,7 @@ class GameCmd(cmd.Cmd):
             if otherRoom:
                 self.gameObj.roomMsg(otherRoom, itemObj.getSingular() +
                                      " smashes open\n")
-            if itemObj.gettype() == "Door":
+            if itemObj.getType() == "Door":
                 self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             return(False)
         else:
