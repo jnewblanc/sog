@@ -44,6 +44,12 @@ class TestGame(TestGameBase):
 
 class TestGameCmd(TestGameBase):
 
+    doorOpenAttributes = [
+        "objId", "_name", "_closed"]
+
+    doorLockAttributes = [
+        "objId", "_name", "_closed", "_locked", "_locklevel", "_lockId"]
+
     def testGameCmdInstanciation(self):
         gameCmdObj = self.getGameCmdObj()
         out = "Could not instanciate the gameCmd object"
@@ -227,37 +233,104 @@ class TestGameCmd(TestGameBase):
         assert doorObj2.getCorresspondingDoorId() == doorObj1.getId()
 
         logger.info("Test: Original State")
-        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
+        self.showDoors([doorObj1, doorObj2], self.doorOpenAttributes)
 
         # Open door1
         self.logRoomInventory(charObj)
-        logger.info("Test: Opening door")
+        msg = "Opening door should succeed"
+        logger.info("Test: " + msg)
+        logger.warn("Opening Door")
         assert not gameCmdObj.do_open("door1")  # cmds always return False
+        assert doorObj1.isOpen(), msg
 
-        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
+        self.showDoors([doorObj1, doorObj2], self.doorOpenAttributes)
 
         # close door1 - check that its closed, and corresponding door is closed
-        logger.info("Test: Closing door")
+        msg = "Closing door - both doors should be closed"
+        logger.info("Test: " + msg)
+        logger.warn("Closing Door")
         assert not gameCmdObj.do_close("door1")  # cmds always return False
-        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
-        assert doorObj1.isClosed()  # Door should be closed
-        assert doorObj2.isClosed()  # Corresponding Door should be closed
+        self.showDoors([doorObj1, doorObj2], self.doorOpenAttributes)
+        assert doorObj1.isClosed(), msg  # Door should be closed
+        assert doorObj2.isClosed(), msg  # Corresponding Door should be closed
         self.logRoomInventory(charObj)
 
         # Re-open door1 after being closed
-        logger.info("Test: Opening door after it was closed")
+        msg = "Opening door after it was closed - both doors should be open"
+        logger.info("Test: " + msg)
+        logger.warn("Opening Door")
         assert not gameCmdObj.do_open("door1")  # cmds always return False
-        self.showDoors([doorObj1, doorObj2], ["objId", "_name", "_closed"])
+        self.showDoors([doorObj1, doorObj2], self.doorOpenAttributes)
         assert doorObj1.isOpen()  # Door should be open
         assert doorObj2.isOpen()  # Corresponding Door should be open
 
         # # self._spring = True   # automatically close if nobody is in the room
         #
-        # ''' test lock/unlock/locklevels/keys '''
-        # # self._locked = False
-        # # self._locklevel = 0  # 0=no lock, -1=unpickable, 1=minor lock
-        # # self._lockId = 0     # keys matching this lockId will open it
-        #
+        keyObj1 = self.createObject(num=99996, type='Key', name='goodkey')
+        keyObj1._lockId = 99999
+        keyObj2 = self.createObject(num=99995, type='Key', name='badkey')
+        keyObj2._lockId = 99990
+        charObj.addToInventory(keyObj1)
+        charObj.addToInventory(keyObj2)
+
+        msg = "Locking any door without key should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        msg = "Locking an open door with key should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        logger.warn("Closing Door")
+        assert not gameCmdObj.do_close("door1")  # cmds always return False
+        self.showDoors([doorObj1], self.doorLockAttributes)
+
+        msg = "Locking closed door with no lock should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        logger.warn("Adding lock level and lock id")
+        doorObj1._locklevel = 1
+        doorObj1._lockId = 99999
+        self.showDoors([doorObj1], self.doorLockAttributes)
+
+        msg = "Locking door with bad key should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 badkey")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        msg = "Locking door with good key should succeed - both should be locked"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
+        self.showDoors([doorObj1, doorObj2], self.doorLockAttributes)
+        assert doorObj1.isLocked(), msg
+        assert doorObj2.isLocked(), msg
+
+        msg = "Opening a locked door should fail - door should remain closed"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        assert doorObj1.isClosed(), msg
+        assert doorObj1.isLocked(), msg
+
+        msg = "Unlocking a locked door with key should succeed, both should be unlocked"
+        logger.info("Test: " + msg)
+        logger.warn("Unlocking Door")
+        assert not gameCmdObj.do_unlock("door1 goodkey")  # cmds always return False
+        self.showDoors([doorObj1], self.doorLockAttributes)
+        assert doorObj1.isUnlocked(), msg
+        assert doorObj2.isUnlocked(), msg
+
+        msg = "Opening a previously locked door should succeed - both should be open"
+        logger.info("Test: " + msg)
+        logger.warn("Opening Door")
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        self.showDoors([doorObj1], self.doorLockAttributes)
+        assert doorObj1.isOpen(), msg
+        assert doorObj2.isOpen(), msg
+
         # ''' test traps/poison '''
         # # self._poison = False  # when trapped, this flag inflicts poison
         # # self._traplevel = 0  # 0=no trap, 1=minor trap

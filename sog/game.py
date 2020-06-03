@@ -314,6 +314,10 @@ class _Game(cmd.Cmd, Combat, Ipc):
                         obj.close(charObj)
                     else:
                         obj.open(charObj)
+                    if doorObj.isLocked():
+                        obj.lock()
+                    else:
+                        obj.unlock()
                     roomObj.save()
             return(True)
         return(True)
@@ -1493,9 +1497,9 @@ class GameCmd(cmd.Cmd):
         roomObj = charObj.getRoom()
 
         roomObjList = roomObj.getInventory()
-#        fullObjList = charObj.getInventory() + roomObjList
+        fullObjList = charObj.getInventory() + roomObjList
 
-        itemList = self.getObjFromCmd(roomObjList, line)
+        itemList = self.getObjFromCmd(fullObjList, line)
 
         itemObj = itemList[0]
         keyObj = itemList[1]
@@ -1506,10 +1510,26 @@ class GameCmd(cmd.Cmd):
         if not keyObj:
             self.selfMsg("You can't lock anything without a key\n")
             return(False)
+
         if not itemObj.isLockable():
-            self.selfMsg("This is not lockable!\n")
+            if itemObj.isLocked():
+                self.selfMsg("It's already locked!\n")
+            elif itemObj.isOpen():
+                self.selfMsg("You can't lock it when it's open!\n")
+            else:
+                self.selfMsg("This is not lockable!\n")
             return(False)
-        self.selfMsg("Not implemented yet.\n")
+
+        if keyObj.getLockId() != itemObj.getLockId():
+            self.selfMsg("The key doesn't fit the lock\n")
+            return(False)
+
+        itemObj.lock()
+        if itemObj.getType() == "Door":
+            self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
+
+        self.selfMsg("Ok\n")
+
         return(False)
 
     def do_look(self, line):
@@ -1597,6 +1617,8 @@ class GameCmd(cmd.Cmd):
         if not itemObj.isOpenable(charObj):
             if itemObj.isOpen():
                 self.selfMsg("It's already open.\n")
+            elif itemObj.isLocked():
+                self.selfMsg("You can't.  It's locked.\n")
             else:
                 self.selfMsg("You can't open that.\n")
             return(False)
@@ -2138,7 +2160,10 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        itemList = self.getObjFromCmd(roomObj.getInventory(), line)
+        roomObjList = roomObj.getInventory()
+        fullObjList = charObj.getInventory() + roomObjList
+
+        itemList = self.getObjFromCmd(fullObjList, line)
 
         if not itemList[0]:
             return(self.missingArgFailure())
@@ -2147,13 +2172,25 @@ class GameCmd(cmd.Cmd):
         keyObj = itemList[1]
 
         if not keyObj:
-            self.selfMsg("You need a key before you can unlock anything\n")
-        if not itemObj.isUnlockable():
-            self.selfMsg("You can't unlock that.\n")
+            self.selfMsg("You can't lock anything without a key\n")
             return(False)
-        # need to get lock ID and see if the given key matches
-        # if keys have charges, we need to modify key
-        if itemObj.unlock(charObj):
+
+        if not itemObj.isUnlockable():
+            if itemObj.isUnlocked():
+                self.selfMsg("It's already unlocked!\n")
+            elif itemObj.isOpen():
+                self.selfMsg("You can't unlock it when it's open!\n")
+            else:
+                self.selfMsg("This is not unlockable!\n")
+            return(False)
+
+        if keyObj.getLockId() != itemObj.getLockId():
+            self.selfMsg("The key doesn't fit the lock\n")
+            return(False)
+
+        if itemObj.unlock(keyObj):
+            if itemObj.getType() == "Door":
+                self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             self.selfMsg("You unlock the lock.\n")
             self.othersMsg(roomObj, charObj.getName() + " unlocks the " +
                            "lock on the " + itemObj.getSingular() + '\n',
@@ -2165,6 +2202,7 @@ class GameCmd(cmd.Cmd):
                            "unlock the lock on the " +
                            itemObj.getSingular() + '\n', charObj.isHidden())
             return(False)
+
         return(False)
 
     def do_up(self, line):

@@ -470,6 +470,9 @@ class Closable(Object):
         AttributeHelper.fixAttributes(self)
         return(True)
 
+    def getLockId(self):
+        return self._lockId
+
     def getLockLevel(self):
         return self._locklevel
 
@@ -510,9 +513,9 @@ class Closable(Object):
         return(False)
 
     def isUnlockable(self):
-        if self.isClosed() and self._isLocked() and self.getLockLevel() > 0:
-            return(False)
-        return(True)
+        if self.isClosed() and self.isLocked() and self.getLockLevel() > 0:
+            return(True)
+        return(False)
 
     def isTrapped(self):
         if self._traplevel > 0:
@@ -534,12 +537,20 @@ class Closable(Object):
         return(not(self.isClosed()))
 
     def isLocked(self):
-        if self._locked:
-            return(True)
-        return(False)
+        return(self._locked)
 
     def isUnlocked(self):
         return(not(self.isLocked()))
+
+    def lock(self):
+        self._locked = True
+        return(True)
+
+    def unlock(self, keyObj=None):
+        if keyObj:
+            keyObj.decrementChargeCounter()
+        self._locked = False
+        return(True)
 
     def smash(self, charObj, saveItem=True):
         ''' Smash open object - return True if object is opened.
@@ -1034,6 +1045,9 @@ class Key(Exhaustible):
         super().__init__(objId)
         self._lockId = 0   # id=1000 will open any door
         return(None)
+
+    def getLockId(self):
+        return self._lockId
 
 
 class Scroll(MagicalDevice):
