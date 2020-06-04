@@ -247,7 +247,7 @@ class TestObject(TestGameBase):
         assert not box.withdraw(charObj, pin, saveItem=False)
         assert not box.withdraw(charObj, None, saveItem=False)
         assert not box.deposit(charObj, None, saveItem=False)
-        box.close(charObj, saveItem=False)
+        box.close(charObj)
         logger.info(box.examine())
         assert not box.deposit(charObj, axe, saveItem=False)
 

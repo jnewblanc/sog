@@ -47,8 +47,11 @@ class TestGameCmd(TestGameBase):
     doorOpenAttributes = [
         "objId", "_name", "_closed"]
 
-    doorLockAttributes = [
-        "objId", "_name", "_closed", "_locked", "_locklevel", "_lockId"]
+    doorLockAttributes = doorOpenAttributes + [
+        "_locked", "_locklevel", "_lockId"]
+
+    doorTrapAttributes = doorLockAttributes + [
+        "_traplevel", "_poison", "_toll"]
 
     def testGameCmdInstanciation(self):
         gameCmdObj = self.getGameCmdObj()
@@ -239,7 +242,7 @@ class TestGameCmd(TestGameBase):
         self.logRoomInventory(charObj)
         msg = "Opening door should succeed"
         logger.info("Test: " + msg)
-        logger.warn("Opening Door")
+        logger.warning("Opening Door")
         assert not gameCmdObj.do_open("door1")  # cmds always return False
         assert doorObj1.isOpen(), msg
 
@@ -248,7 +251,7 @@ class TestGameCmd(TestGameBase):
         # close door1 - check that its closed, and corresponding door is closed
         msg = "Closing door - both doors should be closed"
         logger.info("Test: " + msg)
-        logger.warn("Closing Door")
+        logger.warning("Closing Door")
         assert not gameCmdObj.do_close("door1")  # cmds always return False
         self.showDoors([doorObj1, doorObj2], self.doorOpenAttributes)
         assert doorObj1.isClosed(), msg  # Door should be closed
@@ -258,7 +261,7 @@ class TestGameCmd(TestGameBase):
         # Re-open door1 after being closed
         msg = "Opening door after it was closed - both doors should be open"
         logger.info("Test: " + msg)
-        logger.warn("Opening Door")
+        logger.warning("Opening Door")
         assert not gameCmdObj.do_open("door1")  # cmds always return False
         self.showDoors([doorObj1, doorObj2], self.doorOpenAttributes)
         assert doorObj1.isOpen()  # Door should be open
@@ -283,7 +286,7 @@ class TestGameCmd(TestGameBase):
         assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
         assert not doorObj1.isLocked(), msg
 
-        logger.warn("Closing Door")
+        logger.warning("Closing Door")
         assert not gameCmdObj.do_close("door1")  # cmds always return False
         self.showDoors([doorObj1], self.doorLockAttributes)
 
@@ -292,7 +295,7 @@ class TestGameCmd(TestGameBase):
         assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
         assert not doorObj1.isLocked(), msg
 
-        logger.warn("Adding lock level and lock id")
+        logger.warning("Adding lock level and lock id")
         doorObj1._locklevel = 1
         doorObj1._lockId = 99999
         self.showDoors([doorObj1], self.doorLockAttributes)
@@ -317,7 +320,7 @@ class TestGameCmd(TestGameBase):
 
         msg = "Unlocking a locked door with key should succeed, both should be unlocked"
         logger.info("Test: " + msg)
-        logger.warn("Unlocking Door")
+        logger.warning("Unlocking Door")
         assert not gameCmdObj.do_unlock("door1 goodkey")  # cmds always return False
         self.showDoors([doorObj1], self.doorLockAttributes)
         assert doorObj1.isUnlocked(), msg
@@ -325,18 +328,46 @@ class TestGameCmd(TestGameBase):
 
         msg = "Opening a previously locked door should succeed - both should be open"
         logger.info("Test: " + msg)
-        logger.warn("Opening Door")
+        logger.warning("Opening Door")
         assert not gameCmdObj.do_open("door1")  # cmds always return False
         self.showDoors([doorObj1], self.doorLockAttributes)
         assert doorObj1.isOpen(), msg
         assert doorObj2.isOpen(), msg
 
-        # ''' test traps/poison '''
-        # # self._poison = False  # when trapped, this flag inflicts poison
-        # # self._traplevel = 0  # 0=no trap, 1=minor trap
-        #
-        # ''' test toll '''
-        # # self._toll = 0       # 0=no toll, amount to deduct to open
+        msg = "Opening door with trap - char should be damaged"
+        logger.info("Test: " + msg)
+        charObj.client.popOutSpool()  # Clear the output spool
+        charObj._instanceDebug = True
+        charObj.dexterity = -1000  # make sure random odds don't break tests
+        charObj._level = -1000     # make sure random odds don't break tests
+        logger.warning("Adding trap level")
+        doorObj1._traplevel = 1
+        doorObj1.close(charObj)
+        self.showDoors([doorObj1], self.doorTrapAttributes)
+        charObj.setMaxHP(100)
+        charObj.setHitPoints(100)
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        charObj._instanceDebug = False
+        logger.info("OutSpool: " + charObj.client.popOutSpool())
+        assert charObj.getHitPoints() < 100, msg
+
+        msg = "Opening door with trap and poison - char should be poisoned"
+        logger.info("Test: " + msg)
+        charObj._instanceDebug = True
+        logger.warning("Adding poison to trap")
+        doorObj1._poison = True
+        doorObj1.close(charObj)
+        self.showDoors([doorObj1], self.doorTrapAttributes)
+        charObj.setMaxHP(100)
+        charObj.setHitPoints(100)
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        charObj._instanceDebug = False
+        logger.info("OutSpool: " + charObj.client.popOutSpool())
+        assert charObj.getHitPoints() < 100
+        assert charObj.isPoisoned(), msg
+
+#        doorObj1._toll = True
+
         self.purgeTestRoomData(roomNums=[99992, 99993])
 
 
