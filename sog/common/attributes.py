@@ -38,9 +38,11 @@ class AttributeHelper:
                     setattr(self, attName, newVal)
                     changed = True
                     logger.warning(
-                        "{} Changed {} to int for {}".format(
-                            logPrefix, attName, self.describe()
-                        )
+                        logPrefix
+                        + "Changed "
+                        + attName
+                        + " to int for "
+                        + self.describe()
                     )
             except ValueError:
                 setattr(self, attName, 0)
@@ -52,9 +54,11 @@ class AttributeHelper:
                     setattr(self, attName, newVal)
                     changed = True
                     logger.warning(
-                        "{} Changed {} to bool for {}".format(
-                            logPrefix, attName, self.describe()
-                        )
+                        logPrefix
+                        + "Changed "
+                        + attName
+                        + " to bool for "
+                        + self.describe()
                     )
             except ValueError:
                 setattr(self, attName, False)
@@ -66,9 +70,11 @@ class AttributeHelper:
                     setattr(self, attName, newVal)
                     changed = True
                     logger.warning(
-                        "{} Changed {} to str for {}".format(
-                            logPrefix, attName, self.describe()
-                        )
+                        logPrefix
+                        + "Changed "
+                        + attName
+                        + " to str for "
+                        + self.describe()
                     )
             except ValueError:
                 setattr(self, attName, "")
@@ -79,9 +85,7 @@ class AttributeHelper:
                     delattr(self, attName)
                     changed = True
                     logger.warning(
-                        "{} Removed {} from {}".format(
-                            logPrefix, attName, self.describe()
-                        )
+                        logPrefix + "Removed '" + attName + "' from " + self.describe()
                     )
             except AttributeError:
                 pass

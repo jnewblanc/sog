@@ -43,6 +43,16 @@ class TestGame(TestGameBase):
 
 
 class TestGameCmd(TestGameBase):
+
+    doorOpenAttributes = [
+        "objId", "_name", "_closed"]
+
+    doorLockAttributes = doorOpenAttributes + [
+        "_locked", "_locklevel", "_lockId"]
+
+    doorTrapAttributes = doorLockAttributes + [
+        "_traplevel", "_poison", "_toll"]
+
     def testGameCmdInstanciation(self):
         gameCmdObj = self.getGameCmdObj()
         out = "Could not instanciate the gameCmd object"
@@ -181,14 +191,8 @@ class TestGameCmd(TestGameBase):
 
         self.purgeTestRoomData(roomNums=[tmpRoomNum])
 
-    def testDoors(self):
-        """ Set up a pair of doors and verify that door actions work """
-        # gameObj = self.getGameObj()
-        gameCmdObj = self.getGameCmdObj()
-        charObj = self.getCharObj()
-        charObj.setName("doorOpener")
-        charObj.setHitPoints(10)
-        doorObj1 = self.createObject(num=99997, type="Door", name="door1")
+    def doorTestSetUp(self):
+        doorObj1 = self.createObject(num=99997, type='Door', name='door1')
         doorObj1._toWhere = 99993
         doorObj1._correspondingDoorId = 99996
         doorObj1._closed = False
@@ -202,8 +206,21 @@ class TestGameCmd(TestGameBase):
         roomObj2 = self.createRoom(num=99993)
         roomObj2._inventory = []
         roomObj2.addToInventory(doorObj2)
+        return roomObj1, roomObj2, doorObj1, doorObj2
+
+    def testDoorsInActiveRooms(self):
+        ''' Set up a pair of doors and verify that door actions work '''
+        gameObj = self.getGameObj()
+        gameCmdObj = self.getGameCmdObj()
+        charObj = self.getCharObj()
+        charObj.setName('doorOpener')
+        charObj.setHitPoints(10)
+        (roomObj1, roomObj2, doorObj1, doorObj2) = self.doorTestSetUp()
 
         self.joinRoom(room=roomObj1)
+
+        # Add room with 2nd door to active rooms list
+        gameObj.addToActiveRooms(roomObj2)
 
         # test that doors are set up correctly
         assert doorObj1.getToWhere() == roomObj2.getId()
@@ -211,34 +228,158 @@ class TestGameCmd(TestGameBase):
         assert doorObj1.getCorresspondingDoorId() == doorObj2.getId()
         assert doorObj2.getCorresspondingDoorId() == doorObj1.getId()
 
+        logger.info("Test: Original State")
+        self.showItems([doorObj1, doorObj2], self.doorOpenAttributes)
+
         # Open door1
         self.logRoomInventory(charObj)
+        msg = "Opening door should succeed"
+        logger.info("Test: " + msg)
+        logger.warning("Opening Door")
         assert not gameCmdObj.do_open("door1")  # cmds always return False
+        assert doorObj1.isOpen(), msg
+
+        self.showItems([doorObj1, doorObj2], self.doorOpenAttributes)
 
         # close door1 - check that its closed, and corresponding door is closed
+        msg = "Closing door - both doors should be closed"
+        logger.info("Test: " + msg)
+        logger.warning("Closing Door")
         assert not gameCmdObj.do_close("door1")  # cmds always return False
-        assert doorObj1.isClosed()  # Door should be closed
-        # assert doorObj2.isClosed()  # Corresponding Door should be closed
-        #
-        # # Re-open door1 after being closed
-        # self.logRoomInventory(charObj)
-        # assert not gameCmdObj.do_open("door1")  # cmds always return False
-        # assert not doorObj1.isClosed()  # Door should be closed
-        # assert not doorObj2.isClosed()  # Corresponding Door should be closed
-        #
+        self.showItems([doorObj1, doorObj2], self.doorOpenAttributes)
+        assert doorObj1.isClosed(), msg  # Door should be closed
+        assert doorObj2.isClosed(), msg  # Corresponding Door should be closed
+        self.logRoomInventory(charObj)
+
+        # Re-open door1 after being closed
+        msg = "Opening door after it was closed - both doors should be open"
+        logger.info("Test: " + msg)
+        logger.warning("Opening Door")
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        self.showItems([doorObj1, doorObj2], self.doorOpenAttributes)
+        assert doorObj1.isOpen()  # Door should be open
+        assert doorObj2.isOpen()  # Corresponding Door should be open
+
         # # self._spring = True   # automatically close if nobody is in the room
         #
-        # ''' test lock/unlock/locklevels/keys '''
-        # # self._locked = False
-        # # self._locklevel = 0  # 0=no lock, -1=unpickable, 1=minor lock
-        # # self._lockId = 0     # keys matching this lockId will open it
-        #
-        # ''' test traps/poison '''
-        # # self._poison = False  # when trapped, this flag inflicts poison
-        # # self._traplevel = 0  # 0=no trap, 1=minor trap
-        #
-        # ''' test toll '''
-        # # self._toll = 0       # 0=no toll, amount to deduct to open
+        keyObj1 = self.createObject(num=99996, type='Key', name='goodkey')
+        keyObj1._lockId = 99999
+        keyObj2 = self.createObject(num=99995, type='Key', name='badkey')
+        keyObj2._lockId = 99990
+        charObj.addToInventory(keyObj1)
+        charObj.addToInventory(keyObj2)
+
+        msg = "Locking any door without key should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        msg = "Locking an open door with key should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        logger.warning("Closing Door")
+        assert not gameCmdObj.do_close("door1")  # cmds always return False
+        self.showItems([doorObj1], self.doorLockAttributes)
+
+        msg = "Locking closed door with no lock should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        logger.warning("Adding lock level and lock id")
+        doorObj1._locklevel = 1
+        doorObj1._lockId = 99999
+        self.showItems([doorObj1], self.doorLockAttributes)
+
+        msg = "Locking door with bad key should fail"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 badkey")  # cmds always return False
+        assert not doorObj1.isLocked(), msg
+
+        msg = "Locking door with good key should succeed - both should be locked"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_lock("door1 goodkey")  # cmds always return False
+        self.showItems([doorObj1, doorObj2], self.doorLockAttributes)
+        assert doorObj1.isLocked(), msg
+        assert doorObj2.isLocked(), msg
+
+        msg = "Opening a locked door should fail - door should remain closed"
+        logger.info("Test: " + msg)
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        assert doorObj1.isClosed(), msg
+        assert doorObj1.isLocked(), msg
+
+        msg = "Unlocking a locked door with key should succeed, both should be unlocked"
+        logger.info("Test: " + msg)
+        logger.warning("Unlocking Door")
+        assert not gameCmdObj.do_unlock("door1 goodkey")  # cmds always return False
+        self.showItems([doorObj1], self.doorLockAttributes)
+        assert doorObj1.isUnlocked(), msg
+        assert doorObj2.isUnlocked(), msg
+
+        msg = "Opening a previously locked door should succeed - both should be open"
+        logger.info("Test: " + msg)
+        logger.warning("Opening Door")
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        self.showItems([doorObj1], self.doorLockAttributes)
+        assert doorObj1.isOpen(), msg
+        assert doorObj2.isOpen(), msg
+
+        msg = "Opening door with trap - char should be damaged"
+        logger.info("Test: " + msg)
+        charObj.client.popOutSpool()  # Clear the output spool
+        charObj._instanceDebug = True
+        charObj.dexterity = -1000  # make sure random odds don't break tests
+        charObj._level = -1000     # make sure random odds don't break tests
+        logger.warning("Adding trap level")
+        doorObj1._traplevel = 1
+        doorObj1.close(charObj)
+        self.showItems([doorObj1], self.doorTrapAttributes)
+        charObj.setMaxHP(100)
+        charObj.setHitPoints(100)
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        charObj._instanceDebug = False
+        logger.info("OutSpool: " + charObj.client.popOutSpool())
+        assert charObj.getHitPoints() < 100, msg
+
+        msg = "Opening door with trap and poison - char should be poisoned"
+        logger.info("Test: " + msg)
+        charObj._instanceDebug = True
+        logger.warning("Adding poison to trap")
+        doorObj1._poison = True
+        doorObj1.close(charObj)
+        self.showItems([doorObj1], self.doorTrapAttributes)
+        charObj.setMaxHP(100)
+        charObj.setHitPoints(100)
+        assert not gameCmdObj.do_open("door1")  # cmds always return False
+        charObj._instanceDebug = False
+        logger.info("OutSpool: " + charObj.client.popOutSpool())
+        assert charObj.getHitPoints() < 100
+        assert charObj.isPoisoned(), msg
+
+        msg = "Try to go through a toll door without funds.  Should fail"
+        logger.info("Test: " + msg)
+        doorObj1._toll = 2000
+        charObj._level = 1
+        charObj.setCoins(1000)
+        origId = roomObj1.getItemId()
+        self.showItems([doorObj1], self.doorTrapAttributes)
+        assert not gameCmdObj.do_look("door1")  # cmds always return False
+        assert not gameCmdObj.do_go("door1")  # cmds always return False
+        logger.info("OutSpool: " + charObj.client.popOutSpool())
+        assert roomObj1.getItemId() == origId, msg
+
+        msg = "Go through a door with a toll - Char should have fewer coins"
+        logger.info("Test: " + msg)
+        doorObj1._toll = 250
+        charObj.setCoins(1000)
+        doorLoc = doorObj1.getToWhere()
+        assert not gameCmdObj.do_go("door1")  # cmds always return False
+        assert charObj.getCoins() == 750, msg
+        assert charObj.getRoom().getId() == doorLoc, msg
+
         self.purgeTestRoomData(roomNums=[99992, 99993])
 
 

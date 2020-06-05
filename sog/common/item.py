@@ -105,6 +105,12 @@ class Item(Storage, AttributeHelper, Inventory, EditWizard):
     def isValid(self):
         return False
 
+    def hasToll(self):
+        return False
+
+    def payToll(self, charObj):
+        return True
+
     def isVulnerable(self):
         return False
 

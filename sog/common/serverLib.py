@@ -36,7 +36,7 @@ def server(email=""):
                     clientsock, clientAddress = serverHandle.accept()
 
                     newthread = ClientThread(
-                        clientsock, clientAddress, common.globals.totalConnections,
+                        clientsock, clientAddress, common.globals.totalConnections
                     )
                     common.globals.connections.append(newthread)
                     common.globals.totalConnections += 1

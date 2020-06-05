@@ -671,7 +671,7 @@ class Spell:
         )
         if self.charObj.client:
             self.charObj.client.gameObj.attackCreature(
-                self.charObj, self.targetObj, attackCmd=self.spellName, spellObj=self,
+                self.charObj, self.targetObj, attackCmd=self.spellName, spellObj=self
             )
         else:
             logger.warning(

@@ -468,12 +468,12 @@ class TestCharacter(TestGameBase):
                 charObj.luck = luck
                 charObj.piety = piety
                 origStatTotal = self.getStatTotals(
-                    charObj, name=("lvl " + str(charObj.getLevel())), silent=True,
+                    charObj, name=("lvl " + str(charObj.getLevel())), silent=True
                 )
                 charObj.processDeath(calculateLevelsToLose=True, silent=True)
-                # charObj.processDeath(calculateLevelsToLose=False, silent=True)
+                #                charObj.processDeath(calculateLevelsToLose=False, silent=True)
                 newStatTotal = self.getStatTotals(
-                    charObj, name=("lvl " + str(charObj.getLevel())), silent=True,
+                    charObj, name=("lvl " + str(charObj.getLevel())), silent=True
                 )
                 statDiffs.append(origStatTotal - newStatTotal)
                 levelDiffs.append(_startingLevel - charObj.getLevel())

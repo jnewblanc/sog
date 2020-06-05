@@ -159,21 +159,30 @@ class TestGameBase(unittest.TestCase):
             + self.getRoomObj().debug()
         )
 
+    def txtBanner(self, msg, bChar="-", bCount=5):
+        """ return a string enclosed in characters """
+        return "{0} {1} {0}".format((bChar * bCount), msg)
+
     def banner(self, status="start", testName=""):
+        """ show test header banner """
         if not hasattr(self, "_testName"):
             self.setTestName(testName)
-        dashes = "-" * 12
-        logger.info(
-            dashes
-            + " "
-            + self._testName
-            + " "
-            + str(masterTestNum)
-            + " "
-            + status
-            + " "
-            + dashes
-        )
+        testStr = self._testName + " " + str(masterTestNum) + " " + status
+        logger.info(self.txtBanner(testStr, bCount=12))
+
+    def showItems(self, itemList, attList=[]):
+        gameCmdObj = self.getGameCmdObj()
+        for item in itemList:
+            gameCmdObj.do_look(item.getName())
+            if len(attList):
+                tmplist = []
+                for att in attList:
+                    tmplist.append(att + " = " + str(getattr(item, att)))
+                logger.info(
+                    "\n" + self.txtBanner(item.getName()) + "\n" + "\n".join(tmplist)
+                )
+            else:
+                logger.info(self.txtBanner(item.getName()) + "\n" + item.debug())
 
     def setUp(self, testName="TestGameBase"):
         self.purgeTestRoomData()

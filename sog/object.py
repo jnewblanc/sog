@@ -26,6 +26,9 @@ class Object(Item):
     # integer attributes
     intAttributes = ["_weight", "_value"]
     # boolean attributes
+    boolAttributes = ["_carry", "_hidden", "_invisible", "_magic", "_permanent"]
+    strAttributes = ["_name", "_article", "_singledesc", "_pluraldesc", "_longdesc"]
+    listAttributes = ["_classesAllowed", "_alignmentsAllowed", "_gendersAllowed"]
     boolAttributes = [
         "_carry",
         "_hidden",
@@ -169,7 +172,11 @@ class Object(Item):
         return True
 
     def examine(self):
-        return self._longdesc
+        msg = self._longdesc
+        if hasattr(self, "_toll"):
+            if self.hasToll:
+                msg += "  It has a toll."
+        return msg
 
     def identify(self):
         ROW_FORMAT = "{0:9}: {1:<30}\n"
@@ -527,6 +534,9 @@ class Closable(Object):
         AttributeHelper.fixAttributes(self)
         return True
 
+    def getLockId(self):
+        return self._lockId
+
     def getLockLevel(self):
         return self._locklevel
 
@@ -549,10 +559,15 @@ class Closable(Object):
             return True
         return False
 
+    def trapIsPoisoned(self):
+        return self._poison
+
     def isOpenable(self, charObj):
-        if self.isClosed() and not self.isLocked():
-            return True
-        return False
+        if self.isOpen():
+            return False
+        if self.isLocked():
+            return False
+        return True
 
     def isClosable(self, charObj):
         if self.isClosed():
@@ -565,9 +580,9 @@ class Closable(Object):
         return False
 
     def isUnlockable(self):
-        if self.isClosed() and self._isLocked() and self.getLockLevel() > 0:
-            return False
-        return True
+        if self.isClosed() and self.isLocked() and self.getLockLevel() > 0:
+            return True
+        return False
 
     def isTrapped(self):
         if self._traplevel > 0:
@@ -579,22 +594,32 @@ class Closable(Object):
             return True
         return False
 
+    def getToll(self):
+        return self._toll
+
     def hasSpring(self):
         return self._spring
 
     def isClosed(self):
-        if self._closed:
-            return True
-        return False
+        return self._closed
+
+    def isOpen(self):
+        return not (self.isClosed())
 
     def isLocked(self):
-        if self._locked:
-            return True
-        return False
+        return self._locked
 
     def isUnlocked(self):
-        if self._locked:
-            return False
+        return not (self.isLocked())
+
+    def lock(self):
+        self._locked = True
+        return True
+
+    def unlock(self, keyObj=None):
+        if keyObj:
+            keyObj.decrementChargeCounter()
+        self._locked = False
         return True
 
     def smash(self, charObj, saveItem=True):
@@ -615,7 +640,7 @@ class Closable(Object):
             damage = self.smashDamage(charObj, self.getWeight(), True)
             charObj.client.spoolOut(self.smashTxt(damage, True, charHp))
             charObj.takeDamage(damage)
-            self._closed = "False"
+            self._closed = False
             if saveItem:
                 charObj.getRoom().save()
             return True
@@ -642,18 +667,18 @@ class Closable(Object):
         else:
             charObj.setLastAttackDate()
 
-        if self.pickSuccess(charObj):
-            self._locked = "False"
-            self._closed = "False"
+        if charObj.picksLock(charObj, self.getLockLevel()):
+            self._locked = False
+            self._closed = False
             if saveItem:
                 charObj.getRoom().save()
             return True
-        elif self.traplevel > 0:
-            if not self.avoidTrap(charObj):
+        elif self.getTrapLevel() > 0:
+            if not charObj.avoidsTrap(self.getTrapLevel()):
                 damage = self.trapDamage(charObj, self.getTrapLevel())
 
                 trapTxt = self.trapTxt(
-                    damage, poison=self._poison, currenthealth=charObj.getHitPoints(),
+                    damage, poison=self._poison, currenthealth=charObj.getHitPoints()
                 )
                 charObj.client.spoolOut(trapTxt)
                 charObj.takeDamage(damage)
@@ -664,29 +689,41 @@ class Closable(Object):
             return False
         return False
 
-    def open(self, charObj, saveItem=True):
+    def open(self, charObj):
         """ Open an object - Returns true if opened """
-        if not self.isOpenable():
+        if not self.isOpenable(charObj):
             return False
 
-        self._closed = "False"
-        if saveItem:
-            charObj.getRoom().save()
-
-        if self._traplevel > 0:
-            if not self.avoidTrap(charObj):
+        if self.getTrapLevel() > 0:
+            if not charObj.avoidsTrap(self.getTrapLevel()):
                 damage = self.trapDamage(charObj, self.getTrapLevel())
+                dealPoison = False
+                if self.trapIsPoisoned():
+                    if not charObj.resistsPoison():
+                        charObj.setPoisoned()
+                        dealPoison = True
                 trapTxt = self.trapTxt(
-                    damage, poison=self._poison, currenthealth=charObj.getHitPoints(),
+                    damage, poison=dealPoison, currenthealth=charObj.getHitPoints()
                 )
-                charObj.client.spoolOut(trapTxt)
+                charObj.client.spoolOut(
+                    "{}: Trap hits you for {} hit points.".format(trapTxt, damage)
+                )
+                charObj.client.spoolOut("\n")
                 charObj.takeDamage(damage)
+            else:
+                pass
+                # charObj.client.spoolOut("You avoid the trap!\n")
+
+        self._closed = False
+
         return True
 
-    def close(self, charObj, saveItem=True):
-        self._closed = "True"
-        if saveItem:
-            charObj.getRoom().save()
+    def close(self, charObj):
+        if not self.isClosable(charObj):
+            return False
+
+        self._closed = True
+        return True
 
     def smashSucceds(self, charObj):
         """ Returns True if smash calculations succeed
@@ -718,32 +755,10 @@ class Closable(Object):
 
         return max(0, damage)
 
-    def pickSuccess(self, charObj):
-        """ Returns True if pick calculations succeed
-            * Lock level makes it harder to pick
-            * Dex makes it easier to pick
-            * Rogues get a big pick advantage """
-        if (charObj.getClass().lower() == "rogue") and (
-            charObj.getDexterity() - 5 > self.getLockLevel()
-        ):
-            return True
-        elif (charObj.getDexterity() - 12) > self.getLockLevel():  # stat based
-            return True
-        return False
-
     def trapDamage(self, charObj, traplevel):
         """ Returns damage from trap calculations """
         damage = random.randint(traplevel, traplevel * 10)
         return max(0, damage)
-
-    def avoidTrap(self, charObj):
-        """ Return true if trap is avoided
-            dex, class, and traplevel are used to calulate """
-        trapPercent = 100 + self._traplevel * 10
-        if charObj.getClass().lower() == "rogue":
-            # Thieves are twice as good at avoiding traps
-            trapPercent /= 2
-        return charObj.dodge(trapPercent)
 
     def smashTxt(self, damage=0, success=False, currenthealth=-1):
         """ returns the text for the smash """
@@ -804,16 +819,6 @@ class Closable(Object):
         if buf == "":
             buf = "You are hit by a trap."
         return buf
-
-    def poison(self, charObj, chanceToAvoid=20):
-        """ Returns true/false depending on whether the player is poisoned """
-        randX = random.randint(1, 100)
-        if charObj.getClass() == "ranger":
-            # Rangers are much less likely to be poisoned
-            chanceToAvoid = (chanceToAvoid * 3) + charObj.getLevel
-        if randX > chanceToAvoid:
-            return True
-        return False
 
 
 class Armor(Equippable, Exhaustible):
@@ -971,6 +976,14 @@ class Portal(Object):
             return True
         return False
 
+    def hasToll(self):
+        if self._toll > 0:
+            return True
+        return False
+
+    def getToll(self):
+        return self._toll
+
 
 class Door(Portal, Closable):
     """ Doors are Closables which have a corresponding door who's open/closed
@@ -1013,6 +1026,15 @@ class Door(Portal, Closable):
     def getCorresspondingDoorId(self):
         return self._correspondingDoorId
 
+    def examine(self):
+        buf = super().examine()
+        if self.isClosed():
+            buf += ".  It's closed."
+        return buf
+
+    def getSingular(self):
+        return self.describe(article="")
+
     def describe(self, count=1, article="none"):
         if article == "none":
             article = self._article + " "
@@ -1030,13 +1052,7 @@ class Door(Portal, Closable):
 
 class Container(Closable):
 
-    wizardAttributes = [
-        "_name",
-        "_article",
-        "_singledesc",
-        "_pluraldesc",
-        "_longdesc",
-    ]
+    wizardAttributes = ["_name", "_article", "_singledesc", "_pluraldesc", "_longdesc"]
 
     def __init__(self, objId=0):
         super().__init__(objId)
@@ -1139,6 +1155,9 @@ class Key(Exhaustible):
         super().__init__(objId)
         self._lockId = 0  # id=1000 will open any door
         return None
+
+    def getLockId(self):
+        return self._lockId
 
 
 class Scroll(MagicalDevice):

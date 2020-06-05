@@ -38,7 +38,7 @@ class Room(Item):
     }
 
     # int attributes
-    intAttributes = list(directionNameDict.keys()) + ["_encounterRate", "_roomNum"]
+    intAttributes = ["n", "s", "e", "w", "u", "d", "o", "_encounterRate", "_roomNum"]
     # boolean attributes
     boolAttributes = ["_notifyDM", "_safe", "_antiMagic", "_dark"]
     # string attributes
@@ -77,15 +77,7 @@ class Room(Item):
         "_invValue",
     ]
 
-    wizardAttributes = [
-        "_shortDesc",
-        "_desc",
-        "n",
-        "s",
-        "e",
-        "w",
-        "_encounterRate",
-    ]
+    wizardAttributes = ["_shortDesc", "_desc", "n", "s", "e", "w", "_encounterRate"]
 
     attributeInfo = {
         "_shortDesc": "short room description when brief prompt is used",
@@ -548,7 +540,7 @@ class Room(Item):
             permId = perm.getItemId()
             if permId not in idsOfPermsInRoom:
                 dLog(
-                    "loadPermanents: loading perm =" + str(permId), self._instanceDebug,
+                    "loadPermanents: loading perm =" + str(permId), self._instanceDebug
                 )
                 self.addToInventory(perm)
             else:
@@ -698,9 +690,7 @@ class Room(Item):
         # % chance that room will have no encounter this time
         if random.randint(1, 5) == 5:
             self.setLastEncounter()
-            dLog(
-                debugPrefix + "Encounter randomly discarded", self._instanceDebug,
-            )
+            dLog(debugPrefix + "Encounter randomly discarded", self._instanceDebug)
             return False
 
         dLog(debugPrefix + "Room is ready for encounter", self._instanceDebug)

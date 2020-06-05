@@ -83,7 +83,7 @@ class Inventory:
         return True
 
     def describeInventory(
-        self, showIndex=False, markerAfter=0, markerTxt="", headerTxt="Inventory",
+        self, showIndex=False, markerAfter=0, markerTxt="", headerTxt="Inventory"
     ):
         """ Display inventory
             * showIndex - show the enumerated number in front of each item
@@ -162,9 +162,7 @@ class Inventory:
                 or (oneitem.isHidden() and not showHidden)
                 and not showDm
             ):
-                dLog(
-                    logPrefix + "HID/INV: " + str(oneitem), Inventory._instanceDebug,
-                )
+                dLog(logPrefix + "HID/INV: " + str(oneitem), Inventory._instanceDebug)
                 pass
             else:
                 itemStr += oneitem.getSingular()
@@ -185,9 +183,7 @@ class Inventory:
         # uniqueItemNames = set(itemList)   # set was messing up the order
         uniqueItemNames = self.unique(itemList)
 
-        dLog(
-            logPrefix + "postSet - " + str(uniqueItemNames), Inventory._instanceDebug,
-        )
+        dLog(logPrefix + "postSet - " + str(uniqueItemNames), Inventory._instanceDebug)
 
         # create a list of items with their counts
         countedList = []
@@ -205,9 +201,7 @@ class Inventory:
                 itemStr += dmDict[name]
             countedList.append(itemStr)
 
-        dLog(
-            logPrefix + "counted - " + str(uniqueItemNames), Inventory._instanceDebug,
-        )
+        dLog(logPrefix + "counted - " + str(uniqueItemNames), Inventory._instanceDebug)
 
         # join our list with commas and 'and'
         sightList = inf.join(countedList)
@@ -327,7 +321,7 @@ class Inventory:
                 )
                 if verbose:
                     roomMsgFunct(
-                        roomObj, item.describe() + "falls to the floor and rolls away",
+                        roomObj, item.describe() + "falls to the floor and rolls away"
                     )
 
         roomObj.save()

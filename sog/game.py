@@ -303,10 +303,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         """ When a door is opened/closed on one side, the corresponing door
             needs to be updated """
 
-        # Persist the current door state to disk
-        doorObj.save()
-
-        roomObj = self.getCorrespondingRoomObj()
+        roomObj = self.getCorrespondingRoomObj(doorObj)
 
         if roomObj:
             for obj in roomObj.getInventory():
@@ -315,10 +312,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
                         obj.close(charObj)
                     else:
                         obj.open(charObj)
+                    if doorObj.isLocked():
+                        obj.lock()
+                    else:
+                        obj.unlock()
+                    roomObj.save()
             return True
-        else:
-            roomObj = RoomFactory("room", doorObj.getToWhere())
-
         return True
 
     def buyTransaction(
@@ -383,17 +382,13 @@ class _Game(cmd.Cmd, Combat, Ipc):
         """
         debugPrefix = "game.populateRoomCreatureCache (" + str(roomObj.getId()) + "): "
         if len(roomObj.getCreatureCache()) == 0:
-            dLog(
-                debugPrefix + "Populating room creature cache", self._instanceDebug,
-            )
+            dLog(debugPrefix + "Populating room creature cache", self._instanceDebug)
             # loop through all possible creatures for room and fill cache
             for ccNum in roomObj.getEncounterList():
                 ccObj = Creature(ccNum)
                 ccObj.load()
                 roomObj.creatureCachePush(ccObj)
-                dLog(
-                    debugPrefix + "Cached " + ccObj.describe(), self._instanceDebug,
-                )
+                dLog(debugPrefix + "Cached " + ccObj.describe(), self._instanceDebug)
 
     def getEligibleCreatureList(self, roomObj):
         """ Determine which creatures, from the cache, can be encountered, by
@@ -408,7 +403,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 cObj.load()
                 eligibleCreatureList.append(cObj)
                 dLog(
-                    debugPrefix + cObj.describe() + " is eligible", self._instanceDebug,
+                    debugPrefix + cObj.describe() + " is eligible", self._instanceDebug
                 )
         return eligibleCreatureList
 
@@ -644,69 +639,89 @@ class GameCmd(cmd.Cmd):
             to call it without passing the extra arg) """
         return self.gameObj.othersInRoomMsg(self.charObj, roomObj, msg, ignore)
 
+    def moveDirection(self, charObj, direction):
+        """ move subcommand - move in one of the the basic directions """
+        dLog("GAME move dir = " + direction, self._instanceDebug)
+
+        exitDict = charObj.getRoom().getExits()
+
+        if direction not in exitDict.keys():
+            self.selfMsg("You can't move in that direction!\n")
+            return False
+
+        destRoomNum = exitDict[direction]
+        roomObj = self.gameObj.roomLoader(destRoomNum)
+
+        if not roomObj:
+            logger.error("Could not create roomObj " + str(destRoomNum) + ".")
+            return False
+
+        if not roomObj.canBeJoined(charObj):
+            logger.error(roomObj.getId() + " can not be joined.")
+            return False
+
+        if self.gameObj.joinRoom(roomObj, charObj):
+            return True
+        else:
+            logger.error("joinRoom Failed\n")
+            return False
+        return False
+
+    def moveThroughPortalOrDoor(self, charObj, itemObj):
+        """ move subcommand - move through door or portal """
+        if not itemObj:  # no object - take no action
+            self.selfMsg("That is not somewhere you can go!\n")
+            return False
+
+        if not itemObj.canBeEntered(charObj):
+            self.selfMsg("You can't go there!\n")
+            return False
+
+        if itemObj.hasToll():
+            toll = itemObj.getToll()
+            if charObj.canAffordAmount(toll):
+                charObj.subtractCoins(toll)
+                self.selfMsg("You paid a toll of {} coins.".format(toll))
+            else:
+                self.selfMsg("Opening this item requires more coins than you have\n")
+                return False
+
+        dLog(
+            "GAME move through obj = {}".format(itemObj.describe()), self._instanceDebug
+        )
+
+        roomnum = itemObj.getToWhere()
+        roomObj = self.gameObj.roomLoader(roomnum)
+        if roomObj:
+            if roomObj.canBeJoined(charObj):
+                if self.gameObj.joinRoom(roomnum, charObj):
+                    return True
+                else:
+                    logger.error("joinRoom Failed\n")
+            else:
+                logger.error(roomnum + " can not be joined")
+        else:
+            logger.error("Could not create roomObj " + roomnum)
+        return False
+
     def move(self, line):
+        """ move character from one room to another """
         cmdargs = line.split(" ")
         charObj = self.charObj
         moved = False
         currentRoom = charObj.getRoom()
         oldRoom = charObj.getRoom()
         if currentRoom.isDirection(cmdargs[0]):  # if command is a direction
-            # Handle the primary directions
-            direction = cmdargs[0]
-            dLog("GAME move dir = " + direction, self._instanceDebug)
-            exitDict = currentRoom.getExits()
-            if direction in exitDict.keys():
-                roomObj = self.gameObj.roomLoader(exitDict[direction])
-                if roomObj:
-                    if roomObj.canBeJoined(charObj):
-                        if self.gameObj.joinRoom(roomObj, charObj):
-                            currentRoom = charObj.getRoom()
-                            moved = True
-                        else:
-                            logger.error("joinRoom Failed\n")
-                    else:
-                        logger.error(roomObj.getId() + " can not be joined.")
-                else:
-                    logger.error(
-                        "Could not create roomObj " + str(exitDict[direction]) + "."
-                    )
-            else:
-                self.selfMsg("You can't move in that direction!\n")
+            moved = self.moveDirection(charObj, cmdargs[0])
         else:
             # handle doors and Portals
             itemList = self.getObjFromCmd(currentRoom.getInventory(), line)
 
-            if not itemList[0]:  # no object - take no action
-                self.selfMsg("That is not somewhere you can go!\n")
-                return False
+            moved = self.moveThroughPortalOrDoor(charObj, itemList[0])
 
-            if not itemList[0].canBeEntered(charObj):
-                self.selfMsg("You can go there!\n")
-                return False
-
-            dLog(
-                "GAME move through obj = " + itemList[0].describe(),
-                self._instanceDebug,
-            )
-
-            roomnum = itemList[0].getToWhere()
-            roomObj = self.gameObj.roomLoader(roomnum)
-            if roomObj:
-                if roomObj.canBeJoined(charObj):
-                    if self.gameObj.joinRoom(roomnum, charObj):
-                        currentRoom = charObj.getRoom()
-                        moved = True
-                    else:
-                        logger.error("joinRoom Failed\n")
-                else:
-                    logger.error(roomnum + " can not be joined")
-            else:
-                logger.error("Could not create roomObj " + roomnum)
+        currentRoom = charObj.getRoom()
 
         if moved:
-            dLog(
-                "GAME move obj = " + str(roomObj.describe()), self._instanceDebug,
-            )
             # creatures in old room should stop attacking player
             self.gameObj.unAttack(oldRoom, charObj)
             # character possibly loses hidden
@@ -1093,12 +1108,15 @@ class GameCmd(cmd.Cmd):
         targetObj = itemList[0]
 
         if not targetObj.isClosable(charObj):
-            self.selfMsg("This is not closable!\n")
+            if targetObj.isClosed():
+                self.selfMsg("It's already closed.\n")
+            else:
+                self.selfMsg("You can not close that!\n")
             return False
 
         if targetObj.close(charObj):
             self.selfMsg("Ok\n")
-            if targetObj.gettype() == "Door":
+            if targetObj.getType() == "Door":
                 self.gameObj.modifyCorrespondingDoor(targetObj, charObj)
             return False
         else:
@@ -1530,9 +1548,9 @@ class GameCmd(cmd.Cmd):
         roomObj = charObj.getRoom()
 
         roomObjList = roomObj.getInventory()
-        #        fullObjList = charObj.getInventory() + roomObjList
+        fullObjList = charObj.getInventory() + roomObjList
 
-        itemList = self.getObjFromCmd(roomObjList, line)
+        itemList = self.getObjFromCmd(fullObjList, line)
 
         itemObj = itemList[0]
         keyObj = itemList[1]
@@ -1543,10 +1561,26 @@ class GameCmd(cmd.Cmd):
         if not keyObj:
             self.selfMsg("You can't lock anything without a key\n")
             return False
+
         if not itemObj.isLockable():
-            self.selfMsg("This is not lockable!\n")
+            if itemObj.isLocked():
+                self.selfMsg("It's already locked!\n")
+            elif itemObj.isOpen():
+                self.selfMsg("You can't lock it when it's open!\n")
+            else:
+                self.selfMsg("This is not lockable!\n")
             return False
-        self.selfMsg("Not implemented yet.\n")
+
+        if keyObj.getLockId() != itemObj.getLockId():
+            self.selfMsg("The key doesn't fit the lock\n")
+            return False
+
+        itemObj.lock()
+        if itemObj.getType() == "Door":
+            self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
+
+        self.selfMsg("Ok\n")
+
         return False
 
     def do_look(self, line):
@@ -1631,17 +1665,34 @@ class GameCmd(cmd.Cmd):
         itemObj = itemList[0]
 
         if not itemObj.isOpenable(charObj):
-            self.selfMsg("You can't open that.\n")
+            if itemObj.isOpen():
+                self.selfMsg("It's already open.\n")
+            elif itemObj.isLocked():
+                self.selfMsg("You can't.  It's locked.\n")
+            else:
+                self.selfMsg("You can't open that.\n")
             return False
 
+        if itemObj.getType() == "Container":
+            if itemObj.hasToll():
+                toll = itemObj.getToll()
+                if charObj.canAffordAmount(toll):
+                    charObj.subtractCoins(toll)
+                    self.selfMsg("You paid a toll of {} coins.".format(toll))
+                else:
+                    self.selfMsg(
+                        "Opening this item requires more coins than you have\n"
+                    )
+                    return False
+
         if itemObj.open(charObj):
-            self.selfMsg("It opens.")
+            self.selfMsg("You open it.\n")
             self.othersMsg(
                 roomObj,
-                charObj.getName() + " opens the " + itemObj.getSingular(),
-                charObj.isHidden() + "\n",
+                charObj.getName() + " opens the " + itemObj.getSingular() + "\n",
+                charObj.isHidden(),
             )
-            if itemObj.gettype() == "Door":
+            if itemObj.getType() == "Door":
                 self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             return False
         else:
@@ -2033,7 +2084,7 @@ class GameCmd(cmd.Cmd):
                 self.gameObj.roomMsg(
                     otherRoom, itemObj.getSingular() + " smashes open\n"
                 )
-            if itemObj.gettype() == "Door":
+            if itemObj.getType() == "Door":
                 self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             return False
         else:
@@ -2231,7 +2282,10 @@ class GameCmd(cmd.Cmd):
         charObj = self.charObj
         roomObj = charObj.getRoom()
 
-        itemList = self.getObjFromCmd(roomObj.getInventory(), line)
+        roomObjList = roomObj.getInventory()
+        fullObjList = charObj.getInventory() + roomObjList
+
+        itemList = self.getObjFromCmd(fullObjList, line)
 
         if not itemList[0]:
             return self.missingArgFailure()
@@ -2240,13 +2294,25 @@ class GameCmd(cmd.Cmd):
         keyObj = itemList[1]
 
         if not keyObj:
-            self.selfMsg("You need a key before you can unlock anything\n")
-        if not itemObj.isUnlockable():
-            self.selfMsg("You can't unlock that.\n")
+            self.selfMsg("You can't lock anything without a key\n")
             return False
-        # need to get lock ID and see if the given key matches
-        # if keys have charges, we need to modify key
-        if itemObj.unlock(charObj):
+
+        if not itemObj.isUnlockable():
+            if itemObj.isUnlocked():
+                self.selfMsg("It's already unlocked!\n")
+            elif itemObj.isOpen():
+                self.selfMsg("You can't unlock it when it's open!\n")
+            else:
+                self.selfMsg("This is not unlockable!\n")
+            return False
+
+        if keyObj.getLockId() != itemObj.getLockId():
+            self.selfMsg("The key doesn't fit the lock\n")
+            return False
+
+        if itemObj.unlock(keyObj):
+            if itemObj.getType() == "Door":
+                self.gameObj.modifyCorrespondingDoor(itemObj, charObj)
             self.selfMsg("You unlock the lock.\n")
             self.othersMsg(
                 roomObj,
@@ -2270,6 +2336,7 @@ class GameCmd(cmd.Cmd):
                 charObj.isHidden(),
             )
             return False
+
         return False
 
     def do_up(self, line):

@@ -175,11 +175,7 @@ class Spooler:
             Default is like this:
                ----- mymessage -----
         """
-        return (
-            self.txtLine(lineChar=bChar, lineSize=5)
-            + msg
-            + self.txtLine(lineChar=bChar, lineSize=5)
-        )
+        return "{0} {1} {0}".format(self.txtLine(lineChar=bChar, lineSize=5), msg)
 
     def txtLine(self, lineChar="-", lineSize=80):
         """ return a string containing a line

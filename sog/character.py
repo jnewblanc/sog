@@ -1759,21 +1759,28 @@ class Character(Item):
             status = "fresh"
         return status
 
-    def dodge(self, basePercent=100):
+    def dodge(self, basePercent=100, dodgeTxt=""):
         """ Return true if dodged
             * If basePercent is increased, chance of dodging goes down.
             * chances improved by dex, class, dodge skill, and dodgeBonus """
+        result = "dodge failed"
         randX = random.randint(1, 100)
         classMult = 2 if self.getClassName().lower() == "rogue" else 1
         skillMult = self._dodge + self._dodgeBonus
 
         dodgeAdv = self.getDexterity() * (classMult + skillMult) / 10
         dodgeCalc = (randX + dodgeAdv) * 2
+        if dodgeCalc > basePercent:
+            result = "dodged"
+        if dodgeTxt != "":
+            dodgeTxt += " "
         dLog(
-            "dodge - calc=" + dodgeCalc + " >? basePercent=" + basePercent,
+            "{0}{1} - character dodge calc ({2}) >? {0}odds ({3})".format(
+                dodgeTxt, result, dodgeCalc, basePercent
+            ),
             self._instanceDebug,
         )
-        if dodgeCalc > basePercent:
+        if result == "dodged":
             return True
         return False
 
@@ -1809,9 +1816,7 @@ class Character(Item):
         if nokill and self.getHitPoints() <= 0:
             self.setNearDeathExperience()
         condition = self.condition()
-        dLog(
-            self.getName() + " takes " + str(damage) + " damage", self._instanceDebug,
-        )
+        dLog(self.getName() + " takes " + str(damage) + " damage", self._instanceDebug)
         self.save()
         if self.getHitPoints() <= 0:
             if self.isDm():
@@ -1862,9 +1867,7 @@ class Character(Item):
         logPrefix = __class__.__name__ + " searchSucceeds: "
 
         if self.canSeeHidden():
-            dLog(
-                logPrefix + "Pass - Character can see hidden", self._instanceDebug,
-            )
+            dLog(logPrefix + "Pass - Character can see hidden", self._instanceDebug)
             return True
 
         percentChance = (
@@ -1994,9 +1997,7 @@ class Character(Item):
         fumbleRoll = random.randint(1, 100)
         percentage = basePercent - self.getDexterity()
         if fumbleRoll == 1:  # always a 1% change of fumbling
-            dLog(
-                logPrefix + "Bad luck - 1% fumble triggered", self._instanceDebug,
-            )
+            dLog(logPrefix + "Bad luck - 1% fumble triggered", self._instanceDebug)
             fumbles = True
         elif fumbleRoll < percentage:
             dLog(
@@ -2092,6 +2093,36 @@ class Character(Item):
                 )
                 self.takeDamage(poisonHp)
                 self.setLastPoison()
+
+    def resistsPoison(self, chanceToPoison=80):
+        """ Returns true/false if the player resists poison """
+        if self.getClassName() == "ranger":
+            # Rangers are 3 times less likely to be poisoned
+            chanceToPoison /= 3
+        chanceToPoison -= self.getLevel()
+        return self.dodge(chanceToPoison, dodgeTxt="poison")
+
+    def picksLock(self, lockLevel):
+        """ Returns True if pick calculations succeed
+            * Lock level makes it harder to pick
+            * Dex makes it easier to pick
+            * Rogues get a big pick advantage """
+        if (self.getClassName().lower() == "rogue") and (
+            self.getDexterity() - 5 > lockLevel
+        ):
+            return True
+        elif (self.getDexterity() - 12) > lockLevel:  # stat based
+            return True
+        return False
+
+    def avoidsTrap(self, traplevel):
+        """ Return true if trap is avoided
+            dex, class, and traplevel are used to calulate """
+        trapPercent = 100 + traplevel * 10
+        if self.getClassName().lower() == "rogue":
+            # Thieves are twice as good at avoiding traps
+            trapPercent /= 2
+        return self.dodge(trapPercent, dodgeTxt="trap")
 
     def promptForClass(self, ROW_FORMAT):
         prompt = "Classes:\n"
