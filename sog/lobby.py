@@ -176,7 +176,7 @@ class LobbyCmd(cmd.Cmd):
     def do_help(self, line):
         buf = (
             "play  - play the SoG game\n"
-            "who   - show players logged in to the lobby\n"
+            + "who   - show players logged in to the lobby\n"
             + "info  - get account information\n"
             + "brief - set lobby prompt to brief mode\n"
             + "full  - set lobby promp to full mode\n"

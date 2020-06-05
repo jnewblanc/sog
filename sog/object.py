@@ -29,6 +29,25 @@ class Object(Item):
     boolAttributes = ["_carry", "_hidden", "_invisible", "_magic", "_permanent"]
     strAttributes = ["_name", "_article", "_singledesc", "_pluraldesc", "_longdesc"]
     listAttributes = ["_classesAllowed", "_alignmentsAllowed", "_gendersAllowed"]
+    boolAttributes = [
+        "_carry",
+        "_hidden",
+        "_invisible",
+        "_magic",
+        "_permanent",
+    ]
+    strAttributes = [
+        "_name",
+        "_article",
+        "_singledesc",
+        "_pluraldesc",
+        "_longdesc",
+    ]
+    listAttributes = [
+        "_classesAllowed",
+        "_alignmentsAllowed",
+        "_gendersAllowed",
+    ]
     # obsolete attributes (to be removed)
     obsoleteAttributes = [
         "",

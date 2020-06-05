@@ -217,7 +217,7 @@ class TestMagic(TestGameBase):
                 "lightning": [8, 10],
                 "identify": [10],
                 "disintegrate": []
-            },
+            }
         }
         badLvls = {
             "mage": {

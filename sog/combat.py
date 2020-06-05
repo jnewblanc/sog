@@ -210,7 +210,6 @@ class Combat:
         levelAdj = (attackerObj.getLevel() - defenderObj.getLevel()) * 5
         hitPercentage += levelAdj
         dLog(logPrefix + "  " + str(levelAdj) + "% level adj", self._instanceDebug)
-
         # dex bonus/penalty = +/- %3 per dex above/below 12
         if isinstance(attackerObj, Character):
             dexAdj = (attackerObj.getDexterity() - 12) * 3

@@ -11,7 +11,7 @@ exclude =
 max-complexity = 12
 
 # Set the maximum allowed line length
-max-line-length = 127
+max-line-length = 88
 
 # Print the total number of errors.
 count = True
