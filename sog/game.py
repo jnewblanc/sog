@@ -1228,6 +1228,7 @@ class GameCmd(cmd.Cmd):
         roomObjList = self.getObjFromCmd(roomObj.getInventory(), line)
         if roomObjList[0]:
             roomObj.removeObject(roomObjList[0])
+            roomObj.save()
             self.selfMsg("ok\n")
             return False
 
@@ -1863,6 +1864,23 @@ class GameCmd(cmd.Cmd):
 
         self.useMagicItem(line)
 
+        return False
+
+    def do_reloadperm(self, line):
+        ''' dm - reload permanents from disk (i.e. after modification) '''
+        roomObj = self.charObj.getRoom()
+
+        if not self.charObj.isDm():
+            self.selfMsg("Unknown Command\n")
+            return False
+
+        itemList = self.getObjFromCmd(roomObj.getInventory(), line)
+        if not itemList[0]:
+            self.selfMsg("usage: reloadperm <objectname>\n")
+            return False
+
+        roomObj.reloadPermanent(itemList[0].getId())
+        self.selfMsg("Ok\n")
         return False
 
     def do_remove(self, line):

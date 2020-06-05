@@ -1108,9 +1108,9 @@ class Container(Closable):
         self.addToInventory(item)
         if len(self.getInventory()) >= self._inventoryTruncSize:
             msg = (
-                "Warning - any items in excess of "
-                + self._inventoryTruncSize
-                + " will be truncated on when you leave the room."
+                "Warning - any items in excess " +
+                "of {} ".format(self._inventoryTruncSize) +
+                " will be truncated on when you leave the room."
             )
             charObj.client.spoolOut(msg + "\n")
         self._weight = self.getWeight()
