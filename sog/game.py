@@ -639,66 +639,89 @@ class GameCmd(cmd.Cmd):
             to call it without passing the extra arg) """
         return self.gameObj.othersInRoomMsg(self.charObj, roomObj, msg, ignore)
 
+    def moveDirection(self, charObj, direction):
+        """ move subcommand - move in one of the the basic directions """
+        dLog("GAME move dir = " + direction, self._instanceDebug)
+
+        exitDict = charObj.getRoom().getExits()
+
+        if direction not in exitDict.keys():
+            self.selfMsg("You can't move in that direction!\n")
+            return False
+
+        destRoomNum = exitDict[direction]
+        roomObj = self.gameObj.roomLoader(destRoomNum)
+
+        if not roomObj:
+            logger.error("Could not create roomObj " + str(destRoomNum) + ".")
+            return False
+
+        if not roomObj.canBeJoined(charObj):
+            logger.error(roomObj.getId() + " can not be joined.")
+            return False
+
+        if self.gameObj.joinRoom(roomObj, charObj):
+            return True
+        else:
+            logger.error("joinRoom Failed\n")
+            return False
+        return False
+
+    def moveThroughPortalOrDoor(self, charObj, itemObj):
+        """ move subcommand - move through door or portal """
+        if not itemObj:  # no object - take no action
+            self.selfMsg("That is not somewhere you can go!\n")
+            return False
+
+        if not itemObj.canBeEntered(charObj):
+            self.selfMsg("You can't go there!\n")
+            return False
+
+        if itemObj.hasToll():
+            toll = itemObj.getToll()
+            if charObj.canAffordAmount(toll):
+                charObj.subtractCoins(toll)
+                self.selfMsg("You paid a toll of {} coins.".format(toll))
+            else:
+                self.selfMsg("Opening this item requires more coins than you have\n")
+                return False
+
+        dLog(
+            "GAME move through obj = {}".format(itemObj.describe()), self._instanceDebug
+        )
+
+        roomnum = itemObj.getToWhere()
+        roomObj = self.gameObj.roomLoader(roomnum)
+        if roomObj:
+            if roomObj.canBeJoined(charObj):
+                if self.gameObj.joinRoom(roomnum, charObj):
+                    return True
+                else:
+                    logger.error("joinRoom Failed\n")
+            else:
+                logger.error(roomnum + " can not be joined")
+        else:
+            logger.error("Could not create roomObj " + roomnum)
+        return False
+
     def move(self, line):
+        """ move character from one room to another """
         cmdargs = line.split(" ")
         charObj = self.charObj
         moved = False
         currentRoom = charObj.getRoom()
         oldRoom = charObj.getRoom()
         if currentRoom.isDirection(cmdargs[0]):  # if command is a direction
-            # Handle the primary directions
-            direction = cmdargs[0]
-            dLog("GAME move dir = " + direction, self._instanceDebug)
-            exitDict = currentRoom.getExits()
-            if direction in exitDict.keys():
-                roomObj = self.gameObj.roomLoader(exitDict[direction])
-                if roomObj:
-                    if roomObj.canBeJoined(charObj):
-                        if self.gameObj.joinRoom(roomObj, charObj):
-                            currentRoom = charObj.getRoom()
-                            moved = True
-                        else:
-                            logger.error("joinRoom Failed\n")
-                    else:
-                        logger.error(roomObj.getId() + " can not be joined.")
-                else:
-                    logger.error(
-                        "Could not create roomObj " + str(exitDict[direction]) + "."
-                    )
-            else:
-                self.selfMsg("You can't move in that direction!\n")
+            moved = self.moveDirection(charObj, cmdargs[0])
         else:
             # handle doors and Portals
             itemList = self.getObjFromCmd(currentRoom.getInventory(), line)
 
-            if not itemList[0]:  # no object - take no action
-                self.selfMsg("That is not somewhere you can go!\n")
-                return False
+            moved = self.moveThroughPortalOrDoor(charObj, itemList[0])
 
-            if not itemList[0].canBeEntered(charObj):
-                self.selfMsg("You can go there!\n")
-                return False
-
-            dLog(
-                "GAME move through obj = " + itemList[0].describe(), self._instanceDebug
-            )
-
-            roomnum = itemList[0].getToWhere()
-            roomObj = self.gameObj.roomLoader(roomnum)
-            if roomObj:
-                if roomObj.canBeJoined(charObj):
-                    if self.gameObj.joinRoom(roomnum, charObj):
-                        currentRoom = charObj.getRoom()
-                        moved = True
-                    else:
-                        logger.error("joinRoom Failed\n")
-                else:
-                    logger.error(roomnum + " can not be joined")
-            else:
-                logger.error("Could not create roomObj " + roomnum)
+        currentRoom = charObj.getRoom()
 
         if moved:
-            dLog("GAME move obj = " + str(roomObj.describe()), self._instanceDebug)
             # creatures in old room should stop attacking player
             self.gameObj.unAttack(oldRoom, charObj)
             # character possibly loses hidden
@@ -1649,6 +1672,18 @@ class GameCmd(cmd.Cmd):
             else:
                 self.selfMsg("You can't open that.\n")
             return False
+
+        if itemObj.getType() == "Container":
+            if itemObj.hasToll():
+                toll = itemObj.getToll()
+                if charObj.canAffordAmount(toll):
+                    charObj.subtractCoins(toll)
+                    self.selfMsg("You paid a toll of {} coins.".format(toll))
+                else:
+                    self.selfMsg(
+                        "Opening this item requires more coins than you have\n"
+                    )
+                    return False
 
         if itemObj.open(charObj):
             self.selfMsg("You open it.\n")

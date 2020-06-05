@@ -366,7 +366,26 @@ class TestGameCmd(TestGameBase):
         assert charObj.getHitPoints() < 100
         assert charObj.isPoisoned(), msg
 
-#        doorObj1._toll = True
+        msg = "Try to go through a toll door without funds.  Should fail"
+        logger.info("Test: " + msg)
+        doorObj1._toll = 2000
+        charObj._level = 1
+        charObj.setCoins(1000)
+        origId = roomObj1.getItemId()
+        self.showDoors([doorObj1], self.doorTrapAttributes)
+        assert not gameCmdObj.do_look("door1")  # cmds always return False
+        assert not gameCmdObj.do_go("door1")  # cmds always return False
+        logger.info("OutSpool: " + charObj.client.popOutSpool())
+        assert roomObj1.getItemId() == origId, msg
+
+        msg = "Go through a door with a toll - Char should have fewer coins"
+        logger.info("Test: " + msg)
+        doorObj1._toll = 250
+        charObj.setCoins(1000)
+        doorLoc = doorObj1.getToWhere()
+        assert not gameCmdObj.do_go("door1")  # cmds always return False
+        assert charObj.getCoins() == 750, msg
+        assert charObj.getRoom().getId() == doorLoc, msg
 
         self.purgeTestRoomData(roomNums=[99992, 99993])
 

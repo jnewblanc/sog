@@ -153,7 +153,11 @@ class Object(Item):
         return True
 
     def examine(self):
-        return self._longdesc
+        msg = self._longdesc
+        if hasattr(self, "_toll"):
+            if self.hasToll:
+                msg += "  It has a toll."
+        return msg
 
     def identify(self):
         ROW_FORMAT = "{0:9}: {1:<30}\n"
@@ -571,6 +575,9 @@ class Closable(Object):
             return True
         return False
 
+    def getToll(self):
+        return self._toll
+
     def hasSpring(self):
         return self._spring
 
@@ -949,6 +956,14 @@ class Portal(Object):
         if self.limitationsAreSatisfied(charObj):
             return True
         return False
+
+    def hasToll(self):
+        if self._toll > 0:
+            return True
+        return False
+
+    def getToll(self):
+        return self._toll
 
 
 class Door(Portal, Closable):

@@ -160,6 +160,20 @@ class TestGameBase(unittest.TestCase):
         logger.info(dashes + " " + self._testName + " " +
                     str(masterTestNum) + " " + status + " " + dashes)
 
+    def showItems(self, itemList, attList=[]):
+        gameCmdObj = self.getGameCmdObj()
+        for item in itemList:
+            gameCmdObj.do_look(item.getName())
+            if len(attList):
+                tmplist = []
+                for att in attList:
+                    tmplist.append(att + " = " + str(getattr(item, att)))
+                logger.info('\n' + self.banner(item.getName()) +
+                            '\n' + '\n'.join(tmplist))
+            else:
+                logger.info(self.banner(item.getName()) + '\n' +
+                            item.debug())
+
     def setUp(self, testName="TestGameBase"):
         self.purgeTestRoomData()
         self.setTestName(testName)

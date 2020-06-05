@@ -1,6 +1,7 @@
-''' Account class'''
+""" Account class"""
 
 from datetime import datetime
+
 # import getpass
 import os
 import re
@@ -14,18 +15,18 @@ from common.globals import DATADIR
 
 
 class Account(Storage, AttributeHelper):
-    ''' Account class'''
+    """ Account class"""
 
-    attributesThatShouldntBeSaved = ['client']
+    attributesThatShouldntBeSaved = ["client"]
 
-    validEmailRegex = r'^[A-Za-z0-9_\-\.]+@[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+$'
+    validEmailRegex = r"^[A-Za-z0-9_\-\.]+@[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+$"
 
     def __init__(self, client=None):
         self.client = client
 
-        self.email = ''
-        self.password = ''
-        self._displayName = ''
+        self.email = ""
+        self.password = ""
+        self._displayName = ""
         self.characterList = []
         self._maxcharacters = 5
         self.admin = False
@@ -34,103 +35,117 @@ class Account(Storage, AttributeHelper):
         self._creationDate = datetime.now()
         self._lastLogoutDate = getNeverDate()
 
-        self._debugAccountStorage = False      # Turn on/off debug logging
+        self._debugAccountStorage = False  # Turn on/off debug logging
 
     def __str__(self):
-        return("Account " + str(self.getId()))
+        return "Account " + str(self.getId())
 
     def __repr__(self):
         buf = self.getInfo()
-        buf += "IsAdmin: " + str(self.admin) + '\n'
-        buf += "client: " + str(self.client) + '\n'
-        return(buf)
+        buf += "IsAdmin: " + str(self.admin) + "\n"
+        buf += "client: " + str(self.client) + "\n"
+        return buf
 
     def describe(self):
-        return(self.getId())
+        return self.getId()
 
     def login(self):
-        ''' login and return the acctObj - acct created if needed '''
+        """ login and return the acctObj - acct created if needed """
 
         if not self.client.isRunning():
             # Abort if client is not connected/reachable
-            return(False)
+            return False
 
-        self.getUserEmailAddress()     # prompt user for email address
+        self.getUserEmailAddress()  # prompt user for email address
         email = self.getEmail()
 
-        if email == '' or email == 'exit' or email == 'quit':
+        if email == "" or email == "exit" or email == "quit":
             self.client.spoolOut("Aborting...\n")
             self.logout()
             self.client.terminateClientConnection()
-            return(False)
+            return False
 
         self.setDataFilename()
         if self.dataFileExists():
             if self.verifyAcctPassword():
                 self.load(logStr=__class__.__name__)
-                self.client.spoolOut('Welcome ' + self.getDisplayName() + '\n')
+                self.client.spoolOut("Welcome " + self.getDisplayName() + "\n")
                 self.admin = self.adminFileExists(email)
             else:
                 self.__init__(self.client)  # reset with existing connection
         else:  # Prompt for new account
-            prompt = ("Account for " + email + " doesn't exist\n" +
-                      "Create new account? [y/N] : ")
-            errMsg = ('Please enter y or n')
-            accountCheck = self.client.promptForInput(prompt, r'^[yYnN]$',
-                                                      errMsg)
-            if accountCheck.lower() == 'y':
+            prompt = (
+                "Account for "
+                + email
+                + " doesn't exist\n"
+                + "Create new account? [y/N] : "
+            )
+            errMsg = "Please enter y or n"
+            accountCheck = self.client.promptForInput(prompt, r"^[yYnN]$", errMsg)
+            if accountCheck.lower() == "y":
                 if self.create(email):
                     pass
                 else:
-                    self.client.spoolOut('Account could not be created.  ' +
-                                         'Aborting...\n')
+                    self.client.spoolOut(
+                        "Account could not be created.  " + "Aborting...\n"
+                    )
                     self.__init__(self.client)
-                    return(False)
+                    return False
             else:
                 self.client.spoolOut("Login Aborted...\n")
                 self.__init__(self.client)
-                return(False)
+                return False
 
         self.setLoginDate()
 
         if self.isValid():
-            logger.info(str(self.client) + ' Account login sucessful - ' +
-                        self.getEmail())
+            logger.info(
+                str(self.client) + " Account login sucessful - " + self.getEmail()
+            )
         else:
-            logger.info(str(self.client) + ' Account ' + self.getEmail() +
-                        " is invalid")
-            self.client.spoolOut("Password verification failed.  This " +
-                                 "transaction has been logged and will be " +
-                                 "investigated.\n")
-            return(False)
+            logger.info(
+                str(self.client) + " Account " + self.getEmail() + " is invalid"
+            )
+            self.client.spoolOut(
+                "Password verification failed.  This "
+                + "transaction has been logged and will be "
+                + "investigated.\n"
+            )
+            return False
 
         if self.repairCharacterList():
             self.save(logStr=(__class__.__name__ + "(rcl)"))
 
-        return(True)
+        return True
 
     def logout(self):
-        ''' clean up when the user is done '''
+        """ clean up when the user is done """
         buf = ""
         if "" == self.getEmail():
-            return(True)
+            return True
         self.setLogoutDate()
-        buf += (self.getEmail() + " is logged out\n" +
-                "Login Date:  " +
-                dateStr(self.getLastLoginDate()) + "\n" +
-                "Logout Date: " +
-                dateStr(self.getLastLogoutDate()) + "\n" +
-                self.client.txtLine('=') + "\n")
+        buf += (
+            self.getEmail()
+            + " is logged out\n"
+            + "Login Date:  "
+            + dateStr(self.getLastLoginDate())
+            + "\n"
+            + "Logout Date: "
+            + dateStr(self.getLastLogoutDate())
+            + "\n"
+            + self.client.txtLine("=")
+            + "\n"
+        )
         self.client.spoolOut(buf)
         self.save(logStr=__class__.__name__)
         if self.client:
-            logger.info(str(self.client) + ' Logout ' + self.getEmail())
+            logger.info(str(self.client) + " Logout " + self.getEmail())
         self.__init__(self.client)
-        return(True)
+        return True
 
-    def setDataFilename(self, dfStr=''):
-        ''' sets the data file name.  - Override the superclass because we
-            want the account info to be in the account directory. '''
+    def setDataFilename(self, dfStr=""):
+        """ sets the data file name.  - Override the superclass because we
+            want the account info to be in the account directory. """
 
         # generate the data file name based on class and id
         try:
@@ -138,30 +153,35 @@ class Account(Storage, AttributeHelper):
         except AttributeError:
             pass
 
-        if id and id != '':
-            self._datafile = os.path.abspath(DATADIR + '/' +
-                                             self.__class__.__name__ +
-                                             '/' + str(id) +
-                                             '/account.pickle')
-            return(True)
-        return(False)
+        if id and id != "":
+            self._datafile = os.path.abspath(
+                DATADIR
+                + "/"
+                + self.__class__.__name__
+                + "/"
+                + str(id)
+                + "/account.pickle"
+            )
+            return True
+        return False
 
     def getUserEmailAddress(self):
-        ''' Prompt user for email address and validate input '''
+        """ Prompt user for email address and validate input """
         prompt = "Enter email address or [enter] to quit: "
-        self.email = self.client.promptForInput(prompt, self.validEmailRegex,
-                                                "Invalid Email address\n")
-        if self.email != '':
-            return(True)
-        return(False)
+        self.email = self.client.promptForInput(
+            prompt, self.validEmailRegex, "Invalid Email address\n"
+        )
+        if self.email != "":
+            return True
+        return False
 
-    def setUserEmailAddress(self, address=''):
+    def setUserEmailAddress(self, address=""):
         if re.match(self.validEmailRegex, address):
             self.email = address
-            return(True)
+            return True
         else:
             logger.error("account.setUserEmailAddress: Bad email: " + address)
-        return(False)
+        return False
 
     def postLoad(self):
         self.setLogoutDate()
@@ -169,11 +189,11 @@ class Account(Storage, AttributeHelper):
     def create(self, email):
         self.client.spoolOut("Creating new account\n")
         self.setDisplayName(self.promptForDisplayName())
-        if self.getDisplayName() == '':
-            return(False)
+        if self.getDisplayName() == "":
+            return False
         self.password = self.promptForPassword()
-        if self.password == '':
-            return(False)
+        if self.password == "":
+            return False
         if self.validatePassword(self.password):
             self.email = email
             self._maxcharacters = 5
@@ -182,50 +202,48 @@ class Account(Storage, AttributeHelper):
             self._lastLogoutDate = self.setLogoutDate()
             self.prompt = "full"
             self.save(logStr=__class__.__name__)
-            self.client.spoolOut("Account created for " + self.email + '\n')
-            return(True)
-        return(False)
+            self.client.spoolOut("Account created for " + self.email + "\n")
+            return True
+        return False
 
     def isValid(self):
-        ''' Returns true if the class instance was created properly '''
-        if hasattr(self, 'email'):
-            if self.email != '':
-                return(True)
+        """ Returns true if the class instance was created properly """
+        if hasattr(self, "email"):
+            if self.email != "":
+                return True
             else:
                 logger.warning("Account is missing email address")
-        return(False)
+        return False
 
     def getInfo(self):
-        ''' Show Account Info '''
+        """ Show Account Info """
         ROW_FORMAT = "  {0:16}: {1:<30}\n"
 
-        buf = ("Account Info:\n")
+        buf = "Account Info:\n"
         buf += ROW_FORMAT.format("Email", self.email)
         buf += ROW_FORMAT.format("Display Name", self.getDisplayName())
-        buf += ROW_FORMAT.format("Creation Date",
-                                 dateStr(self._creationDate))
-        buf += ROW_FORMAT.format("Last Login Date",
-                                 dateStr(self.getLastLoginDate()))
-        buf += ROW_FORMAT.format("Last Logout Date",
-                                 dateStr(self.getLastLogoutDate()))
-        buf += ROW_FORMAT.format("Number of Characters",
-                                 str(len(self.characterList)) + " of " +
-                                 str(self._maxcharacters))
-        buf += ROW_FORMAT.format("Character List:", '')
-        buf += (self.showCharacterList(indent='    '))
-        return(buf)
+        buf += ROW_FORMAT.format("Creation Date", dateStr(self._creationDate))
+        buf += ROW_FORMAT.format("Last Login Date", dateStr(self.getLastLoginDate()))
+        buf += ROW_FORMAT.format("Last Logout Date", dateStr(self.getLastLogoutDate()))
+        buf += ROW_FORMAT.format(
+            "Number of Characters",
+            str(len(self.characterList)) + " of " + str(self._maxcharacters),
+        )
+        buf += ROW_FORMAT.format("Character List:", "")
+        buf += self.showCharacterList(indent="    ")
+        return buf
 
     def fixAttributes(self):
-        ''' Sometimes we change attributes, and need to fix them in rooms
+        """ Sometimes we change attributes, and need to fix them in rooms
             that are saved.  This method lets us do that.  Typically this
             involves casting types or removing obsolete vars, but we could
-            also use this for copying values from one attribute to another '''
+            also use this for copying values from one attribute to another """
         # integer attributes
         intAtt = []
         # boolean attributes
         boolAtt = []
         # obsolete attributes (to be removed)
-        obsoleteAtt = ['maxcharacter']
+        obsoleteAtt = ["maxcharacter"]
 
         for attName in intAtt:
             try:
@@ -246,65 +264,76 @@ class Account(Storage, AttributeHelper):
                 pass
 
     def promptForDisplayName(self):
-        ''' prompt user for displayName '''
-        errMsg = ('Invalid name, displayName must be at least 3 characters, ' +
-                  'must start with\n an alphanumeric, and contain only ' +
-                  'alphanumerics, spaces, underscores, and hyphens')
-        displayName = self.client.promptForInput('Display Name: ', r'^[A-Za-z][A-Za-z0-9_-]{2}', errMsg)  # noqa: E501
-        if displayName == '':
-            self.client.spoolOut('Aborting...\n')
-            return('')
+        """ prompt user for displayName """
+        errMsg = (
+            "Invalid name, displayName must be at least 3 characters, "
+            + "must start with\n an alphanumeric, and contain only "
+            + "alphanumerics, spaces, underscores, and hyphens"
+        )
+        displayName = self.client.promptForInput(
+            "Display Name: ", r"^[A-Za-z][A-Za-z0-9_-]{2}", errMsg
+        )  # noqa: E501
+        if displayName == "":
+            self.client.spoolOut("Aborting...\n")
+            return ""
         else:
-            return(displayName)
+            return displayName
 
-    def promptForPassword(self, promptStr='Enter Password: '):
-        ''' Prompts user for password, verifies it, and returns password '''
+    def promptForPassword(self, promptStr="Enter Password: "):
+        """ Prompts user for password, verifies it, and returns password """
         while True:
             self.client.spoolOut(promptStr)
             self.client._sendAndReceive()
             password = self.client.getInputStr()
 
             if re.match("^[A-Za-z0-9_-]+$", password):
-                return(password)
-            elif password == '':
-                self.client.spoolOut('Aborting...\n')
-                return('')
+                return password
+            elif password == "":
+                self.client.spoolOut("Aborting...\n")
+                return ""
             else:
                 self.client.spoolOut("Invalid password.  Try Again\n")
 
-    def verifyAcctPassword(self, promptStr='Enter Account Password: '):
-        ''' Prompt user to verify password, returns True if successful '''
+    def verifyAcctPassword(self, promptStr="Enter Account Password: "):
+        """ Prompt user to verify password, returns True if successful """
 
-        if not self.email or self.email == '':
+        if not self.email or self.email == "":
             logger.debug("verifyAcctPassword failed.  email not defined")
-            return(False)
+            return False
 
-        if self.load(['password'], logStr=__class__.__name__):
+        if self.load(["password"], logStr=__class__.__name__):
             for x in range(1, 4):
                 if self.validatePassword(self.password, promptStr):
-                    return(True)
+                    return True
                 else:
-                    self.client.spoolOut('Password invalid for account ' +
-                                         self.email + ' (attempt ' + str(x) +
-                                         ' of 3).\n')
+                    self.client.spoolOut(
+                        "Password invalid for account "
+                        + self.email
+                        + " (attempt "
+                        + str(x)
+                        + " of 3).\n"
+                    )
                     if x == 3:
-                        logger.warning("Failed password verification for " +
-                                       "account " + self.email)
-        return(False)
+                        logger.warning(
+                            "Failed password verification for "
+                            + "account "
+                            + self.email
+                        )
+        return False
 
-    def validatePassword(self, loadedpassword, promptStr='Verify Password: '):
-        ''' Prompt user to verify password, returns True if successful '''
+    def validatePassword(self, loadedpassword, promptStr="Verify Password: "):
+        """ Prompt user to verify password, returns True if successful """
         self.client.spoolOut(promptStr)
         self.client._sendAndReceive()
         password = self.client.getInputStr()
 
         if password == loadedpassword:
-            return(True)
-        return(False)
+            return True
+        return False
 
     def repairCharacterList(self):
-        ''' Fix the cases where:
-            * characters in the characterList are no longer on disk '''
+        """ Fix the cases where:
+            * characters in the characterList are no longer on disk """
         charObj = None
         changed = False
         if self.client.charObj:
@@ -313,49 +342,56 @@ class Account(Storage, AttributeHelper):
             charObj = Character(self.client, self.getId())  # temp for methods
 
         for cName in self.characterList:
-            charObj.setName(cName)            # set the charName
-            self.setDataFilename()            # set the filename
+            charObj.setName(cName)  # set the charName
+            self.setDataFilename()  # set the filename
             if not self.dataFileExists():
-                logger.warning(__class__.__name__ + ' - Character ' + cName +
-                               ' of player ' + self.email + ' does ' +
-                               ' not exist at ' + self.getDataFilename() +
-                               '.  Removing character from account')
+                logger.warning(
+                    __class__.__name__
+                    + " - Character "
+                    + cName
+                    + " of player "
+                    + self.email
+                    + " does "
+                    + " not exist at "
+                    + self.getDataFilename()
+                    + ".  Removing character from account"
+                )
                 self.characterList.remove(cName)
                 changed = True
         charObj = None
-        return(changed)
+        return changed
 
-    def showCharacterList(self, indent=''):
-        ''' return a numbered list of characters from account's char list '''
-        buf = ''
+    def showCharacterList(self, indent=""):
+        """ return a numbered list of characters from account's char list """
+        buf = ""
         if len(self.characterList) == 0:
             buf = indent + "None\n"
         else:
             ROW_FORMAT = indent + "({1:1}) {0:40}\n"
             for characterName, num in enumerate(self.characterList, start=1):
                 buf += ROW_FORMAT.format(str(num), characterName)
-        return(buf)
+        return buf
 
     def setPromptSize(self, size):
-        ''' change the prompt verbosity '''
-        if size == 'full' or size == 'brief':
+        """ change the prompt verbosity """
+        if size == "full" or size == "brief":
             self.prompt = size
-        elif size == '':
+        elif size == "":
             # if promptStr is blank, toggle between the prompts
-            if self.prompt == 'full':
-                self.prompt = 'brief'
+            if self.prompt == "full":
+                self.prompt = "brief"
             else:
-                self.prompt = 'full'
-        return(None)
+                self.prompt = "full"
+        return None
 
     def getPromptSize(self):
-        ''' get the prompt size. '''
+        """ get the prompt size. """
         try:
-            return(self.prompt)
+            return self.prompt
         except AttributeError:
             # In some cases, this gets called before the account is loaded
             pass
-        return('full')
+        return "full"
 
     def addCharacterToAccount(self, characterName):
         if characterName not in self.characterList:
@@ -367,43 +403,47 @@ class Account(Storage, AttributeHelper):
             self.characterList.remove(characterName)
             self.save(logStr=__class__.__name__)
         else:
-            logger.warning("Could not remove character " + characterName +
-                           " from account " + self.getId())
+            logger.warning(
+                "Could not remove character "
+                + characterName
+                + " from account "
+                + self.getId()
+            )
 
     def getMaxNumOfCharacters(self):
-        return(self._maxcharacters)
+        return self._maxcharacters
 
     def getCharacterList(self):
-        return(self.characterList)
+        return self.characterList
 
     def getDisplayName(self):
-        return(self._displayName)
+        return self._displayName
 
     def setDisplayName(self, nameStr):
         self._displayName = str(nameStr)
 
     def getLastLoginDate(self):
-        return(self._lastLoginDate)
+        return self._lastLoginDate
 
     def getLastLogoutDate(self):
-        return(self._lastLogoutDate)
+        return self._lastLogoutDate
 
     def getName(self):
-        return(str(self._displayName))
+        return str(self._displayName)
 
     def getEmail(self):
-        return(self.email)
+        return self.email
 
     def getId(self):
-        return(self.email)
+        return self.email
 
     def getAttributesThatShouldntBeSaved(self):
-        return(self.attributesThatShouldntBeSaved)
+        return self.attributesThatShouldntBeSaved
 
     def isAdmin(self):
-        if (self.admin):
-            return(True)
-        return(False)
+        if self.admin:
+            return True
+        return False
 
     def setLoginDate(self):
         self._lastLoginDate = datetime.now()
@@ -411,35 +451,34 @@ class Account(Storage, AttributeHelper):
     def setLogoutDate(self):
         self._lastLogoutDate = datetime.now()
 
-    def adminFileExists(self, id=''):
-        ''' returns True if a admin file exists in account directory) '''
-        if id == '':
+    def adminFileExists(self, id=""):
+        """ returns True if a admin file exists in account directory) """
+        if id == "":
             id = str(self.getId())
-        if os.path.exists(os.path.abspath(DATADIR + "/account/" + id +
-                                          '/isAdmin.txt')):
-            return(True)
-        return(False)
+        if os.path.exists(os.path.abspath(DATADIR + "/account/" + id + "/isAdmin.txt")):
+            return True
+        return False
 
-    def getCharactersOnDisk(self, id=''):
-        ''' returns a list of characters based on the files on disk
-            used when repairing an account which is missing it's charList '''
+    def getCharactersOnDisk(self, id=""):
+        """ returns a list of characters based on the files on disk
+            used when repairing an account which is missing it's charList """
         charList = []
-        if id == '':
+        if id == "":
             id = str(self.getId())
         mypath = os.path.abspath(DATADIR + "/account/" + id)
         for f in os.listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
-                [charName, junk] = f.split('.')
+                [charName, junk] = f.split(".")
                 charList.append(charName)
-        return(charList)
+        return charList
 
     def characterNameIsUnique(self, name):
-        ''' Return true if the name does not match a character file on disk
+        """ Return true if the name does not match a character file on disk
             * walks the account tree checking to see if a file matching the
-              character name exists '''
-        filename = name + '.pickle'
+              character name exists """
+        filename = name + ".pickle"
         for dirpath, dirnames, files in os.walk(DATADIR + "/account"):
             for name in files:
                 if name == filename:
-                    return(False)
-        return(True)
+                    return False
+        return True
