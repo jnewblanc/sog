@@ -16,7 +16,7 @@
     "_defendCreature": [],
     "_dodge": 0,
     "_drain": false,
-    "_exp": 21,
+    "_exp": 64,
     "_fleeIfAttacked": false,
     "_follow": false,
     "_frequency": 50,
@@ -25,6 +25,7 @@
     "_hostile": false,
     "_hp": 54,
     "_inventory": [],
+    "_inventoryTruncSize": 12,
     "_invisible": false,
     "_itemCatalog": [
         "Weapon/14"
@@ -34,6 +35,7 @@
     "_longdesc": "Something about this woman's hood and mask make you think she's not out for a leisurely stroll",
     "_magicImmunity": false,
     "_maxhp": 54,
+    "_maxweight": 0,
     "_name": "vandal",
     "_noKill": false,
     "_numOfItemsCarried": [

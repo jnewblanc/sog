@@ -61,8 +61,9 @@ class Ipc:
             return True
 
         charObj.client.spoolOut(msg)
-        debugMsg = re.sub("\n$", "", msg)
-        logger.info("charMsg to " + charObj.getName() + ": " + debugMsg)
+        if self._instanceDebug:
+            debugMsg = re.sub("\n$", "", msg)
+            logger.info("charMsg to " + charObj.getName() + ": " + debugMsg)
         return True
 
     def gameMsg(self, msg):

@@ -22,9 +22,10 @@
     "_frequency": 50,
     "_guardTreasure": false,
     "_hidden": false,
-    "_hostile": true,
+    "_hostile": false,
     "_hp": 47,
     "_inventory": [],
+    "_inventoryTruncSize": 12,
     "_invisible": false,
     "_itemCatalog": [
         "Armor/20",
@@ -36,6 +37,7 @@
     "_longdesc": "This laborer is fresh off the job site.",
     "_magicImmunity": false,
     "_maxhp": 47,
+    "_maxweight": 0,
     "_name": "laborer",
     "_noKill": false,
     "_numOfItemsCarried": [

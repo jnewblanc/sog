@@ -515,12 +515,14 @@ class Combat:
             dLog(logPrefix + roomObj.getItemId() + " is safe", self._instanceDebug)
             return False
 
-        if target.isUnKillable():
+        if target.isUnKillable() and attackCmd != "slay":
             self.charMsg(
                 charObj,
-                "Aw.  Don't hurt the poor " + target.describe(article="") + "\n",
+                "Aw.  Don't hurt the poor {}\n".format(target.describe(article="")),
             )
-            dLog(logPrefix + target.describe() + " is unkillable", self._instanceDebug)
+            dLog(
+                logPrefix + target.describe() + " is unkillable", self._instanceDebug,
+            )
             return False
 
         if not charObj.canAttack():

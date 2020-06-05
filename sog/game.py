@@ -217,6 +217,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
             logger.error(logPrefix + "Room object is None")
 
         return roomObj
+        # end roomLoader
 
     def joinRoom(self, roomThing, charObj):
         """ insert player into a room
@@ -293,8 +294,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         if not roomObj:  # If active room doesn't exist
             if not activeOnly:
                 # Load room from disk into separate instance
-                roomObj = RoomFactory("room", doorObj.getToWhere())
-                roomObj.load()
+                roomObj = self.roomLoader(doorObj.getToWhere())
             else:
                 roomObj = None
         return roomObj
@@ -1284,6 +1284,7 @@ class GameCmd(cmd.Cmd):
             return False
 
         if charObj.removeFromInventory(targetList[0]):
+            charObj.unEquip(targetList[0])
             roomObj.addObject(targetList[0])
             self.selfMsg("Ok\n")
         else:
@@ -1844,6 +1845,7 @@ class GameCmd(cmd.Cmd):
             return False
 
         if containerObj.deposit(charObj, itemObj):
+            charObj.unEquip(itemObj)
             self.selfMsg("ok\n")
             return False
 

@@ -2088,7 +2088,7 @@ class Character(Item):
             dLog("poison cntr: " + str(regenSecsRemaining) + " secs", False)
 
             if poisonSecsRemaining <= 0:
-                self.spoolOut(
+                self._spoolOut(
                     "As the poison circulates, you take " + poisonHp + " damage.\n"
                 )
                 self.takeDamage(poisonHp)

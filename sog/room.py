@@ -467,7 +467,10 @@ class Room(Item):
 
     def getCharacterList(self):
         """ return list of characters in room """
-        return self._characterList
+        characterList = []
+        if hasattr(self, "_characterList"):
+            characterList += self._characterList
+        return characterList
 
     def addCharacter(self, charObj):
         """ add character to list of characters in room """
