@@ -1,9 +1,9 @@
-''' test harness - common test functions and classes
+""" test harness - common test functions and classes
       * TestGameBase - superClass from which all tests classes should inherit
                        from
       * masterTestNum & incrementTestNum - globals for tracking/incrementing
                        the test numbers
-'''
+"""
 # import doctest
 import os
 import unittest
@@ -21,7 +21,7 @@ from game import GameCmd
 
 
 class TestGameBase(unittest.TestCase):
-    ''' Base class for testing game
+    """ Base class for testing game
         * Sets up commonly used parts of the game so that each test subClass
           doesn't need to do the same thing.
         * Make it easy to create and get handles for the following major class
@@ -31,14 +31,15 @@ class TestGameBase(unittest.TestCase):
           - Room
           - Creature
           - Objects
-    '''
+    """
+
     _testAcctName = "sogTest@example.com"
     _testAcctDisplay = "sogTest"
 
-    _testCharName = 'testCharBase'
-    _testCharGender = 'male'
-    _testCharClassName = 'fighter'
-    _testCharAlignment = 'neutral'
+    _testCharName = "testCharBase"
+    _testCharGender = "male"
+    _testCharClassName = "fighter"
+    _testCharAlignment = "neutral"
 
     _testRoomNum = 320
     _testRoomNum2 = 319
@@ -48,28 +49,28 @@ class TestGameBase(unittest.TestCase):
     _tmpTestRoomNumbers = list(range(99990, 100000))
 
     def getClientObj(self):
-        return(self._client)
+        return self._client
 
     def getCharObj(self):
-        return(self.getClientObj().charObj)
+        return self.getClientObj().charObj
 
     def getRoomObj(self):
-        return(self.getCharObj().getRoom())
+        return self.getCharObj().getRoom()
 
     def getGameObj(self):
-        return(self.getClientObj().gameObj)
+        return self.getClientObj().gameObj
 
     def getGameCmdObj(self):
-        return(self._gameCmdObj)
+        return self._gameCmdObj
 
     def getAcctObj(self):
-        return(self.getClientObj().acctObj)
+        return self.getClientObj().acctObj
 
     def getAsyncThread(self):
-        return(self._asyncThread)
+        return self._asyncThread
 
-    def setTestName(self, name=''):
-        if name == '':
+    def setTestName(self, name=""):
+        if name == "":
             self._testName = __class__.__name__
         else:
             self._testName = name
@@ -78,8 +79,7 @@ class TestGameBase(unittest.TestCase):
         self._asyncThread = common.serverLib.createAndStartAsyncThread()
 
     def stopAsyncThread(self):
-        common.serverLib.haltAsyncThread(self.getGameObj(),
-                                         self.getAsyncThread())
+        common.serverLib.haltAsyncThread(self.getGameObj(), self.getAsyncThread())
 
     def createClientAndAccount(self):
         client = threads.ClientBase()
@@ -87,78 +87,88 @@ class TestGameBase(unittest.TestCase):
         client.acctObj.setUserEmailAddress(self._testAcctName)
         client.acctObj.setDisplayName(self._testAcctDisplay)
         assert client.acctObj.isValid()
-        return(client)
+        return client
 
-    def createCharacter(self,
-                        name=_testCharName,
-                        gender=_testCharGender,
-                        cname=_testCharClassName,
-                        align=_testCharAlignment):
+    def createCharacter(
+        self,
+        name=_testCharName,
+        gender=_testCharGender,
+        cname=_testCharClassName,
+        align=_testCharAlignment,
+    ):
 
-        charObj = character.Character(client=self.getClientObj(),
-                                      acctName=self.getAcctObj().getId())
+        charObj = character.Character(
+            client=self.getClientObj(), acctName=self.getAcctObj().getId()
+        )
         charObj.setName(name)
         charObj.setGender(gender)
         charObj.setClassName(cname)
         charObj.setAlignment(align)
         assert charObj.isValid()
-        return(charObj)
+        return charObj
 
-    def createObject(self, num=99999, type='Portal', name='portal'):
+    def createObject(self, num=99999, type="Portal", name="portal"):
         obj = ObjectFactory(type, num)
         if not obj:
-            logger.error('Could not instanciate object type ' + type)
+            logger.error("Could not instanciate object type " + type)
         obj._name = name
-        obj._article = 'a'
+        obj._article = "a"
         obj._singledesc = name
-        obj._pluraldesc = name + 's'
+        obj._pluraldesc = name + "s"
         obj._longdesc = "A long " + name
         obj._weight = 5
         obj._value = 100
-        return(obj)
+        return obj
 
     def createCreature(self, num=99999, name="bug"):
         cre = creature.Creature(num)
         cre._name = name
-        cre._article = 'a'
+        cre._article = "a"
         cre._singledesc = name
-        cre._pluraldesc = name + 's'
+        cre._pluraldesc = name + "s"
         cre._longdesc = "It's a long " + name
         cre._level = 1
         cre._hostile = False
-        cre._itemCatalog = ['Armor/1', 'Weapon/1']
+        cre._itemCatalog = ["Armor/1", "Weapon/1"]
         cre._numOfItemsCarried = [1, 2]
         cre.setHitPoints(20)
         cre.autoPopulateInventory()
         cre.setEnterRoomTime()
         assert cre.isValid()
-        return(cre)
+        return cre
 
     def createRoom(self, num=99999):
-        room = RoomFactory('room', num)
-        room._shortDesc = 'in a short test room'
-        room._desc = 'in a long test room'
-        return(room)
+        room = RoomFactory("room", num)
+        room._shortDesc = "in a short test room"
+        room._desc = "in a long test room"
+        return room
 
     def joinGame(self):
         assert self._client.gameObj.isValid()
         self._client.gameObj.addToActivePlayerList(self.getCharObj())
         self._gameCmdObj = GameCmd(self._client)
+
     #    self._gameCmdObj.postcmd = [lambda *args: None]
 
     def joinRoom(self, room=_testRoomNum):
         # room can be an id or an object
         self._client.gameObj.joinRoom(room, self.getCharObj())
         assert self.getRoomObj().isValid(), (
-            "To be valid, rooms require a _roomnum, a _shortDesc, and a " +
-            "self._desc\n" + self.getRoomObj().debug())
+            "To be valid, rooms require a _roomnum, a _shortDesc, and a "
+            + "self._desc\n"
+            + self.getRoomObj().debug()
+        )
 
-    def banner(self, status='start', testName=''):
+    def txtBanner(self, msg, bChar="-", bCount=5):
+        """ return a string enclosed in characters """
+        return "{0} {1} {0}".format((bChar * bCount), msg)
+
+    def banner(self, status="start", testName=""):
+        """ show test header banner """
         if not hasattr(self, "_testName"):
             self.setTestName(testName)
-        dashes = "-" * 12
-        logger.info(dashes + " " + self._testName + " " +
-                    str(masterTestNum) + " " + status + " " + dashes)
+        testStr = self._testName + " " + str(masterTestNum) + " " + status
+        logger.info(self.txtBanner(testStr, bCount=12))
 
     def showItems(self, itemList, attList=[]):
         gameCmdObj = self.getGameCmdObj()
@@ -168,16 +178,16 @@ class TestGameBase(unittest.TestCase):
                 tmplist = []
                 for att in attList:
                     tmplist.append(att + " = " + str(getattr(item, att)))
-                logger.info('\n' + self.banner(item.getName()) +
-                            '\n' + '\n'.join(tmplist))
+                logger.info(
+                    "\n" + self.txtBanner(item.getName()) + "\n" + "\n".join(tmplist)
+                )
             else:
-                logger.info(self.banner(item.getName()) + '\n' +
-                            item.debug())
+                logger.info(self.txtBanner(item.getName()) + "\n" + item.debug())
 
     def setUp(self, testName="TestGameBase"):
         self.purgeTestRoomData()
         self.setTestName(testName)
-        self.banner('start')
+        self.banner("start")
         self._client = self.createClientAndAccount()
         self._client.charObj = self.createCharacter()
         self.joinGame()
@@ -190,8 +200,9 @@ class TestGameBase(unittest.TestCase):
             roomNums = self._tmpTestRoomNumbers
         # Clean up any saved room data
         for testRoomNum in roomNums:
-            testRoomFilename = os.path.abspath(DATADIR + '/Room/' +
-                                               str(testRoomNum) + '.json')
+            testRoomFilename = os.path.abspath(
+                DATADIR + "/Room/" + str(testRoomNum) + ".json"
+            )
             if os.path.isfile(testRoomFilename):
                 try:
                     os.remove(testRoomFilename)
@@ -200,9 +211,9 @@ class TestGameBase(unittest.TestCase):
                     pass
 
     def tearDown(self):
-        if hasattr(self, '_asyncThread'):
+        if hasattr(self, "_asyncThread"):
             self.stopAsyncThread()
-        self.banner('end')
+        self.banner("end")
         incrementTestNum()
         self.purgeTestRoomData()
 

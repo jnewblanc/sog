@@ -1,7 +1,7 @@
-''' threads.py - server side client and async thread classes
+""" threads.py - server side client and async thread classes
     * ClientThread - uses existing (or spins up) lobby/game instance
     * AsyncThread - uses existing (or spins up) game instance
-    * Note: threads must be started before use'''
+    * Note: threads must be started before use"""
 
 from datetime import datetime
 import socket
@@ -18,7 +18,7 @@ import lobby
 
 
 class ClientBase(ServerIo, AttributeHelper):
-    ''' SuperClass for ClientThread
+    """ SuperClass for ClientThread
         * Contains everything the clientThread needs, except for network and
           threading specific features.  This way, tests can use ClientBase
           without needing to set up networking and client/server threads
@@ -27,182 +27,192 @@ class ClientBase(ServerIo, AttributeHelper):
           by subClass, where we want real logins.
         * Main loop is modified for testing and is expcted to be overwritten
           by subClass
-    '''
+    """
+
     def __init__(self):
         ServerIo.__init__(self)
-        self.lobbyObj = lobby.Lobby()     # create/use single lobby instance
-        self.gameObj = game.Game()        # create/use the single game instance
+        self.lobbyObj = lobby.Lobby()  # create/use single lobby instance
+        self.gameObj = game.Game()  # create/use the single game instance
         self.acctObj = None
         self.charObj = None
-        self._area = 'server'
+        self._area = "server"
 
-        self._debugServer = False          # Turn on/off debug logging
+        self._debugServer = False  # Turn on/off debug logging
         self._startdate = datetime.now()
 
         if self._debugServer:
             logger.info(str(self) + " New ClientThread")
 
     def __str__(self):
-        ''' Str - often used as a prefix for logging '''
-        return(__class__.__name__)
+        """ Str - often used as a prefix for logging """
+        return __class__.__name__
 
     def getId(self):
-        return(1)
+        return 1
 
     def getGameObj(self):
-        return(self.gameObj)
+        return self.gameObj
 
     def getAccountObj(self):
-        return(self.acctObj)
+        return self.acctObj
 
     def getCharacterObj(self):
-        return(self.charObj)
+        return self.charObj
 
     def setDebug(self, debugBool=True):
         self._debugServer = bool(debugBool)
 
     def acctLogin(self):
-        ''' Login - return true if successful
+        """ Login - return true if successful
             * Auto Account Login
             * intended to be overwritten in subClass
-        '''
-        self.acctObj.email = 'default@example.com'
-        self.password = 'default'
-        self._displayName = 'defaultUser'
-        return(True)
+        """
+        self.acctObj.email = "default@example.com"
+        self.password = "default"
+        self._displayName = "defaultUser"
+        return True
 
     def mainLoop(self):
-        ''' Main loop of program
+        """ Main loop of program
             * intended to be overwritten in subClass
-        '''
+        """
         self.lobbyObj.joinLobby(self, self._test)
-        if (self.acctObj):
+        if self.acctObj:
             self.acctObj.logout()
         self.acctObj = None
 
     def serverLoop(self):
-        ''' This is the main entry point into the app
+        """ This is the main entry point into the app
             * intended to be overwritten in subClass
-        '''
+        """
         logger.info(str(self) + " serverLoop started")
         try:
-            while True:                             # Server loop
+            while True:  # Server loop
                 self.welcome("Sog Server\n")
                 self.acctObj = account.Account(self)
                 if self.acctLogin():
                     self.mainLoop()
                 else:
-                    logger.warning(str(self) + ' Authentication failed')
+                    logger.warning(str(self) + " Authentication failed")
                     self.acctObj = None
                     if not self.isRunning():
-                        break                # exit loop to terminate
+                        break  # exit loop to terminate
                     time.sleep(1)
         finally:
             logger.info(str(self) + "serverLoop complete")
-        return(None)
+        return None
 
         def setArea(self, area):
             self._area = area
 
         def getArea(self):
             if self._area:
-                return(str(self._area))
-            return(None)
+                return str(self._area)
+            return None
 
-        def isArea(self, area=''):
+        def isArea(self, area=""):
             if self._area:
                 if self._area == area:
-                    return(True)
-            return(False)
+                    return True
+            return False
 
     def getCmdPrompt(self):
         if self.isArea("game"):
-            sp = '<'
-            ep = '>'
+            sp = "<"
+            ep = ">"
             if self.charObj:
                 promptsize = self.charObj.getPromptSize()
             elif self.acctObj:
                 promptsize = self.acctObj.getPromptSize()
             else:
-                promptsize = 'full'
+                promptsize = "full"
         elif self.isArea("lobby"):
-            sp = '['
-            ep = ']'
+            sp = "["
+            ep = "]"
             promptsize = self.acctObj.getPromptSize()
         else:
-            sp = '('
-            ep = ')'
-            promptsize = 'full'
+            sp = "("
+            ep = ")"
+            promptsize = "full"
 
-        if promptsize == 'brief':
-            promptStr = ep + ' '
+        if promptsize == "brief":
+            promptStr = ep + " "
         else:
-            promptStr = sp + self.getArea() + ep + ' '
-        return(promptStr)
+            promptStr = sp + self.getArea() + ep + " "
+        return promptStr
 
     def getConnectionList(self):
-        ''' All connections to the game
+        """ All connections to the game
             * intended to be overwritten in subClass, which uses client/server
-        '''
-        return([])
+        """
+        return []
 
     def broadcast(self, data, header=None):
-        ''' output a message to all users '''
+        """ output a message to all users """
         sentCount = 0
         logger.debug("broadcast - " + str(data))
 
-        if data[-1] != '\n':        # Add newline if needed
-            data += '\n'
+        if data[-1] != "\n":  # Add newline if needed
+            data += "\n"
 
         if not header:
-            header = (self.txtBanner('Broadcast message from ' +
-                      self.acctObj.getEmail()) + '\n> ')
+            header = (
+                self.txtBanner("Broadcast message from " + self.acctObj.getEmail())
+                + "\n> "
+            )
         for client in self.getConnectionList():
             if client.id != self.id:
                 client.spoolOut(header + data)
                 sentCount += 1
 
         if sentCount:
-            return(True)
+            return True
 
-        header = (self.txtBanner("No valid target for message." +
-                  "  Sending to yourself") + "\n> ")
-        self.spoolOut(header + data)     # send to myself
+        header = (
+            self.txtBanner("No valid target for message." + "  Sending to yourself")
+            + "\n> "
+        )
+        self.spoolOut(header + data)  # send to myself
 
-        return(False)
+        return False
 
     def directMessage(self, data, who, header=None):
-        ''' output a message to specific user '''
+        """ output a message to specific user """
         sentCount = 0
         logger.debug("broadcast - " + str(data) + " - " + str(who))
 
-        if data[-1] != '\n':        # Add newline if needed
-            data += '\n'
+        if data[-1] != "\n":  # Add newline if needed
+            data += "\n"
 
         # toDo: this should be a name search, instead of a number from 'who'
         if self.isNum(who):
             if not header:
-                header = (self.txtBanner('Private message from ' +
-                          self.acctObj.getEmail()) + '\n> ')
+                header = (
+                    self.txtBanner("Private message from " + self.acctObj.getEmail())
+                    + "\n> "
+                )
             for client in self.getConnectionList():
                 if client.id == int(who):
                     client.spoolOut(header + data)
                     sentCount += 1
 
         if sentCount:
-            return(True)
+            return True
 
-        header = (self.txtBanner("No valid target for message." +
-                  "  Sending to yourself") + "\n> ")
-        self.spoolOut(header + data)     # send to myself
+        header = (
+            self.txtBanner("No valid target for message." + "  Sending to yourself")
+            + "\n> "
+        )
+        self.spoolOut(header + data)  # send to myself
 
-        return(False)
+        return False
 
 
 class ClientThread(threading.Thread, ClientBase):
-    ''' Main client thread of the server
+    """ Main client thread of the server
         * All non network, non-thread features should be part of the
-          ClientBase superClass'''
+          ClientBase superClass"""
+
     def __init__(self, socket, address, id):
         threading.Thread.__init__(self, daemon=True, target=self.serverLoop)
         ClientBase.__init__(self)
@@ -213,63 +223,63 @@ class ClientThread(threading.Thread, ClientBase):
         self.identifier = "CT" + str(id) + str(address)
 
     def __str__(self):
-        ''' Connection/Thread ID Str - often used as a prefix for logging '''
+        """ Connection/Thread ID Str - often used as a prefix for logging """
         return self.identifier
 
     # main program
     def serverLoop(self):
-        ''' This is the main entry point into the app '''
+        """ This is the main entry point into the app """
         logger.info(str(self) + " Client connection established")
         try:
-            while True:                             # Server loop
+            while True:  # Server loop
                 self.welcome("Sog Server\n")
                 self.acctObj = account.Account(self)
                 if self.acctLogin():
                     self.mainLoop()
                 else:
                     if not self.isRunning():
-                        break                # exit loop to terminate
+                        break  # exit loop to terminate
                     time.sleep(1)
             self.terminateClientConnection()
         finally:
             self.terminateClientConnection()
-        return(None)
+        return None
 
     def acctLogin(self):
-        ''' Login - return true if successful '''
+        """ Login - return true if successful """
         loggedIn = False
         if self.acctObj.login():
             loggedIn = True
         else:
-            logger.warning(str(self) + ' Authentication failed')
+            logger.warning(str(self) + " Authentication failed")
             self.acctObj = None
 
         if loggedIn:
-            return(True)
-        return(False)
+            return True
+        return False
 
     def mainLoop(self):
-        ''' Main loop of program
+        """ Main loop of program
             * Launch lobby loop
-            * Logout of account if lobby loop is exited '''
+            * Logout of account if lobby loop is exited """
         self.lobbyObj.joinLobby(self)
-        if (self.acctObj):
+        if self.acctObj:
             self.acctObj.logout()
         self.acctObj = None
 
     def isRunning(self):
         if not self._running:
-            return(False)
-        return(True)
+            return False
+        return True
 
     def getSock(self):
-        return(self.socket)
+        return self.socket
 
     def getId(self):
-        return(self.id)
+        return self.id
 
     def getConnectionList(self):
-        return(common.globals.connections)
+        return common.globals.connections
 
     def removeConnectionFromList(self):
         if self in self.getConnectionList():
@@ -278,7 +288,7 @@ class ClientThread(threading.Thread, ClientBase):
             common.globals.totalConnections -= 1
 
     def terminateClientConnection(self):
-        ''' terminate the connection and clean up loose ends '''
+        """ terminate the connection and clean up loose ends """
         if self._running:
             self.removeConnectionFromList()
             self._running = False
@@ -293,25 +303,27 @@ class ClientThread(threading.Thread, ClientBase):
                 self.socket.close()
             except OSError:
                 if self._debugServer:
-                    logger.debug("Server term - Couldn't close " +
-                                 "non-existent socket")
-        return(None)
+                    logger.debug(
+                        "Server term - Couldn't close " + "non-existent socket"
+                    )
+        return None
 
 
 class AsyncThread(threading.Thread):
-    ''' a separate worker thread for handling asyncronous tasks '''
+    """ a separate worker thread for handling asyncronous tasks """
+
     def __init__(self):
-        self.gameObj = game.Game()   # create/use the single game instance
+        self.gameObj = game.Game()  # create/use the single game instance
         self._debugAsync = False
         threading.Thread.__init__(self, daemon=True, target=self._asyncLoop)
         self._startdate = datetime.now()
         self._stopFlag = False
 
     def _asyncLoop(self):
-        ''' Call the _asyncTasks method of the single game instance.
-            * Thread control and tasks are handled in the game instance. '''
+        """ Call the _asyncTasks method of the single game instance.
+            * Thread control and tasks are handled in the game instance. """
         if self._debugAsync:
-            logger.debug(str(self) + 'AsyncThread._asyncMain')
+            logger.debug(str(self) + "AsyncThread._asyncMain")
         logger.info("Thread started - async worker")
         while not self._stopFlag:
             self.gameObj.asyncTasks()

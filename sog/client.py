@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-''' SoG client
+""" SoG client
 
  Entry point to the SoG client
    * Create a persistent connection
@@ -10,7 +10,7 @@
 Related files:
    * common/clientLib
    * common/network
-'''
+"""
 
 import argparse
 
@@ -19,13 +19,10 @@ from common.clientLib import Client
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Client for SoG')
-    parser.add_argument('--username', type=str,
-                        help='username for auto login')
-    parser.add_argument('--password', type=str,
-                        help='password for auto login')
-    parser.add_argument('--debug', action='store_true',
-                        help='turn debugging on')
+    parser = argparse.ArgumentParser(description="Client for SoG")
+    parser.add_argument("--username", type=str, help="username for auto login")
+    parser.add_argument("--password", type=str, help="password for auto login")
+    parser.add_argument("--debug", action="store_true", help="turn debugging on")
 
     args = parser.parse_args()
 

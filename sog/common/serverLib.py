@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-''' SoG server library module
+""" SoG server library module
    * server - runs the server loop, including exception handler
    * helper functions for starting/stopping threads
-'''
+"""
 
 # import selectors
 import socket
@@ -16,7 +16,7 @@ from threads import ClientThread, AsyncThread
 import game
 
 
-def server(email=''):
+def server(email=""):
     logger.info("-------------------------------------------------------")
     logger.info("Server Start - " + sys.argv[0])
 
@@ -35,8 +35,9 @@ def server(email=''):
                 try:
                     clientsock, clientAddress = serverHandle.accept()
 
-                    newthread = ClientThread(clientsock, clientAddress,
-                                             common.globals.totalConnections)
+                    newthread = ClientThread(
+                        clientsock, clientAddress, common.globals.totalConnections
+                    )
                     common.globals.connections.append(newthread)
                     common.globals.totalConnections += 1
                     common.globals.connections[newthread.getId()].start()
@@ -72,11 +73,11 @@ def createAndStartAsyncThread():
     asyncThread = AsyncThread()
     if asyncThread:
         asyncThread.start()
-        return(asyncThread)
+        return asyncThread
 
 
 def exitProg(statusCode=0):
-    ''' Cleanup and Exit program '''
+    """ Cleanup and Exit program """
     logger.info("Server Exit - " + sys.argv[0])
 
     # exit server
