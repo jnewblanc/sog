@@ -22,8 +22,10 @@
     "_frequency": 50,
     "_guardTreasure": false,
     "_hidden": false,
-    "_hostile": true,
+    "_hostile": false,
     "_hp": 51,
+    "_inventory": [],
+    "_inventoryTruncSize": 12,
     "_invisible": false,
     "_itemCatalog": [
         "Weapon/10",
@@ -36,6 +38,7 @@
     "_longdesc": "This well dressed woman appears to be employed by someone rich.",
     "_magicImmunity": false,
     "_maxhp": 51,
+    "_maxweight": 0,
     "_name": "steward",
     "_noKill": false,
     "_numOfItemsCarried": [

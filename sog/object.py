@@ -1012,7 +1012,7 @@ class Door(Portal, Closable):
 
     def canBeEntered(self, charObj):
         if self.isClosed():
-            charObj.client.spoolOut(self.name + " is closed")
+            charObj.client.spoolOut(self.describe(article="The") + " is closed.\n")
             return False
         if self.limitationsAreSatisfied(charObj):
             return True
