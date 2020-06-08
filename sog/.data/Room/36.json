@@ -1,10 +1,10 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "pushing your way through the crowds at Bridge Plaza.  To the north is the bridge that connects, and protects, the aristocrats from the rest of the city",
     "_encounterList": [],
     "_encounterRate": 0,
+    "_inventory": [],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],

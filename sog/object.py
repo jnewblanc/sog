@@ -174,7 +174,7 @@ class Object(Item):
     def examine(self):
         msg = self._longdesc
         if hasattr(self, "_toll"):
-            if self.hasToll:
+            if self.hasToll():
                 msg += "  It has a toll."
         return msg
 
@@ -543,7 +543,7 @@ class Closable(Object):
     def getTrapLevel(self):
         return self._traplevel
 
-    def isSmashable(self, charObj):
+    def isSmashable(self, charObj=None):
         if self.isClosed():
             # Time check - can only smash every 15 seconds
             if charObj.secsSinceLastAttack() < 15:
@@ -551,7 +551,7 @@ class Closable(Object):
             return True
         return False
 
-    def isPickable(self, charObj):
+    def isPickable(self, charObj=None):
         if self.isClosed() and self.isLocked():
             # Time check - can only smash every 15 seconds
             if charObj.secsSinceLastAttack() < 15:
@@ -562,14 +562,14 @@ class Closable(Object):
     def trapIsPoisoned(self):
         return self._poison
 
-    def isOpenable(self, charObj):
+    def isOpenable(self, charObj=None):
         if self.isOpen():
             return False
         if self.isLocked():
             return False
         return True
 
-    def isClosable(self, charObj):
+    def isClosable(self, charObj=None):
         if self.isClosed():
             return False
         return True
@@ -718,7 +718,7 @@ class Closable(Object):
 
         return True
 
-    def close(self, charObj):
+    def close(self, charObj=None):
         if not self.isClosable(charObj):
             return False
 

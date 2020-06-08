@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "at a tee where Pacific Street abuts Jewel Lane",
     "_encounterList": [
         9,
@@ -13,6 +12,44 @@
         15
     ],
     "_encounterRate": 100,
+    "_inventory": [
+        {
+            "_alignmentsAllowed": [],
+            "_article": "the",
+            "_carry": false,
+            "_classesAllowed": [],
+            "_closed": false,
+            "_correspondingDoorId": "8",
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Door\\7.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": false,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_lockId": 0,
+            "_locked": false,
+            "_locklevel": 0,
+            "_longdesc": "This is a lovely, well kept building, despite being heavily fortified.",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "shop",
+            "_permanent": true,
+            "_pluraldesc": "jewelery shops",
+            "_poison": false,
+            "_singledesc": "jewelery shop",
+            "_spring": true,
+            "_toWhere": "40",
+            "_toll": 0,
+            "_traplevel": 0,
+            "_value": 1,
+            "_weight": 100,
+            "objId": 7,
+            "py/object": "object.Door"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [

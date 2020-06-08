@@ -18,6 +18,38 @@
     "_encounterList": [],
     "_encounterRate": 0,
     "_guildDues": 100,
+    "_inventory": [
+        {
+            "_alignmentsAllowed": [],
+            "_article": "the",
+            "_carry": false,
+            "_classesAllowed": [
+                "fighter"
+            ],
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Portal\\22.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": false,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_longdesc": "A downward sloping tunnel leads down to the fighting pits.",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "pits",
+            "_permanent": true,
+            "_pluraldesc": "fighting pits",
+            "_singledesc": "fighting pits",
+            "_toWhere": "237",
+            "_toll": 0,
+            "_value": 1,
+            "_weight": 1,
+            "objId": 22,
+            "py/object": "object.Portal"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_isShop": true,
     "_lastTrainDate": {
@@ -26,12 +58,14 @@
                 "py/type": "datetime.datetime"
             },
             [
-                "B2wBAQAAAAAAAA=="
+                "B+QGBxceEAWRGw=="
             ]
         ],
         "py/object": "datetime.datetime"
     },
-    "_lastTrainees": [],
+    "_lastTrainees": [
+        "Drac"
+    ],
     "_lastTransactionDate": {
         "__reduce__": [
             {
@@ -43,8 +77,10 @@
         ],
         "py/object": "datetime.datetime"
     },
-    "_masterLevel": 1,
-    "_masters": [],
+    "_masterLevel": 3,
+    "_masters": [
+        "Drac"
+    ],
     "_notEnoughExpTxt": "You don't have enough experience to train.",
     "_notHereTxt": "You can't train here!",
     "_notifyDM": false,
