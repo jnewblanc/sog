@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "slipping through Dore Alley, one of the seeder areas on this end of town",
     "_encounterList": [
         "33",
@@ -13,6 +12,7 @@
         "19"
     ],
     "_encounterRate": 0,
+    "_inventory": [],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],

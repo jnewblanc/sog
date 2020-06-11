@@ -1,7 +1,6 @@
 {
     "_antiMagic": false,
     "_dark": false,
-    "_datafile": "",
     "_desc": "at the top of Highland Ave.  You pause for a moment to catch your breath.",
     "_encounterList": [
         9,
@@ -13,6 +12,7 @@
         15
     ],
     "_encounterRate": 100,
+    "_inventory": [],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [],

@@ -12,6 +12,36 @@
         15
     ],
     "_encounterRate": 100,
+    "_inventory": [
+        {
+            "_alignmentsAllowed": [],
+            "_article": "a",
+            "_carry": false,
+            "_classesAllowed": [],
+            "_cursed": false,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Portal\\21.json",
+            "_enchanted": false,
+            "_gendersAllowed": [],
+            "_hidden": false,
+            "_instanceDebug": false,
+            "_invisible": false,
+            "_isObject": true,
+            "_longdesc": "This is the entrance to the arena, where gladiators train and battle.",
+            "_magic": false,
+            "_maxLevelAllowed": 100,
+            "_minLevelAllowed": 0,
+            "_name": "entrance",
+            "_permanent": true,
+            "_pluraldesc": "entrance to the arena",
+            "_singledesc": "entrance to the arena",
+            "_toWhere": "114",
+            "_toll": 0,
+            "_value": 1,
+            "_weight": 1,
+            "objId": 21,
+            "py/object": "object.Portal"
+        }
+    ],
     "_inventoryTruncSize": 12,
     "_notifyDM": false,
     "_permanentList": [

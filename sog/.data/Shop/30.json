@@ -59,112 +59,6 @@
             "py/object": "object.Door"
         },
         {
-            "_ac": 7,
-            "_alignment": "neutral",
-            "_antiMagic": true,
-            "_article": "a",
-            "_assistCreature": [],
-            "_attackIfPietyLessThan": 3,
-            "_attackIfPietyMoreThan": 0,
-            "_attackLastAttacker": true,
-            "_attackRate": 100,
-            "_blockFromLeaving": false,
-            "_carry": false,
-            "_creationDate": {
-                "__reduce__": [
-                    {
-                        "py/type": "datetime.datetime"
-                    },
-                    [
-                        "B+QGBQEDJQgfYw=="
-                    ]
-                ],
-                "py/object": "datetime.datetime"
-            },
-            "_creatureId": 34,
-            "_currentlyAttacking": null,
-            "_damagePct": 100,
-            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Creature\\34.json",
-            "_defend": false,
-            "_defendCreature": [],
-            "_dodge": 200,
-            "_drain": false,
-            "_enterRoomTime": {
-                "__reduce__": [
-                    {
-                        "py/type": "datetime.datetime"
-                    },
-                    [
-                        "B+QGBQEDJQgfYw=="
-                    ]
-                ],
-                "py/object": "datetime.datetime"
-            },
-            "_exp": 14710,
-            "_fleeIfAttacked": false,
-            "_follow": false,
-            "_frequency": 50,
-            "_guardTreasure": false,
-            "_hidden": false,
-            "_hostile": false,
-            "_hp": 30000,
-            "_instanceDebug": false,
-            "_invValue": 0,
-            "_invWeight": 0,
-            "_inventory": [],
-            "_inventoryTruncSize": 12,
-            "_invisible": false,
-            "_itemCatalog": [],
-            "_kidnap": false,
-            "_lastAttackDate": {
-                "__reduce__": [
-                    {
-                        "py/type": "datetime.datetime"
-                    },
-                    [
-                        "B+QGBQEDJQgfYw=="
-                    ]
-                ],
-                "py/object": "datetime.datetime"
-            },
-            "_level": 12,
-            "_longdesc": "The shopkeep looks proud of his wares.",
-            "_magicImmunity": false,
-            "_maxhp": 5250,
-            "_maxweight": 0,
-            "_name": "shopkeep",
-            "_noKill": true,
-            "_numOfItemsCarried": [
-                0,
-                1,
-                2
-            ],
-            "_offensiveSpells": [],
-            "_parleyAction": "None",
-            "_parleyTeleportRooms": [],
-            "_parleyTxt": [
-                "The shopkeep silently points to a sign on the wall that reads: Use 'catalog' to see what I have to offer and then 'buy #' to make a purchase"
-            ],
-            "_permanent": true,
-            "_pluraldesc": "shopkeeps",
-            "_poison": false,
-            "_regenerate": false,
-            "_rust": false,
-            "_secondsUntilNextAttack": 5,
-            "_sendToJail": false,
-            "_singledesc": "shopkeep",
-            "_steal": false,
-            "_timeToFirstAttack": 10,
-            "_tohit": 50,
-            "_undead": false,
-            "_unique": false,
-            "_value": 0,
-            "_vulnerable": false,
-            "_watch": false,
-            "_weight": 20,
-            "py/object": "creature.Creature"
-        },
-        {
             "_NotThereTxt": "That item isn't in there",
             "_alignmentsAllowed": [],
             "_article": "a",
@@ -180,8 +74,8 @@
             "_gendersAllowed": [],
             "_hidden": false,
             "_instanceDebug": false,
-            "_invValue": 80,
-            "_invWeight": 29,
+            "_invValue": 95,
+            "_invWeight": 37,
             "_inventory": [
                 {
                     "_alignmentsAllowed": [],
@@ -335,6 +229,84 @@
                     "_weight": 7,
                     "objId": 1,
                     "py/object": "object.Armor"
+                },
+                {
+                    "_alignmentsAllowed": [],
+                    "_article": "a",
+                    "_breakable": true,
+                    "_broken": false,
+                    "_carry": true,
+                    "_charges": 200,
+                    "_classesAllowed": [],
+                    "_cooldown": 0,
+                    "_cursed": false,
+                    "_damageType": "pierce",
+                    "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Weapon\\10.json",
+                    "_depleatable": true,
+                    "_enchanted": false,
+                    "_equippedSlotName": "_equippedWeapon",
+                    "_gendersAllowed": [],
+                    "_hidden": false,
+                    "_instanceDebug": false,
+                    "_invisible": false,
+                    "_isObject": true,
+                    "_lastUse": null,
+                    "_longdesc": "a quill partially stained with dried ink that has a sharpened point",
+                    "_magic": false,
+                    "_maxCharges": 200,
+                    "_maxLevelAllowed": 100,
+                    "_maximumDamage": 2,
+                    "_minLevelAllowed": 0,
+                    "_minimumDamage": 2,
+                    "_name": "pen",
+                    "_permanent": false,
+                    "_pluraldesc": "feather pens",
+                    "_singledesc": "feather pen",
+                    "_timesRepaired": 0,
+                    "_toHitBonus": 0,
+                    "_value": 10,
+                    "_weight": 1,
+                    "objId": 10,
+                    "py/object": "object.Weapon"
+                },
+                {
+                    "_ac": 1,
+                    "_alignmentsAllowed": [],
+                    "_article": "a",
+                    "_breakable": true,
+                    "_broken": false,
+                    "_carry": true,
+                    "_charges": 100,
+                    "_classesAllowed": [],
+                    "_cooldown": 0,
+                    "_cursed": false,
+                    "_damageReduction": 0,
+                    "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Armor\\1.json",
+                    "_depleatable": true,
+                    "_dodgeBonus": 0,
+                    "_enchanted": false,
+                    "_equippedSlotName": "_equippedArmor",
+                    "_gendersAllowed": [],
+                    "_hasMetal": true,
+                    "_hidden": false,
+                    "_instanceDebug": false,
+                    "_invisible": false,
+                    "_isObject": true,
+                    "_lastUse": null,
+                    "_longdesc": "This long sleeveless coat looks like it could be part of a uniform.",
+                    "_magic": false,
+                    "_maxCharges": 100,
+                    "_maxLevelAllowed": 100,
+                    "_minLevelAllowed": 0,
+                    "_name": "tunic",
+                    "_permanent": false,
+                    "_pluraldesc": "simple tunics",
+                    "_singledesc": "simple tunic",
+                    "_timesRepaired": 0,
+                    "_value": 5,
+                    "_weight": 7,
+                    "objId": 1,
+                    "py/object": "object.Armor"
                 }
             ],
             "_inventoryTruncSize": 6,
@@ -359,9 +331,115 @@
             "_trap": 0,
             "_traplevel": 0,
             "_value": 1,
-            "_weight": 49,
+            "_weight": 50,
             "objId": 1,
             "py/object": "object.Container"
+        },
+        {
+            "_ac": 7,
+            "_alignment": "neutral",
+            "_antiMagic": true,
+            "_article": "a",
+            "_assistCreature": [],
+            "_attackIfPietyLessThan": 3,
+            "_attackIfPietyMoreThan": 0,
+            "_attackLastAttacker": true,
+            "_attackRate": 100,
+            "_blockFromLeaving": false,
+            "_carry": false,
+            "_creationDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QGBQwhMwsJIQ=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_creatureId": 34,
+            "_currentlyAttacking": null,
+            "_damagePct": 100,
+            "_datafile": "C:\\Users\\Jason\\work\\sog\\sog\\.data\\Creature\\34.json",
+            "_defend": false,
+            "_defendCreature": [],
+            "_dodge": 200,
+            "_drain": false,
+            "_enterRoomTime": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QGBQwhMwsJIQ=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_exp": 14710,
+            "_fleeIfAttacked": false,
+            "_follow": false,
+            "_frequency": 50,
+            "_guardTreasure": false,
+            "_hidden": false,
+            "_hostile": false,
+            "_hp": 30000,
+            "_instanceDebug": false,
+            "_invValue": 0,
+            "_invWeight": 0,
+            "_inventory": [],
+            "_inventoryTruncSize": 12,
+            "_invisible": false,
+            "_itemCatalog": [],
+            "_kidnap": false,
+            "_lastAttackDate": {
+                "__reduce__": [
+                    {
+                        "py/type": "datetime.datetime"
+                    },
+                    [
+                        "B+QGBQwhMwsJIQ=="
+                    ]
+                ],
+                "py/object": "datetime.datetime"
+            },
+            "_level": 12,
+            "_longdesc": "The grubby looking blacksmith appears to be proud of his wares.",
+            "_magicImmunity": false,
+            "_maxhp": 5250,
+            "_maxweight": 0,
+            "_name": "blacksmith",
+            "_noKill": true,
+            "_numOfItemsCarried": [
+                0,
+                1,
+                2
+            ],
+            "_offensiveSpells": [],
+            "_parleyAction": "None",
+            "_parleyTeleportRooms": [],
+            "_parleyTxt": [
+                "silently points to a sign on the wall that reads: Use 'catalog' to see what I have to offer and then 'buy #' to make a purchase"
+            ],
+            "_permanent": true,
+            "_pluraldesc": "blacksmiths",
+            "_poison": false,
+            "_regenerate": false,
+            "_rust": false,
+            "_secondsUntilNextAttack": 5,
+            "_sendToJail": false,
+            "_singledesc": "blacksmith",
+            "_steal": false,
+            "_timeToFirstAttack": 11,
+            "_tohit": 50,
+            "_undead": false,
+            "_unique": false,
+            "_value": 0,
+            "_vulnerable": false,
+            "_watch": false,
+            "_weight": 20,
+            "py/object": "creature.Creature"
         }
     ],
     "_inventoryTruncSize": 12,

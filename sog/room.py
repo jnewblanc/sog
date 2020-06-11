@@ -1127,18 +1127,18 @@ class Guild(Shop):
     def recordTrainStats(self, charObj):
         charLevel = charObj.getLevel()
         self._lastTrainDate = datetime.now()
-        self._lastTrainees.append(charObj.getId())
+        self._lastTrainees.append(charObj.getName())
         if len(self._lastTrainees) > 5:
             self._lastTrainees.pop(0)
         if charLevel == self._masterLevel:
-            self._masters.append(charObj.getId())
+            self._masters.append(charObj.getName())
         if charLevel > self._masterLevel:
             self._masterLevel = charLevel
-            self._masters = [charObj.getId()]
+            self._masters = [charObj.getName()]
             coinBonus = self.calculateMasterCoinBonus(charLevel)
             charObj.addCoins(coinBonus)
             charObj.client.spoolOut(
-                "As the first "
+                "  As the first "
                 + self._order
                 + " to reach level "
                 + str(charLevel)

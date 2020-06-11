@@ -220,7 +220,7 @@ class TestRoom(TestGameBase):
         assert roomObj.train(charObj)
         assert charObj.getLevel() == 2
         assert roomObj.calculateMasterCoinBonus(7) == 49000
-        assert self._testAcctName + "/Bingo" in roomObj.getLastTrainees()
+        assert "Bingo" in roomObj.getLastTrainees()
         logger.info(roomObj.getPlaqueMsg())
         assert roomObj.getPlaqueMsg() != ""
 
