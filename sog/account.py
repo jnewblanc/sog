@@ -455,7 +455,7 @@ class Account(Storage, AttributeHelper):
         """ returns True if a admin file exists in account directory) """
         if id == "":
             id = str(self.getId())
-        if os.path.exists(os.path.abspath(DATADIR + "/account/" + id + "/isAdmin.txt")):
+        if os.path.exists(os.path.abspath(DATADIR + "/Account/" + id + "/isAdmin.txt")):
             return True
         return False
 
@@ -465,7 +465,7 @@ class Account(Storage, AttributeHelper):
         charList = []
         if id == "":
             id = str(self.getId())
-        mypath = os.path.abspath(DATADIR + "/account/" + id)
+        mypath = os.path.abspath(DATADIR + "/Account/" + id)
         for f in os.listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
                 [charName, junk] = f.split(".")
@@ -477,7 +477,7 @@ class Account(Storage, AttributeHelper):
             * walks the account tree checking to see if a file matching the
               character name exists """
         filename = name + ".pickle"
-        for dirpath, dirnames, files in os.walk(DATADIR + "/account"):
+        for dirpath, dirnames, files in os.walk(DATADIR + "/Account"):
             for name in files:
                 if name == filename:
                     return False
