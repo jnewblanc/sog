@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 # Local Data
-sog/.data/account
+sog/.data/Account
 sog/.logs
 sog/tmp
