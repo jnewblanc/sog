@@ -46,7 +46,7 @@ class Client(AttributeHelper):
                 print("Client: REC: Waiting to receive data")
             data = self.socket.recv(BYTES_TO_TRANSFER)
             if self.getDebug():
-                print("Client: REC: Data received")
+                print("Client: REC: Data received ({})".format(len(data)))
             self.output = str(data.decode("utf-8"))
             return True
         except OSError:
