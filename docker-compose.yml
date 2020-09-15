@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  sog:
+    image: sog
+    environment:
+      SOG_SERVER_DIR: "/opt/sog"
+      SOG_SERVER_DATADIR: "${SOG_SERVER_DIR}/.data"
+      SOG_SERVER_LOGDIR: "${SOG_SERVER_DIR}/.logs"
+      SOG_SERVER_HOST: "127.0.0.1"
+      SOG_SERVER_PORT: "8888"
+      SOG_SERVER_APP: "server.py"
+    command: python ${SOG_SERVER_DIR}/${SOG_SERVER_APP}
+    ports:
+      - 8888:8888
+    volumes:
+      - ./sog/:/opt/sog

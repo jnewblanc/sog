@@ -17,7 +17,7 @@ LOGDIR = os.getenv('SOG_SERVER_LOGDIR', os.path.join(ROOTDIR, ".logs"))
 # Network #
 ###########
 HOST = os.getenv('SOG_SERVER_HOST', "127.0.0.1")  # hostname or IP address
-PORT = os.getenv('SOG_SERVER_PORT', '8888')  # The port used by the server
+PORT = int(os.getenv('SOG_SERVER_PORT', '8888'))  # The port used by the server
 BYTES_TO_TRANSFER = 2048
 
 NOOP_STR = "=-o-= NOOP =-o-="

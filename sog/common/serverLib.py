@@ -2,6 +2,7 @@
 """ SoG server library module
    * server - runs the server loop, including exception handler
    * helper functions for starting/stopping threads
+   * Threads are instanciated from threads.ClientThread
 """
 
 # import selectors
