@@ -19,7 +19,8 @@ import game
 
 def server(email=""):
     logger.info("-------------------------------------------------------")
-    logger.info("Server Start - " + sys.argv[0])
+    logger.info("Server Start - {} - Listening on {}:{}".format(
+        sys.argv[0], common.globals.HOST, common.globals.PORT))
 
     try:
         asyncThread = createAndStartAsyncThread()

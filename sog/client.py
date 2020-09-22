@@ -22,6 +22,8 @@ def main():
     parser = argparse.ArgumentParser(description="Client for SoG")
     parser.add_argument("--username", type=str, help="username for auto login")
     parser.add_argument("--password", type=str, help="password for auto login")
+    parser.add_argument("--host", type=str, help="ip of server")
+    parser.add_argument("--port", type=str, help="port of server")
     parser.add_argument("--debug", action="store_true", help="turn debugging on")
 
     args = parser.parse_args()
