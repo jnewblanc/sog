@@ -33,7 +33,7 @@ class Client(AttributeHelper):
         self._receivedInput = False  # gets set the first time input is entered
 
     def start(self, args):
-        if self.connect():
+        if self.connect(args):
             print("Client: Started.  Enter [term] to perform a hard stop")
             self.dataLoop(args)
             print("Client: Finished.")
@@ -80,16 +80,21 @@ class Client(AttributeHelper):
                 pass
         self.socket = None
 
-    def connect(self):
+    def connect(self, args):
         """ Set up the connection """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(self.socketTimeout)
+
+        svrhost = args.host or HOST
+        svrport = int(args.port or PORT)
         try:
-            self.socket.connect((HOST, PORT))
+            self.socket.connect((svrhost, svrport))
             if self.getDebug():
-                print("Client: Connection established")
+                print("Client: Connection established at {}:{}".format(
+                    svrhost, svrport))
         except ConnectionRefusedError:
-            print("Client: Server is refusing connections")
+            print("Client: Server is refusing connections at {}:{}".format(svrhost,
+                                                                           svrport))
             return False
         return True
 
