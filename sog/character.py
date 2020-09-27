@@ -488,7 +488,7 @@ class Character(Item):
 
         self._attackTargets = []
 
-        self._lastInputDate = getNeverDate()
+        self._lastInputDate = datetime.now()
         self._lastAttackDate = getNeverDate()
         self._lastAttackCmd = "attack"
         self._lastRegenDate = getNeverDate()
@@ -1180,6 +1180,8 @@ class Character(Item):
         return self._acctName + "/" + str(self.getName())
 
     def getInputDate(self):
+        if not hasattr(self, "_lastInputDate"):
+            return getNeverDate()
         return(self._lastInputDate)
 
     def getIntelligence(self):

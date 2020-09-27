@@ -338,7 +338,7 @@ class Room(Item):
                 if charObj.isDM():
                     otherPlayerList.append(oneplayer.getName() + "(INV)")
             elif oneplayer.isHidden():
-                if charObj.isDM():
+                if charObj.isDm():
                     otherPlayerList.append(oneplayer.getName() + "(HID)")
             else:
                 otherPlayerList.append(oneplayer.getName())

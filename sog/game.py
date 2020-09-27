@@ -751,6 +751,10 @@ class GameCmd(cmd.Cmd):
         oldRoom = charObj.getRoom()
         if currentRoom.isDirection(cmdargs[0]):  # if command is a direction
             moved = self.moveDirection(charObj, cmdargs[0])
+            # Folks in the old room should see the player leave, unless hidden
+            msg = "{} went {}\n".format(
+                charObj.getName(), currentRoom.directionNameDict[cmdargs[0]])
+            self.othersMsg(oldRoom, msg, charObj.isHidden())
         else:
             # handle doors and Portals
             itemList = self.getObjFromCmd(currentRoom.getInventory(), line)
@@ -765,6 +769,9 @@ class GameCmd(cmd.Cmd):
             # character possibly loses hidden
             charObj.possibilyLoseHiddenWhenMoving()
             self.selfMsg(charObj.getRoom().display(charObj))
+            # Folks in the new room should see the player arrive, unless hidden
+            msg = "{} has arrived\n".format(charObj.getName())
+            self.othersMsg(currentRoom, msg, charObj.isHidden())
             return True
         else:
             self.selfMsg("You can not go there!\n")
