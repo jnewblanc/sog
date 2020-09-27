@@ -1179,6 +1179,9 @@ class Character(Item):
     def getId(self):
         return self._acctName + "/" + str(self.getName())
 
+    def getInputDate(self):
+        return(self._lastInputDate)
+
     def getIntelligence(self):
         return int(self.intelligence)
 

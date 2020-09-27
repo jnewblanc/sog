@@ -18,6 +18,7 @@ import traceback
 from common.attributes import AttributeHelper
 from common.globals import HOST, PORT, BYTES_TO_TRANSFER
 from common.globals import NOOP_STR, TERM_STR, STOP_STR
+from common.general import dateStr
 
 
 class Client(AttributeHelper):
@@ -34,7 +35,8 @@ class Client(AttributeHelper):
 
     def start(self, args):
         if self.connect(args):
-            print("Client: Started.  Enter [term] to perform a hard stop")
+            print("Client: Started at {}.  ".format(dateStr("now")) +
+                  "Enter [term] to perform a hard stop")
             self.dataLoop(args)
             print("Client: Finished.")
         self.disconnect()

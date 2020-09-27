@@ -15,7 +15,7 @@ from combat import Combat
 from common.ipc import Ipc
 from common.general import isIntStr, dateStr, logger, dLog
 from common.general import splitTargets, targetSearch, itemSort
-from common.general import getRandomItemFromList
+from common.general import getRandomItemFromList, secsSinceDate, getNeverDate
 from common.globals import maxCreaturesInRoom
 from common.help import enterHelp
 from magic import Spell, SpellList, spellCanTargetSelf
@@ -74,7 +74,9 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self.addToActivePlayerList(charObj)
 
         # in-game broadcast announcing game entry
-        msg = client.txtBanner(charObj.getName() + " has entered the game", bChar="=")
+        msg = client.txtBanner(
+            "{} has entered the game at {}".format(charObj.getName(),
+                                                   dateStr("now")), bChar="=")
         self.gameMsg(msg + "\n")
         logger.info("JOINED GAME " + charObj.getId())
 
@@ -103,8 +105,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
             charObj.save(logStr=__class__.__name__)
 
         # notification and logging
-        msg = client.txtBanner(charObj.getName() + " has left the game", bChar="=")
+        msg = client.txtBanner(
+            "{} has left the game at {}".format(charObj.getName(), dateStr("now")),
+            bChar="=")
         self.gameMsg(msg + "\n")
+        client.spoolOut(msg + "\n")
+
         logger.info("LEFT GAME " + charObj.getId())
 
         # Discard charObj
@@ -169,7 +175,25 @@ class _Game(cmd.Cmd, Combat, Ipc):
     def asyncCharacterActions(self):
         """ asyncronous actions that occur to players. """
         for charObj in self.getCharacterList():
+            self.timeoutInactivePlayers(charObj)
             charObj.processPoisonAndRegen()
+
+    def timeoutInactivePlayers(self, charObj, timeoutInSecs=30):
+        """ kick character out of game if they have been inactive """
+        timeOutTxt = "You have timed out due to inactivity\n"
+        if charObj.getInputDate() == getNeverDate():
+            # Ignore the timeout check if the input date has not been set yet
+            # This is a timing issue in that the first run of the async loop
+            # runs before the character is fully initialized with an input date.
+            return(False)
+        if secsSinceDate(charObj.getInputDate()) > timeoutInSecs:
+            # kick character out of game
+            self.charMsg(charObj, timeOutTxt)
+            logger.info("GAME TIMEOUT {}".format(charObj.getId()))
+            self.leaveGame(charObj.client, saveChar=True)
+            return(True)
+
+        return(False)
 
     def asyncNonPlayerActions(self):
         """ asyncronous actions that are not tied to a player. """
@@ -518,21 +542,35 @@ class GameCmd(cmd.Cmd):
         """
         self._lastinput = cmd
         dLog("GAME cmd = " + cmd, self._instanceDebug)
-        self.precmd(cmd)
+        if self.precmd() == "stop":
+            return True
         stop = self.onecmd(cmd)
-        self.postcmd(stop, cmd)
+        if self.postcmd(cmd) == "stop":
+            return True
         return stop
 
-    def precmd(self, line):
+    def preloop(self):
+        """ functionality that get run once before the input loop begins """
+        # Set the input date when first entering the game.  Required for timeout
+        # to work properly on characters that never input a command.
+        self.charObj.setInputDate()
+
+    def precmd(self):
         """ cmd method override """
+        # If charater has timed out or been booted from the game
+        # terminate the command loop.
+        if self.charObj not in self.gameObj.getCharacterList():
+            return("stop")
+        self.charObj.setInputDate()
         if self.lastcmd != "":
             self.charObj.setLastCmd(self.lastcmd)
+        return(False)
 
-    def postcmd(self, stop, line):
+    def postcmd(self, line):
         """ cmd method override """
         if self.charObj:  # doesn't exist if there is a suicide
             self.charObj.save(logStr=__class__.__name__)
-        return stop
+        return(False)
 
     def emptyline(self):
         """ cmd method override """
