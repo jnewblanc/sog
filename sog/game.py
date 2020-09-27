@@ -178,7 +178,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
             self.timeoutInactivePlayers(charObj)
             charObj.processPoisonAndRegen()
 
-    def timeoutInactivePlayers(self, charObj, timeoutInSecs=30):
+    def timeoutInactivePlayers(self, charObj, timeoutInSecs=300):
         """ kick character out of game if they have been inactive """
         timeOutTxt = "You have timed out due to inactivity\n"
         if charObj.getInputDate() == getNeverDate():
