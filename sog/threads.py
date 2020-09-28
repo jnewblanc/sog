@@ -293,9 +293,11 @@ class ClientThread(threading.Thread, ClientBase):
             self.removeConnectionFromList()
             self._running = False
             self.lobbyObj = None
+            if self.charObj:
+                self.gameObj.leaveGame(self.charObj, saveChar=True)
+                self.charObj = None
             self.gameObj = None
             self.acctObj = None
-            self.charObj = None
 
             try:
                 self.socket.sendall(str.encode(common.globals.TERM_STR))
@@ -314,10 +316,12 @@ class AsyncThread(threading.Thread):
 
     def __init__(self):
         self.gameObj = game.Game()  # create/use the single game instance
+        self.gameObj._asyncThread = self
         self._debugAsync = False
         threading.Thread.__init__(self, daemon=True, target=self._asyncLoop)
         self._startdate = datetime.now()
         self._stopFlag = False
+        self._lastRunTime = datetime.now()
 
     def _asyncLoop(self):
         """ Call the _asyncTasks method of the single game instance.
@@ -327,7 +331,11 @@ class AsyncThread(threading.Thread):
         logger.info("Thread started - async worker")
         while not self._stopFlag:
             self.gameObj.asyncTasks()
+            self._lastRunTime = datetime.now()
             time.sleep(1)
 
     def halt(self):
         self._stopFlag = True
+
+    def getLastRunTime(self):
+        return(self._lastRunTime)

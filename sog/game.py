@@ -18,10 +18,10 @@ from common.general import splitTargets, targetSearch, itemSort
 from common.general import getRandomItemFromList, secsSinceDate, getNeverDate
 from common.globals import maxCreaturesInRoom
 from common.help import enterHelp
-from magic import Spell, SpellList, spellCanTargetSelf
-from room import RoomFactory, isRoomFactoryType, getRoomTypeFromFile
-from object import ObjectFactory, isObjectFactoryType
 from creature import Creature
+from magic import Spell, SpellList, spellCanTargetSelf
+from object import ObjectFactory, isObjectFactoryType
+from room import RoomFactory, isRoomFactoryType, getRoomTypeFromFile
 
 
 class _Game(cmd.Cmd, Combat, Ipc):
@@ -36,6 +36,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self._activeRooms = []
         self._activePlayers = []
         self._startdate = datetime.now()
+        self._asyncThread = None
 
         self._instanceDebug = _Game._instanceDebug
         return None
@@ -62,6 +63,9 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self.asyncNonPlayerActions()
         self.asyncCharacterActions()
 
+    def processDeadClients(self):
+        True
+
     def joinGame(self, client):
         """ Perform required actions related to joining the game """
         charObj = client.charObj
@@ -74,7 +78,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self.addToActivePlayerList(charObj)
 
         # in-game broadcast announcing game entry
-        msg = client.txtBanner(
+        msg = self.txtBanner(
             "{} has entered the game at {}".format(charObj.getName(),
                                                    dateStr("now")), bChar="=")
         self.gameMsg(msg + "\n")
@@ -87,13 +91,11 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 gameCmd.cmdloop()  # start the game cmdloop
             finally:
                 if client.charObj:
-                    self.leaveGame(client)
+                    self.leaveGame(client.charObj)
         return False
 
-    def leaveGame(self, client, saveChar=True):
+    def leaveGame(self, charObj, saveChar=True):
         """ Handle details of leaving a game """
-        charObj = client.charObj
-
         self.leaveRoom(charObj)
 
         # remove character from game character list
@@ -102,20 +104,26 @@ class _Game(cmd.Cmd, Combat, Ipc):
         # final character save before throwing away charObj
         if saveChar:
             # saveChar is False when it's a suicide
-            charObj.save(logStr=__class__.__name__)
+            try:
+                charObj.save(logStr=__class__.__name__)
+            except AttributeError:
+                logger.warning("Could not save character")
 
         # notification and logging
-        msg = client.txtBanner(
+        msg = self.txtBanner(
             "{} has left the game at {}".format(charObj.getName(), dateStr("now")),
             bChar="=")
         self.gameMsg(msg + "\n")
-        client.spoolOut(msg + "\n")
+
+        if charObj.client:
+            charObj.client.spoolOut(msg + "\n")
 
         logger.info("LEFT GAME " + charObj.getId())
 
         # Discard charObj
+        if charObj.client:
+            charObj.client.charObj = None
         charObj = None
-        client.charObj = None
         return True
 
     def getCharacterList(self):
@@ -175,11 +183,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
     def asyncCharacterActions(self):
         """ asyncronous actions that occur to players. """
         for charObj in self.getCharacterList():
-            self.timeoutInactivePlayers(charObj)
+            self.timeoutInactivePlayer(charObj)
             charObj.processPoisonAndRegen()
 
-    def timeoutInactivePlayers(self, charObj, timeoutInSecs=300):
+    def timeoutInactivePlayer(self, charObj, timeoutInSecs=300):
         """ kick character out of game if they have been inactive """
+        removeCharFromGame = False
         timeOutTxt = "You have timed out due to inactivity\n"
         if charObj.getInputDate() == getNeverDate():
             # Ignore the timeout check if the input date has not been set yet
@@ -187,10 +196,13 @@ class _Game(cmd.Cmd, Combat, Ipc):
             # runs before the character is fully initialized with an input date.
             return(False)
         if secsSinceDate(charObj.getInputDate()) > timeoutInSecs:
-            # kick character out of game
+            removeCharFromGame = True
+        if not charObj.client.is_alive():
+            removeCharFromGame = True
+        if removeCharFromGame:
             self.charMsg(charObj, timeOutTxt)
             logger.info("GAME TIMEOUT {}".format(charObj.getId()))
-            self.leaveGame(charObj.client, saveChar=True)
+            self.leaveGame(charObj, saveChar=True)
             return(True)
 
         return(False)
@@ -477,6 +489,21 @@ class _Game(cmd.Cmd, Combat, Ipc):
         charObj.removeFromInventory(item)
         return None
 
+    def txtBanner(self, msg, bChar="-"):
+        """ return a string containing a banner.
+            Default is like this:
+               ----- mymessage -----
+        """
+        return "{0} {1} {0}".format(self.txtLine(lineChar=bChar, lineSize=5), msg)
+
+    def txtLine(self, lineChar="-", lineSize=80):
+        """ return a string containing a line
+            line size and character are customizable
+            Default is like this:
+               ----------------------------------------------------------------
+        """
+        return lineChar * lineSize
+
 
 class GameCmd(cmd.Cmd):
     """ Game loop - separate one for each player
@@ -751,6 +778,10 @@ class GameCmd(cmd.Cmd):
         oldRoom = charObj.getRoom()
         if currentRoom.isDirection(cmdargs[0]):  # if command is a direction
             moved = self.moveDirection(charObj, cmdargs[0])
+            # Folks in the old room should see the player leave, unless hidden
+            msg = "{} went {}\n".format(
+                charObj.getName(), currentRoom.directionNameDict[cmdargs[0]])
+            self.othersMsg(oldRoom, msg, charObj.isHidden())
         else:
             # handle doors and Portals
             itemList = self.getObjFromCmd(currentRoom.getInventory(), line)
@@ -765,6 +796,9 @@ class GameCmd(cmd.Cmd):
             # character possibly loses hidden
             charObj.possibilyLoseHiddenWhenMoving()
             self.selfMsg(charObj.getRoom().display(charObj))
+            # Folks in the new room should see the player arrive, unless hidden
+            msg = "{} has arrived\n".format(charObj.getName())
+            self.othersMsg(currentRoom, msg, charObj.isHidden())
             return True
         else:
             self.selfMsg("You can not go there!\n")
@@ -1287,6 +1321,7 @@ class GameCmd(cmd.Cmd):
         if self.acctObj.isAdmin():
             self.charObj.setDm()
             self.selfMsg("ok\n")
+            logger.info("{} just became a DM".format(self.charObj.getName()))
 
     def do_dm_off(self, line):
         """ dm - turn dm mode off """
@@ -2181,6 +2216,14 @@ class GameCmd(cmd.Cmd):
         """ transaction - attempt to steal from another player """
         self.selfMsg(line + " not implemented yet\n")
 
+    def do_stopasync(self, line):
+        """ dm - stop async thread (which should trigger an automatic restart) """
+        if not self.charObj.isDm():
+            self.selfMsg("Unknown Command\n")
+            return False
+        self.gameObj._asyncThread.halt()
+        self.selfMsg("ok\n")
+
     def do_strike(self, line):
         """ combat """
         target = self.getCombatTarget(line)
@@ -2226,8 +2269,8 @@ class GameCmd(cmd.Cmd):
             return False
         charObj = self.charObj
         charName = charObj.getName()
-        self.gameObj.leaveGame(self.client, saveChar=False)
-        msg = self.client.txtBanner(
+        self.gameObj.leaveGame(self.client.charObj, saveChar=False)
+        msg = self.gameObj.txtBanner(
             charName + " has shuffled off this mortal coil", bChar="="
         )
         charObj.delete()
@@ -2495,14 +2538,17 @@ class GameCmd(cmd.Cmd):
         """ info - show who is playing the game """
         charTxt = ""
         charObj = self.charObj
+        charFormat = "  {:20} - {:16} - {:20}\n"
+
+        header = "  Characters currently playing:\n"
+        header += charFormat.format("Character Name", "Login Date", "Account")
+        header += charFormat.format("-" * 20, "-" * 16, "-" * 20)
+
         for onechar in charObj.getRoom().getCharacterList():
-            if onechar != charObj:
-                charTxt += onechar.getName() + "\n"
-        if charTxt == "":
-            buf = "You are the only one in the game\n"
-        else:
-            buf = "Characters in the Game:\n" + charTxt
-        self.selfMsg(buf)
+            charTxt += charFormat.format(onechar.getName(),
+                                         dateStr(onechar.getLastLoginDate()),
+                                         re.sub('@.*', '@', onechar.getAcctName()))
+        self.selfMsg(header + charTxt)
         return None
 
     def do_wield(self, line):
