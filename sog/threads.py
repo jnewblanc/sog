@@ -293,9 +293,11 @@ class ClientThread(threading.Thread, ClientBase):
             self.removeConnectionFromList()
             self._running = False
             self.lobbyObj = None
+            if self.charObj:
+                self.gameObj.leaveGame(self.charObj, saveChar=True)
+                self.charObj = None
             self.gameObj = None
             self.acctObj = None
-            self.charObj = None
 
             try:
                 self.socket.sendall(str.encode(common.globals.TERM_STR))

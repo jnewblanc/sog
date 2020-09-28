@@ -63,6 +63,9 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self.asyncNonPlayerActions()
         self.asyncCharacterActions()
 
+    def processDeadClients(self):
+        True
+
     def joinGame(self, client):
         """ Perform required actions related to joining the game """
         charObj = client.charObj
@@ -75,7 +78,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self.addToActivePlayerList(charObj)
 
         # in-game broadcast announcing game entry
-        msg = client.txtBanner(
+        msg = self.txtBanner(
             "{} has entered the game at {}".format(charObj.getName(),
                                                    dateStr("now")), bChar="=")
         self.gameMsg(msg + "\n")
@@ -88,13 +91,11 @@ class _Game(cmd.Cmd, Combat, Ipc):
                 gameCmd.cmdloop()  # start the game cmdloop
             finally:
                 if client.charObj:
-                    self.leaveGame(client)
+                    self.leaveGame(client.charObj)
         return False
 
-    def leaveGame(self, client, saveChar=True):
+    def leaveGame(self, charObj, saveChar=True):
         """ Handle details of leaving a game """
-        charObj = client.charObj
-
         self.leaveRoom(charObj)
 
         # remove character from game character list
@@ -103,20 +104,26 @@ class _Game(cmd.Cmd, Combat, Ipc):
         # final character save before throwing away charObj
         if saveChar:
             # saveChar is False when it's a suicide
-            charObj.save(logStr=__class__.__name__)
+            try:
+                charObj.save(logStr=__class__.__name__)
+            except AttributeError:
+                logger.warning("Could not save character")
 
         # notification and logging
-        msg = client.txtBanner(
+        msg = self.txtBanner(
             "{} has left the game at {}".format(charObj.getName(), dateStr("now")),
             bChar="=")
         self.gameMsg(msg + "\n")
-        client.spoolOut(msg + "\n")
+
+        if charObj.client:
+            charObj.client.spoolOut(msg + "\n")
 
         logger.info("LEFT GAME " + charObj.getId())
 
         # Discard charObj
+        if charObj.client:
+            charObj.client.charObj = None
         charObj = None
-        client.charObj = None
         return True
 
     def getCharacterList(self):
@@ -176,11 +183,12 @@ class _Game(cmd.Cmd, Combat, Ipc):
     def asyncCharacterActions(self):
         """ asyncronous actions that occur to players. """
         for charObj in self.getCharacterList():
-            self.timeoutInactivePlayers(charObj)
+            self.timeoutInactivePlayer(charObj)
             charObj.processPoisonAndRegen()
 
-    def timeoutInactivePlayers(self, charObj, timeoutInSecs=300):
+    def timeoutInactivePlayer(self, charObj, timeoutInSecs=300):
         """ kick character out of game if they have been inactive """
+        removeCharFromGame = False
         timeOutTxt = "You have timed out due to inactivity\n"
         if charObj.getInputDate() == getNeverDate():
             # Ignore the timeout check if the input date has not been set yet
@@ -188,10 +196,13 @@ class _Game(cmd.Cmd, Combat, Ipc):
             # runs before the character is fully initialized with an input date.
             return(False)
         if secsSinceDate(charObj.getInputDate()) > timeoutInSecs:
-            # kick character out of game
+            removeCharFromGame = True
+        if not charObj.client.is_alive():
+            removeCharFromGame = True
+        if removeCharFromGame:
             self.charMsg(charObj, timeOutTxt)
             logger.info("GAME TIMEOUT {}".format(charObj.getId()))
-            self.leaveGame(charObj.client, saveChar=True)
+            self.leaveGame(charObj, saveChar=True)
             return(True)
 
         return(False)
@@ -477,6 +488,21 @@ class _Game(cmd.Cmd, Combat, Ipc):
         # Remove item from player's inventory
         charObj.removeFromInventory(item)
         return None
+
+    def txtBanner(self, msg, bChar="-"):
+        """ return a string containing a banner.
+            Default is like this:
+               ----- mymessage -----
+        """
+        return "{0} {1} {0}".format(self.txtLine(lineChar=bChar, lineSize=5), msg)
+
+    def txtLine(self, lineChar="-", lineSize=80):
+        """ return a string containing a line
+            line size and character are customizable
+            Default is like this:
+               ----------------------------------------------------------------
+        """
+        return lineChar * lineSize
 
 
 class GameCmd(cmd.Cmd):
@@ -2243,8 +2269,8 @@ class GameCmd(cmd.Cmd):
             return False
         charObj = self.charObj
         charName = charObj.getName()
-        self.gameObj.leaveGame(self.client, saveChar=False)
-        msg = self.client.txtBanner(
+        self.gameObj.leaveGame(self.client.charObj, saveChar=False)
+        msg = self.gameObj.txtBanner(
             charName + " has shuffled off this mortal coil", bChar="="
         )
         charObj.delete()
