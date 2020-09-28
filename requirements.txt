@@ -5,3 +5,4 @@
 
 inflect
 jsonpickle
+passlib

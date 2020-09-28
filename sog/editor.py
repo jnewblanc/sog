@@ -7,7 +7,7 @@ import random
 import re
 import sys
 
-# from account import Account
+from account import Account
 from character import Character
 from creature import Creature
 from common.attributes import AttributeHelper
@@ -56,7 +56,7 @@ class Editor(LocalIo, AttributeHelper):
         if cmd == "help":
             for obj in RoomFactoryTypes + ObjFactoryTypes:
                 print(obj + " [num] - edit " + obj)
-            # print("account - edit account")
+            print("account - edit account")
             print("character - edit character")
             print("creature - edit creature")
             print("------------------------")
@@ -64,8 +64,6 @@ class Editor(LocalIo, AttributeHelper):
             print("history - view the last 20 commands")
             print("list - show a tabular list of items of a certain type")
             print("quit - quit editor")
-        elif cmd == "account":
-            print("Not implemented")
         elif cmd == "list":
             if len(cmdargs) < 3:
                 print("list <item> <start#>-<end#>")
@@ -198,11 +196,11 @@ class Editor(LocalIo, AttributeHelper):
             """ The id is provided along with the command """
             if re.match("^[0-9]+$", cmdargs[1]):
                 return int(cmdargs[1])
-            if cmdargs[0].lower() == "character":
+            if cmdargs[0].lower() == "character" or cmdargs[0].lower() == "account":
                 return str(cmdargs[1])
         else:
             """ Prompt for the ID """
-            if cmdargs[0].lower() == "character":
+            if cmdargs[0].lower() == "character" or cmdargs[0].lower() == "account":
                 """ prompt for string, since Character Ids are strings """
                 prompt = "Enter " + cmdargs[0] + " id: "
                 idStr = self.promptForInput(prompt)
@@ -232,6 +230,9 @@ class Editor(LocalIo, AttributeHelper):
             itemObj = Creature(id1)
         elif isObjectFactoryType(itemStr.lower()):
             itemObj = ObjectFactory(itemStr, id1)
+        elif itemStr.lower() == "account":
+            itemObj = Account()
+            itemObj.email = id1
         else:
             print("Can not determine object type.")
             return None

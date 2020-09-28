@@ -2547,7 +2547,7 @@ class GameCmd(cmd.Cmd):
         for onechar in charObj.getRoom().getCharacterList():
             charTxt += charFormat.format(onechar.getName(),
                                          dateStr(onechar.getLastLoginDate()),
-                                         re.sub('@.*', '@', onechar.getAcctName()))
+                                         charObj.client.acctObj.getDisplayName())
         self.selfMsg(header + charTxt)
         return None
 

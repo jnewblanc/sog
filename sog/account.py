@@ -8,18 +8,24 @@ import re
 
 from character import Character
 from common.attributes import AttributeHelper
+from common.editwizard import EditWizard
 from common.general import getNeverDate, dateStr
 from common.general import logger
 from common.storage import Storage
 from common.globals import DATADIR
+import common.security
 
 
-class Account(Storage, AttributeHelper):
+class Account(Storage, AttributeHelper, EditWizard):
     """ Account class"""
 
     attributesThatShouldntBeSaved = ["client"]
 
     validEmailRegex = r"^[A-Za-z0-9_\-\.]+@[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+$"
+
+    wizardAttributes = ["_email", "_password", "_displayName", "admin"]
+
+    attributeInfo = {}
 
     def __init__(self, client=None):
         self.client = client
@@ -46,8 +52,11 @@ class Account(Storage, AttributeHelper):
         buf += "client: " + str(self.client) + "\n"
         return buf
 
-    def describe(self):
+    def describe(self, article=""):
         return self.getId()
+
+    def getType(self):
+        return self.__class__.__name__
 
     def login(self):
         """ login and return the acctObj - acct created if needed """
@@ -71,8 +80,10 @@ class Account(Storage, AttributeHelper):
                 self.load(logStr=__class__.__name__)
                 self.client.spoolOut("Welcome " + self.getDisplayName() + "\n")
                 self.admin = self.adminFileExists(email)
+                password_verified = True
             else:
                 self.__init__(self.client)  # reset with existing connection
+                password_verified = False
         else:  # Prompt for new account
             prompt = (
                 "Account for "
@@ -84,6 +95,7 @@ class Account(Storage, AttributeHelper):
             accountCheck = self.client.promptForInput(prompt, r"^[yYnN]$", errMsg)
             if accountCheck.lower() == "y":
                 if self.create(email):
+                    password_verified = True
                     pass
                 else:
                     self.client.spoolOut(
@@ -98,18 +110,21 @@ class Account(Storage, AttributeHelper):
 
         self.setLoginDate()
 
-        if self.isValid():
-            logger.info(
-                str(self.client) + " Account login sucessful - " + self.getEmail()
-            )
-        else:
-            logger.info(
-                str(self.client) + " Account " + self.getEmail() + " is invalid"
-            )
+        if not password_verified:
             self.client.spoolOut(
                 "Password verification failed.  This "
                 + "transaction has been logged and will be "
                 + "investigated.\n"
+            )
+            return False
+        elif self.isValid():
+            logger.info(
+                "{} Account login sucessful - {}".format(str(self.client),
+                                                         self.getEmail())
+            )
+        else:
+            logger.info(
+                "{} Account {} is invalid".format(str(self.client), email)
             )
             return False
 
@@ -163,6 +178,9 @@ class Account(Storage, AttributeHelper):
                 + "/account.pickle"
             )
             return True
+        else:
+            self._datafile = "nothing"
+
         return False
 
     def getUserEmailAddress(self):
@@ -191,9 +209,10 @@ class Account(Storage, AttributeHelper):
         self.setDisplayName(self.promptForDisplayName())
         if self.getDisplayName() == "":
             return False
-        self.password = self.promptForPassword()
-        if self.password == "":
+        password = self.promptForPassword()
+        if password == "":
             return False
+        self.password = common.security.hash_password(password)
         if self.validatePassword(self.password):
             self.email = email
             self._maxcharacters = 5
@@ -202,8 +221,15 @@ class Account(Storage, AttributeHelper):
             self._lastLogoutDate = self.setLogoutDate()
             self.prompt = "full"
             self.save(logStr=__class__.__name__)
-            self.client.spoolOut("Account created for " + self.email + "\n")
+            acctmsg = "Account {} created for {}\n".format(
+                self.getDisplayName(), self.getEmail())
+            self.client.spoolOut(acctmsg)
+            logger.info("NEW ACCOUNT " + acctmsg)
             return True
+        else:
+            self.client.spoolOut("Password validation failed\n")
+            return False
+
         return False
 
     def isValid(self):
@@ -268,7 +294,7 @@ class Account(Storage, AttributeHelper):
         errMsg = (
             "Invalid name, displayName must be at least 3 characters, "
             + "must start with\n an alphanumeric, and contain only "
-            + "alphanumerics, spaces, underscores, and hyphens"
+            + "alphanumerics, spaces, underscores, and hyphens\n"
         )
         displayName = self.client.promptForInput(
             "Display Name: ", r"^[A-Za-z][A-Za-z0-9_-]{2}", errMsg
@@ -321,14 +347,31 @@ class Account(Storage, AttributeHelper):
                         )
         return False
 
-    def validatePassword(self, loadedpassword, promptStr="Verify Password: "):
-        """ Prompt user to verify password, returns True if successful """
-        self.client.spoolOut(promptStr)
-        self.client._sendAndReceive()
-        password = self.client.getInputStr()
+    def validatePassword(self, given_password, promptStr="Verify Password: "):
+        """ Prompt user to verify password against a given password,
+            returns True if successful """
 
-        if password == loadedpassword:
-            return True
+        # Prompt user for cleartxt password
+        # self.client.spoolOut(promptStr)
+        # self.client._sendAndReceive()
+        # password_input = self.client.getInputStr()
+
+        password_input = self.promptForPassword(promptStr)
+
+        # Validate the password against the password we have on file
+        if common.security.password_is_encrypted(given_password):
+            # If the given password is encoded, use the encrypted check
+            password_check = common.security.check_encrypted_password(
+                password_input, given_password)
+            # logger.debug("vp: Checking encrypted password... {}".format(
+            #     password_check))
+            return(password_check)
+        else:
+            password_check = (password_input == given_password)
+            # logger.debug("vp: Checking cleartxt password... {}".format(
+            #     password_check))
+            return(password_check)
+
         return False
 
     def repairCharacterList(self):

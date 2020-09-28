@@ -11,12 +11,8 @@ Fast forward 30 years.  I'm a software release engineer who was looking to learn
 While I'm hoping to have a playable game in the end, my primary goal is to obtain a decent grasp of the Python language, as well as having my own code to use for practicing my release engineering skills.  Starting from a place of not knowing Python, never having written a game, nor dove into any serious object oriented design, I expect that some of this is going to start out as ugly spaghetti code.  Hopefully it will improve over time, as I learn more.  At some point, I may make this project public and/or open it up to contributors
 
 ### Installation ###
-1. Install python 3.x
+1. Install docker
 2. Clone sog repo
-3. Install python modules in requirement.txt
-  ```
-  pip install -r requirements.txt
-  ```
 
 ### To play ###
 1. Run the server
@@ -24,7 +20,7 @@ While I'm hoping to have a playable game in the end, my primary goal is to obtai
    2. Open a command shell and run:
 ```
 cd to sog/sog
-python server.py
+docker-compose up
 ```
 2. Run the client
    1. Run the client script in sob/bin OR
