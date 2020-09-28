@@ -27,15 +27,16 @@ class Character(Item):
 
     attributesThatShouldntBeSaved = [
         "client",
-        "_instanceDebug",
         "_currentlyAttacking",
-        "_vulnerable",
-        "_secondsUntilNextAttack",
-        "_lastInputDate",
+        "_instanceDebug",
         "_lastAttackDate",
+        "_lastInputDate",
+        "_lastLoginDate",
         "_lastRegenDate",
-        "_spoolOut",
         "_roomObj",
+        "_secondsUntilNextAttack",
+        "_spoolOut",
+        "_vulnerable",
     ]
 
     # int attributes
@@ -293,6 +294,7 @@ class Character(Item):
         self._creationDate = datetime.now()
         self._lastLogoutDate = getNeverDate()
         self._lastPoisonDate = getNeverDate()
+        self._lastLoginDate = datetime.now()
 
         self._playtester = False
 
@@ -492,6 +494,7 @@ class Character(Item):
         self._lastAttackDate = getNeverDate()
         self._lastAttackCmd = "attack"
         self._lastRegenDate = getNeverDate()
+        self._lastLoginDate = datetime.now()
         self._currentlyAttacking = None
         self._secondsUntilNextAttack = 0
         self._vulnerable = False
@@ -1124,6 +1127,9 @@ class Character(Item):
     def isVulnerable(self):
         return self._vulnerable
 
+    def getAcctName(self):
+        return self._acctName
+
     def getAlignment(self):
         return self._alignment
 
@@ -1207,6 +1213,11 @@ class Character(Item):
             self.setLastRegen()
             return getNeverDate()
         return self._lastRegenDate
+
+    def getLastLoginDate(self):
+        if not hasattr(self, "_lastLoginDate"):
+            return getNeverDate()
+        return self._lastLoginDate
 
     def getLimitedSpellCount(self):
         return int(self._limitedSpellsLeft)

@@ -47,8 +47,11 @@ def server(email=""):
                     common.globals.totalConnections += 1
                     common.globals.connections[newthread.getId()].start()
                 except OSError:
-                    # This seems to happen when timeout occurs, but isn't fatal
-                    logger.warning("socket accept() failed - timeout?")
+                    # This occurs when the socket accept times out, which, since
+                    # we are listening for new connections, is about
+                    # every second or so.  Will leave this here for debugging
+                    if False:
+                        logger.warning("socket accept() failed - timeout?")
 
                 time.sleep(1)
 

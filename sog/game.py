@@ -2512,14 +2512,17 @@ class GameCmd(cmd.Cmd):
         """ info - show who is playing the game """
         charTxt = ""
         charObj = self.charObj
+        charFormat = "  {:20} - {:16} - {:20}\n"
+
+        header = "  Characters currently playing:\n"
+        header += charFormat.format("Character Name", "Login Date", "Account")
+        header += charFormat.format("-" * 20, "-" * 16, "-" * 20)
+
         for onechar in charObj.getRoom().getCharacterList():
-            if onechar != charObj:
-                charTxt += onechar.getName() + "\n"
-        if charTxt == "":
-            buf = "You are the only one in the game\n"
-        else:
-            buf = "Characters in the Game:\n" + charTxt
-        self.selfMsg(buf)
+            charTxt += charFormat.format(onechar.getName(),
+                                         dateStr(onechar.getLastLoginDate()),
+                                         re.sub('@.*', '@', onechar.getAcctName()))
+        self.selfMsg(header + charTxt)
         return None
 
     def do_wield(self, line):
