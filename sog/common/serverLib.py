@@ -18,19 +18,22 @@ import game
 
 
 def server(email=""):
+    asyncThread = None
     logger.info("-------------------------------------------------------")
     logger.info("Server Start - {} - Listening on {}:{}".format(
         sys.argv[0], common.globals.HOST, common.globals.PORT))
 
     try:
-        asyncThread = createAndStartAsyncThread()
-
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverHandle:
 
             serverHandle.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             serverHandle.bind((common.globals.HOST, common.globals.PORT))
 
             while True:
+
+                if not threadIsRunning(asyncThread):
+                    asyncThread = createAndStartAsyncThread()
+
                 serverHandle.listen(1)
                 serverHandle.settimeout(60)
 
@@ -74,8 +77,17 @@ def haltClientThreads():
 def createAndStartAsyncThread():
     asyncThread = AsyncThread()
     if asyncThread:
+        logger.info("Starting AsyncThread")
         asyncThread.start()
         return asyncThread
+
+
+def threadIsRunning(threadHandle):
+    if not threadHandle:
+        return(False)
+    if threadHandle.is_alive():
+        return(True)
+    return(False)
 
 
 def exitProg(statusCode=0):

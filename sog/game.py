@@ -18,10 +18,10 @@ from common.general import splitTargets, targetSearch, itemSort
 from common.general import getRandomItemFromList, secsSinceDate, getNeverDate
 from common.globals import maxCreaturesInRoom
 from common.help import enterHelp
-from magic import Spell, SpellList, spellCanTargetSelf
-from room import RoomFactory, isRoomFactoryType, getRoomTypeFromFile
-from object import ObjectFactory, isObjectFactoryType
 from creature import Creature
+from magic import Spell, SpellList, spellCanTargetSelf
+from object import ObjectFactory, isObjectFactoryType
+from room import RoomFactory, isRoomFactoryType, getRoomTypeFromFile
 
 
 class _Game(cmd.Cmd, Combat, Ipc):
@@ -36,6 +36,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
         self._activeRooms = []
         self._activePlayers = []
         self._startdate = datetime.now()
+        self._asyncThread = None
 
         self._instanceDebug = _Game._instanceDebug
         return None
@@ -1294,6 +1295,7 @@ class GameCmd(cmd.Cmd):
         if self.acctObj.isAdmin():
             self.charObj.setDm()
             self.selfMsg("ok\n")
+            logger.info("{} just became a DM".format(self.charObj.getName()))
 
     def do_dm_off(self, line):
         """ dm - turn dm mode off """
@@ -2187,6 +2189,14 @@ class GameCmd(cmd.Cmd):
     def do_steal(self, line):
         """ transaction - attempt to steal from another player """
         self.selfMsg(line + " not implemented yet\n")
+
+    def do_stopasync(self, line):
+        """ dm - stop async thread (which should trigger an automatic restart) """
+        if not self.charObj.isDm():
+            self.selfMsg("Unknown Command\n")
+            return False
+        self.gameObj._asyncThread.halt()
+        self.selfMsg("ok\n")
 
     def do_strike(self, line):
         """ combat """
