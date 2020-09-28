@@ -13,6 +13,8 @@ While I'm hoping to have a playable game in the end, my primary goal is to obtai
 ### Installation ###
 1. Install docker
 2. Clone sog repo
+3. For multiplayer, adjust firewall - Open up port 8888 to other machines
+   1. Windows: https://www.tomshardware.com/news/how-to-open-firewall-ports-in-windows-10,36451.html
 
 ### To play ###
 1. Run the server
@@ -28,6 +30,7 @@ docker-compose up
 ```
 cd sog/sog
 python client.py
+(multi-player - Remote clients can use client.py --host <ip>)
 ```
 
 ### Admin/DM Info ###
