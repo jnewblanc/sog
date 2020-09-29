@@ -174,16 +174,16 @@ class LobbyCmd(cmd.Cmd):
         self.acctObj.setPromptSize("full")
 
     def do_help(self, line):
-        buf = (
-            "play  - play the SoG game\n"
-            + "who   - show players logged in to the lobby\n"
-            + "info  - get account information\n"
-            + "brief - set lobby prompt to brief mode\n"
-            + "full  - set lobby promp to full mode\n"
-            + "msg - send a private message to one player\n"
-            + "broadcast - send a message to all players\n"
-            + "quit  - log out of lobby\n"
-        )
+        HELP_FORMAT = "  {:10} - {}\n"
+        buf = ''.join([
+            HELP_FORMAT.format("play", "play the SoG game"),
+            HELP_FORMAT.format("who", "show players logged in to the lobby"),
+            HELP_FORMAT.format("info", "display your account information"),
+            HELP_FORMAT.format("msg", "send a private message to one player"),
+            HELP_FORMAT.format("broadcast", "send a message to all players"),
+            HELP_FORMAT.format("brief/full", "toggle lobby prompt"),
+            HELP_FORMAT.format("quit", "log out of lobby")
+        ])
         self.client.spoolOut(buf)
 
     def do_info(self, line):

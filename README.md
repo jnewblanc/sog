@@ -6,22 +6,27 @@ A creative recreation of the late 80's MUD, written in Python
 
 In the late 80's, I used my 300 baud modem to dial into a Teleplay 12-line modem bank to play [Scepter of Goth](https://dwheeler.com/scepter-of-goth/scepter-of-goth.html), a txt based fantasy role playing (RPG) multi-user dungeon (MUD).  It was cutting edge at the time, was super fun, and I met a lot of great people, some of whom I still keep in contact with today.
 
-Fast forward 30 years.  I'm a software release engineer who was looking to learn python, object oriented scripting, and a new IDE when I came across some old printouts for Teleplay and Scepter of Goth.  This prompted me to embark on a creative remake of the SoG MUD.  I opted to stick with the original gameplay where it made sense, but to creatively alter it, or expand it, as desired.
+Fast forward 30 years.  I'm a build/release/devops engineer who was looking to learn python, object oriented scripting, and a new IDE when I came across some old printouts for Teleplay and Scepter of Goth.  This prompted me to embark on a creative remake of the SoG MUD.  I opted to stick with the original gameplay where it made sense, but to creatively alter it, or expand it, as desired.
 
-While I'm hoping to have a playable game in the end, my primary goal is to obtain a decent grasp of the Python language, as well as having my own code to use for practicing my release engineering skills.  Starting from a place of not knowing Python, never having written a game, nor dove into any serious object oriented design, I expect that some of this is going to start out as ugly spaghetti code.  Hopefully it will improve over time, as I learn more.  At some point, I may make this project public and/or open it up to contributors
+While I'm working to make this a playable game in the end, my primary goal is to obtain a decent grasp of the Python language, as well as having my own code project to use for practicing my release engineering skills.  Starting from a place of not knowing Python, never having written a game, and not having any serious object oriented design experience, I expect that the code will start out ugly.  As I learn more, it will, hopefully, improve and become more pythonic.  At some point, I hope to make this project public and/or open it up to contributors.
 
 ### Installation ###
 1. Install docker
-2. Clone sog repo
-3. For multiplayer, adjust firewall - Open up port 8888 to other machines
+2. Install python
+3. Clone sog repo
+4. For multiplayer, adjust firewall to allow external connections to port 8888
    1. Windows: https://www.tomshardware.com/news/how-to-open-firewall-ports-in-windows-10,36451.html
 
 ### To play ###
 1. Run the server
-   1. Run the server script in sog/bin OR
-   2. Open a command shell and run:
+   - Windows: Run the server script
 ```
-cd to sog/sog
+ sog --> sog --> bin --> docker_server_start.bat
+```
+OR
+   - Mac/Linux: Open a command shell and run:
+```
+cd sog/sog
 docker-compose up
 ```
 2. Run the client
@@ -30,8 +35,16 @@ docker-compose up
 ```
 cd sog/sog
 python client.py
-(multi-player - Remote clients can use client.py --host <ip>)
 ```
+   3. For remote clients, provide server ip address
+```
+client.py --host <local-network-server-ip-address>)
+```
+3. Tips for first timers:
+  - Get familiar with commands by using the "help" command
+  - New activity is only displayed when you press [enter]
+  - The farther you get from Town Square, the more dangerous it gets
+
 
 ### Admin/DM Info ###
 * At present, all persistent storage is on disk in the sog/.data directory.
@@ -39,8 +52,15 @@ python client.py
 * logs are in sog/.logs .  Some windows logfile tailing scripts are in sog/bin
 * town map is at: https://docs.google.com/drawings/d/1SDAjL62DRsWta3vgfGLerKsn49e5wzywlQregGmKTbk/edit
 * Game balance spreadsheets: https://docs.google.com/spreadsheets/d/1A9xDUhb6tH_dD-rPEm43a6ojthbCDpA9_RNiBZouvTg/edit#gid=214718106
-* To become an admin, create an account and then create an empty isAdmin.txt file in the directory: sog\sog\.data\Account\<your_email>
-  - This allows you to create DM characters and/or turn dm mode on in-game by running the dm_on command.  dm mode allows you to see additional debug info.
+* To become an admin, create an account and then create an empty isAdmin.txt file in your account directory: sog\sog\.data\Account\<your_email>
+  - Having an admin account allows you to:
+    1. Create DM characters
+    2. Turn dm mode on in-game by running the dm_on command
+  - In game DM mode allows you to:
+    1. See additional debug info
+    2. Use the "debug <obj>" command to see object data
+    3. Use some additional DM-only commands
+      4. Not die, even when health gets to 0
 
 ### Basic Design ###
 1. client connects to server
