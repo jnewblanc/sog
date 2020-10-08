@@ -218,7 +218,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
 
     def roomLoader(self, roomStr):
         """ returns a roomObj, given a roomStr """
-        logPrefix = "game.roomLoader (" + str(roomStr) + ")"
+        logPrefix = "game.roomLoader (" + str(roomStr) + ") "
         roomObj = None
         roomType = "room"
         roomNum = 0
@@ -1416,7 +1416,27 @@ class GameCmd(cmd.Cmd):
 
     def do_follow(self, line):
         """ follow another player - follower is moved when they move """
-        self.selfMsg(line + " not implemented yet\n")
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        charList = self.getObjFromCmd(roomObj.getCharacterList(), line)
+        targetCharObj = charList[0]
+
+        if not targetCharObj:
+            self.selfMsg("You can't follow that\n")
+            charObj.setFollow()  # Unset follow attribute
+            return False
+
+        # Verify that target is a character
+
+        charObj.setFollow(targetCharObj)
+        self.selfMsg("ok\n")
+
+        if not charObj.isHidden():
+            self.gameObj.charMsg(targetCharObj,
+                                 "{} follows you\n".format(charObj.getName()))
+
+        return(False)
 
     def do_full(self, line):
         """ set the prompt and room descriptions to maximum verbosity """
@@ -1695,7 +1715,25 @@ class GameCmd(cmd.Cmd):
 
     def do_lose(self, line):
         """ attempt to ditch someone that is following you """
-        self.selfMsg(line + " not implemented yet\n")
+        roomObj = self.charObj.getRoom()
+
+        charList = self.getObjFromCmd(roomObj.getCharacterList(), line)
+        targetCharObj = charList[0]
+
+        if not targetCharObj:
+            self.selfMsg("You can't lose that\n")
+            return False
+
+        # Need to determine if lose succeeds, based on odds
+
+        targetCharObj.setFollow(None)
+        self.selfMsg("ok\n")
+
+        # Notify target that they have been lost
+        self.gameObj.charMsg(targetCharObj,
+                             "{} loses you".format(self.charObj.getName()))
+
+        return False
 
     def do_lunge(self, line):
         """ combat """

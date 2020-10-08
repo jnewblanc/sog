@@ -95,10 +95,16 @@ class TestGameBase(unittest.TestCase):
         gender=_testCharGender,
         cname=_testCharClassName,
         align=_testCharAlignment,
+        client=None
     ):
 
+        if client is None:
+            logger.debug(
+                "createCharacter: instanciating new client for {}".format(name))
+            client = self.getClientObj()
+
         charObj = character.Character(
-            client=self.getClientObj(), acctName=self.getAcctObj().getId()
+            client=client, acctName=self.getAcctObj().getId()
         )
         charObj.setName(name)
         charObj.setGender(gender)
@@ -194,6 +200,29 @@ class TestGameBase(unittest.TestCase):
         self._asyncThread = None
         # self.startAsyncThread()
         self.joinRoom()
+
+    def createAdditionalClient(self,
+                               name="char2",
+                               room=_testRoomNum,
+                               email="sogTest2@example.com",
+                               acctName="testAcct2"):
+        """ Create a secondary character
+                This character isn't connected to self, except that"""
+        newCharClient = self.createClientAndAccount()
+        newCharClient.gameObj = self.getClientObj().gameObj
+        newCharClient.acctObj.setUserEmailAddress(email)
+        newCharClient.acctObj.setDisplayName(acctName)
+
+        newCharClient.charObj = self.createCharacter(client=newCharClient)
+        newCharClient.charObj.setName(name)
+
+        newCharClient.gameObj.addToActivePlayerList(newCharClient.charObj)
+        gameCmdObj = GameCmd(newCharClient)
+
+        newCharClient._asyncThread = None
+        newCharClient.gameObj.joinRoom(room, newCharClient.charObj)
+
+        return(newCharClient, gameCmdObj)
 
     def purgeTestRoomData(self, roomNums=[]):
         if len(roomNums) == 0:
