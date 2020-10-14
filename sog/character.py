@@ -1729,6 +1729,13 @@ class Character(Item):
             return True
         return False
 
+    def calculateFollows(followingCharObj):
+        """ Returns true if follow succeeds
+            Follow ability should be based on stats, class, luck, and other
+            character's level """
+        logger.debug("calculateFollows: Returning True, todo: algorithm")
+        return(True)
+
     def checkCooldown(self, secs, msgStr=""):
         if self._lastAttackDate == getNeverDate():
             return True

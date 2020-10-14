@@ -1,5 +1,6 @@
 """ test_game """
 from collections import namedtuple
+import re
 import unittest
 
 from common.testLib import TestGameBase
@@ -70,8 +71,8 @@ class TestGameCmd(TestGameBase):
         if len(nameList) > 1:
             logger.debug("multi: Verifying character setup")
 
-            charNamesInGame = [c.getName() for c in charList[0].clientObj.gameObj.getCharacterList()]  # noqa: E501
-            charNamesInRoom = [c.getName() for c in charList[0].charObj.getRoom().getCharacterList()]  # noqa: E501
+            charNamesInGame = self.getCharNamesInGame(charList[0].clientObj.gameObj)
+            charNamesInRoom = self.getCharNamesInRoom(charList[0].charObj.getRoom())
             # logger.debug("multi: CharList={}".format(", ".join(charNamesInGame)))
 
             for oneCharName in nameList:
@@ -86,40 +87,86 @@ class TestGameCmd(TestGameBase):
 
         return(charList)
 
+    def getCharNamesInRoom(self, roomObj):
+        """ Returns a list of character names in the given room """
+        return [c.getName() for c in roomObj.getCharacterList()]
+
+    def getCharNamesInGame(self, gameObj):
+        return [c.getName() for c in gameObj.getCharacterList()]
+
+    def charIsInRoom(self, charObj, roomObj):
+        return charObj in roomObj.getCharacterList()
+
+    def showRoomNumsForAllChars(self):
+        """ Dump the list of characters and their room number as debug output """
+        outStr = "--- Characters in the Game: "
+        outStr += ", ".join(["{0}-->{1}".format(
+            c.getName(),
+            c.getRoom().getId()) for c in self.getGameObj().getCharacterList()])
+        logger.debug(outStr)
+
+    def showOutput(self, prefix, charObj):
+        """ Shows the character's output spool as debug log output """
+        logStr = "--- {0} {1} - begin output ---\n{2}\n--- {0} {1}- end output ---\n"
+        outStr = re.sub("^", "> ", charObj.client.popOutSpool())
+        logger.debug(logStr.format(prefix, charObj.getName(), outStr))
+
     def testFollow(self):
         """ Test the lead/follow functionality """
         roomObj = self.createRoom(num=99990)
+        roomObj._shortDesc = "room1"
+        roomObj.s = "1"
         leadCharName = "Leader"
         parasiteCharName = "Parasite"
         charList = self.multiCharacterSetUp([leadCharName, parasiteCharName],
                                             roomObj)
 
         leadCharObj = charList[0].charObj
+        leadGameCmdObj = charList[0].gameCmdObj
         parasiteCharObj = charList[1].charObj
         parasiteGameCmdObj = charList[1].gameCmdObj
 
         # Begin tests
 
-        logger.debug("testFollow: Follow case1: valid target")
+        logger.debug("testFollow: Follow case1: invalid target")
+        logger.debug("testFollowBad: FollowSettingPre={}".format(
+            parasiteCharObj.getFollow()))
+        assert not parasiteGameCmdObj.do_follow("does-not-exist")  # always False
+        logger.debug(self.showOutput("testFollowBad", parasiteCharObj))
+        logger.debug("testFollowBad: FollowSettingPost={}".format(
+            parasiteCharObj.getFollow()))
+        assert parasiteCharObj.getFollow() is None
+
+        logger.debug("testFollow: Follow case1: invalid self target")
+        logger.debug("testFollowBad: FollowSettingPre={}".format(
+            parasiteCharObj.getFollow()))
+        assert not parasiteGameCmdObj.do_follow(parasiteCharObj.getName())  # always F
+        logger.debug(self.showOutput("testFollowBad", parasiteCharObj))
+        logger.debug("testFollowBad: FollowSettingPost={}".format(
+            parasiteCharObj.getFollow()))
+        assert parasiteCharObj.getFollow() is None
+
+        logger.debug("testFollow: Follow case2: valid target")
 
         logger.debug("testFollowGood: FollowSettingPre={}".format(
             parasiteCharObj.getFollow()))
         assert not parasiteGameCmdObj.do_follow(leadCharObj.getName())  # always False
-        logger.debug("testFollowGood: Output = {}".format(
-            parasiteCharObj.client.popOutSpool()))
+        logger.debug(self.showOutput("testFollowGood", parasiteCharObj))
         logger.debug("testFollowGood: FollowSettingPost={}".format(
             parasiteCharObj.getFollow()))
         assert parasiteCharObj.getFollow() is leadCharObj
 
-        logger.debug("testFollow: Follow case2: invalid target")
-        logger.debug("testFollowBad: FollowSettingPre={}".format(
-            parasiteCharObj.getFollow()))
-        assert not parasiteGameCmdObj.do_follow("does-not-exist")  # always False
-        logger.debug("testFollowBad: Output = {}".format(
-            parasiteCharObj.client.popOutSpool()))
-        logger.debug("testFollowBad: FollowSettingPost={}".format(
-            parasiteCharObj.getFollow()))
-        assert parasiteCharObj.getFollow() is None
+        logger.debug("testFollow: Follow case3: lead moves south")
+
+        self.showRoomNumsForAllChars()
+        leadGameCmdObj._lastinput = "s"
+        assert not leadGameCmdObj.do_s("")  # always False
+        logger.debug(self.showOutput("testFollowGood", leadCharObj))
+        logger.debug(self.showOutput("testFollowGood", parasiteCharObj))
+        debugInfo = "LeadCharRoom={} - ParasiteCharRoom={}".format(
+            leadCharObj.getRoom().getId(), parasiteCharObj.getRoom().getId())
+        self.showRoomNumsForAllChars()
+        assert self.charIsInRoom(parasiteCharObj, leadCharObj.getRoom()), debugInfo
 
     def testLose(self):
         """ Test the lead/follow functionality """

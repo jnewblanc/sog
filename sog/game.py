@@ -725,12 +725,29 @@ class GameCmd(cmd.Cmd):
             logger.error(roomObj.getId() + " can not be joined.")
             return False
 
+        followers = self.getAllFollowers(charObj)
         if self.gameObj.joinRoom(roomObj, charObj):
+            # For each character in the room, check to see if any are following
+            # For those who are, move them to the same room.
+            for onechar in followers:
+                    charObj.getName(), onechar.getName()))
+                if onechar.calculateFollows():
+                    self.gameObj.joinRoom(roomObj, onechar)
             return True
         else:
             logger.error("joinRoom Failed\n")
             return False
         return False
+
+    def getAllFollowers(self, charObj):
+        """ Returns list of characters from current room that are following charObj """
+        followerList = []
+        for onechar in charObj.getRoom().getCharacterList():
+            if onechar is charObj:  # ignore self
+                continue
+            if onechar.getFollow() is charObj:
+                followerList.append(onechar)
+        return followerList
 
     def moveThroughPortalOrDoor(self, charObj, itemObj):
         """ move subcommand - move through door or portal """
@@ -1424,6 +1441,11 @@ class GameCmd(cmd.Cmd):
 
         if not targetCharObj:
             self.selfMsg("You can't follow that\n")
+            charObj.setFollow()  # Unset follow attribute
+            return False
+
+        if targetCharObj is charObj:
+            self.selfMsg("You can't follow yourself\n")
             charObj.setFollow()  # Unset follow attribute
             return False
 
