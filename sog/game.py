@@ -694,6 +694,18 @@ class GameCmd(cmd.Cmd):
 
         return (spellItem, spellName, targetObj)
 
+    def getFollowerList(self, charObj, roomObj=None):
+        """ Returns list of characters from room that are following character """
+        followerList = []
+        if not roomObj:
+            roomObj = charObj.getRoom()
+        for onechar in roomObj.getCharacterList():
+            if onechar is charObj:  # ignore self
+                continue
+            if onechar.getFollow() is charObj:
+                followerList.append(onechar)
+        return followerList
+
     def selfMsg(self, msg):
         """ send message using Game communnication.  This simply allows us
             to call it without passing the extra arg) """
@@ -725,29 +737,12 @@ class GameCmd(cmd.Cmd):
             logger.error(roomObj.getId() + " can not be joined.")
             return False
 
-        followers = self.getAllFollowers(charObj)
         if self.gameObj.joinRoom(roomObj, charObj):
-            # For each character in the room, check to see if any are following
-            # For those who are, move them to the same room.
-            for onechar in followers:
-                    charObj.getName(), onechar.getName()))
-                if onechar.calculateFollows():
-                    self.gameObj.joinRoom(roomObj, onechar)
             return True
         else:
             logger.error("joinRoom Failed\n")
             return False
         return False
-
-    def getAllFollowers(self, charObj):
-        """ Returns list of characters from current room that are following charObj """
-        followerList = []
-        for onechar in charObj.getRoom().getCharacterList():
-            if onechar is charObj:  # ignore self
-                continue
-            if onechar.getFollow() is charObj:
-                followerList.append(onechar)
-        return followerList
 
     def moveThroughPortalOrDoor(self, charObj, itemObj):
         """ move subcommand - move through door or portal """
@@ -806,6 +801,7 @@ class GameCmd(cmd.Cmd):
             moved = self.moveThroughPortalOrDoor(charObj, itemList[0])
 
         currentRoom = charObj.getRoom()
+        arrivedMsg = "{} has arrived\n"
 
         if moved:
             # creatures in old room should stop attacking player
@@ -814,8 +810,18 @@ class GameCmd(cmd.Cmd):
             charObj.possibilyLoseHiddenWhenMoving()
             self.selfMsg(charObj.getRoom().display(charObj))
             # Folks in the new room should see the player arrive, unless hidden
-            msg = "{} has arrived\n".format(charObj.getName())
+            msg = arrivedMsg.format(charObj.getName())
             self.othersMsg(currentRoom, msg, charObj.isHidden())
+
+            # Handle followers that are moving along with primary character
+            for onechar in self.getFollowerList(charObj, oldRoom):
+                if onechar.calculateFollows():
+                    self.gameObj.joinRoom(currentRoom, onechar)
+                    self.gameObj.charMsg(onechar, onechar.getRoom().display(onechar))
+                    msg = arrivedMsg.format(onechar.getName())
+                    self.gameObj.othersInRoomMsg(
+                        onechar, currentRoom, msg, charObj.isHidden())
+
             return True
         else:
             self.selfMsg("You can not go there!\n")
@@ -2437,6 +2443,12 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("Ok\n")
         else:
             self.selfMsg("You can't do that\n")
+
+    def do_unfollow(self, line):
+        """ unfollow - stop following """
+        self.charObj.setFollow()  # Unset follow attribute
+        self.selfMsg("ok\n")
+        return False
 
     def do_unlock(self, line):
         """ unlock a door/chest with a key """

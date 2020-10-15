@@ -108,7 +108,7 @@ class TestGameCmd(TestGameBase):
     def showOutput(self, prefix, charObj):
         """ Shows the character's output spool as debug log output """
         logStr = "--- {0} {1} - begin output ---\n{2}\n--- {0} {1}- end output ---\n"
-        outStr = re.sub("^", "> ", charObj.client.popOutSpool())
+        outStr = re.sub("\n", "\n> ", ("> " + charObj.client.popOutSpool().rstrip()))
         logger.debug(logStr.format(prefix, charObj.getName(), outStr))
 
     def testFollow(self):
