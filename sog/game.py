@@ -218,7 +218,7 @@ class _Game(cmd.Cmd, Combat, Ipc):
 
     def roomLoader(self, roomStr):
         """ returns a roomObj, given a roomStr """
-        logPrefix = "game.roomLoader (" + str(roomStr) + ")"
+        logPrefix = "game.roomLoader (" + str(roomStr) + ") "
         roomObj = None
         roomType = "room"
         roomNum = 0
@@ -694,6 +694,18 @@ class GameCmd(cmd.Cmd):
 
         return (spellItem, spellName, targetObj)
 
+    def getFollowerList(self, charObj, roomObj=None):
+        """ Returns list of characters from room that are following character """
+        followerList = []
+        if not roomObj:
+            roomObj = charObj.getRoom()
+        for onechar in roomObj.getCharacterList():
+            if onechar is charObj:  # ignore self
+                continue
+            if onechar.getFollow() is charObj:
+                followerList.append(onechar)
+        return followerList
+
     def selfMsg(self, msg):
         """ send message using Game communnication.  This simply allows us
             to call it without passing the extra arg) """
@@ -789,6 +801,7 @@ class GameCmd(cmd.Cmd):
             moved = self.moveThroughPortalOrDoor(charObj, itemList[0])
 
         currentRoom = charObj.getRoom()
+        arrivedMsg = "{} has arrived\n"
 
         if moved:
             # creatures in old room should stop attacking player
@@ -797,8 +810,18 @@ class GameCmd(cmd.Cmd):
             charObj.possibilyLoseHiddenWhenMoving()
             self.selfMsg(charObj.getRoom().display(charObj))
             # Folks in the new room should see the player arrive, unless hidden
-            msg = "{} has arrived\n".format(charObj.getName())
+            msg = arrivedMsg.format(charObj.getName())
             self.othersMsg(currentRoom, msg, charObj.isHidden())
+
+            # Handle followers that are moving along with primary character
+            for onechar in self.getFollowerList(charObj, oldRoom):
+                if onechar.calculateFollows():
+                    self.gameObj.joinRoom(currentRoom, onechar)
+                    self.gameObj.charMsg(onechar, onechar.getRoom().display(onechar))
+                    msg = arrivedMsg.format(onechar.getName())
+                    self.gameObj.othersInRoomMsg(
+                        onechar, currentRoom, msg, charObj.isHidden())
+
             return True
         else:
             self.selfMsg("You can not go there!\n")
@@ -1416,7 +1439,32 @@ class GameCmd(cmd.Cmd):
 
     def do_follow(self, line):
         """ follow another player - follower is moved when they move """
-        self.selfMsg(line + " not implemented yet\n")
+        charObj = self.charObj
+        roomObj = charObj.getRoom()
+
+        charList = self.getObjFromCmd(roomObj.getCharacterList(), line)
+        targetCharObj = charList[0]
+
+        if not targetCharObj:
+            self.selfMsg("You can't follow that\n")
+            charObj.setFollow()  # Unset follow attribute
+            return False
+
+        if targetCharObj is charObj:
+            self.selfMsg("You can't follow yourself\n")
+            charObj.setFollow()  # Unset follow attribute
+            return False
+
+        # Verify that target is a character
+
+        charObj.setFollow(targetCharObj)
+        self.selfMsg("ok\n")
+
+        if not charObj.isHidden():
+            self.gameObj.charMsg(targetCharObj,
+                                 "{} follows you\n".format(charObj.getName()))
+
+        return(False)
 
     def do_full(self, line):
         """ set the prompt and room descriptions to maximum verbosity """
@@ -1695,7 +1743,25 @@ class GameCmd(cmd.Cmd):
 
     def do_lose(self, line):
         """ attempt to ditch someone that is following you """
-        self.selfMsg(line + " not implemented yet\n")
+        roomObj = self.charObj.getRoom()
+
+        charList = self.getObjFromCmd(roomObj.getCharacterList(), line)
+        targetCharObj = charList[0]
+
+        if not targetCharObj:
+            self.selfMsg("You can't lose that\n")
+            return False
+
+        # Need to determine if lose succeeds, based on odds
+
+        targetCharObj.setFollow(None)
+        self.selfMsg("ok\n")
+
+        # Notify target that they have been lost
+        self.gameObj.charMsg(targetCharObj,
+                             "{} loses you".format(self.charObj.getName()))
+
+        return False
 
     def do_lunge(self, line):
         """ combat """
@@ -2377,6 +2443,12 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("Ok\n")
         else:
             self.selfMsg("You can't do that\n")
+
+    def do_unfollow(self, line):
+        """ unfollow - stop following """
+        self.charObj.setFollow()  # Unset follow attribute
+        self.selfMsg("ok\n")
+        return False
 
     def do_unlock(self, line):
         """ unlock a door/chest with a key """

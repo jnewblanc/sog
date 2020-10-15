@@ -8,7 +8,7 @@ In the late 80's, I used my 300 baud modem to dial into a Teleplay 12-line modem
 
 Fast forward 30 years.  I'm a build/release/devops engineer who was looking to learn python, object oriented scripting, and a new IDE when I came across some old printouts for Teleplay and Scepter of Goth.  This prompted me to embark on a creative remake of the SoG MUD.  I opted to stick with the original gameplay where it made sense, but to creatively alter it, or expand it, as desired.
 
-While I'm working to make this a playable game in the end, my primary goal is to obtain a decent grasp of the Python language, as well as having my own code project to use for practicing my release engineering skills.  Starting from a place of not knowing Python, never having written a game, and not having any serious object oriented design experience, I expect that the code will start out ugly.  As I learn more, it will, hopefully, improve and become more pythonic.  At some point, I hope to make this project public and/or open it up to contributors.
+While I'm working to make this a playable game in the end, my primary goal is to obtain a decent grasp of the Python language, as well as having my own code project to use for practicing my release engineering skills.  Starting from a place of not knowing Python, never having written a game, and not having any serious object oriented design experience, I expect that the code will start out ugly.  As I learn more, it will, hopefully, improve and become more pythonic.  At some point, I hope to make this project public and/or open it up to like-minded contributors.
 
 ### Installation ###
 1. Install docker

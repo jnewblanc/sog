@@ -476,7 +476,7 @@ class Character(Item):
         self._equippedRing = None
         self._equippedNecklace = None
 
-        self._follow = ""
+        self._follow = None
         self._lastCommand = ""
 
         self.setAc()
@@ -926,7 +926,7 @@ class Character(Item):
         else:
             (article, possessive, predicate) = self.getArticle(self.getGender())
 
-        if self._following != "":
+        if self._follow is not None:
             buf = predicate + " following." + self.following
         return buf
 
@@ -1074,12 +1074,6 @@ class Character(Item):
     def describe(self, count=1, article=""):
         return self._name
 
-    def getAc(self):
-        return self._ac
-
-    def getDodgeBonus(self):
-        return self._dodgeBonus
-
     def isAttacking(self):
         if self._currentlyAttacking is not None:
             return True
@@ -1127,6 +1121,9 @@ class Character(Item):
     def isVulnerable(self):
         return self._vulnerable
 
+    def getAc(self):
+        return self._ac
+
     def getAcctName(self):
         return self._acctName
 
@@ -1153,6 +1150,9 @@ class Character(Item):
     def getDexterity(self):
         return int(self.dexterity)
 
+    def getDodgeBonus(self):
+        return self._dodgeBonus
+
     def getEquippedWeapon(self):
         return self._equippedWeapon
 
@@ -1167,6 +1167,9 @@ class Character(Item):
 
     def getEquippedNecklace(self):
         return self._equippedNecklace
+
+    def getFollow(self):
+        return self._follow
 
     def getExp(self):
         return self._expToNextLevel
@@ -1303,6 +1306,9 @@ class Character(Item):
     def setExpForLevel(self):
         """ set the character's exp to the amount required for next level """
         self._expToNextLevel = 2 ** (9 + self.getLevel())
+
+    def setFollow(self, charObj=None):
+        self._follow = charObj
 
     def setGender(self, _gender):
         if _gender in self.genderList:
@@ -1722,6 +1728,13 @@ class Character(Item):
             self._achievedSkillForLevel = True
             return True
         return False
+
+    def calculateFollows(followingCharObj):
+        """ Returns true if follow succeeds
+            Follow ability should be based on stats, class, luck, and other
+            character's level """
+        logger.debug("calculateFollows: Returning True, todo: algorithm")
+        return(True)
 
     def checkCooldown(self, secs, msgStr=""):
         if self._lastAttackDate == getNeverDate():
