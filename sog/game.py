@@ -815,12 +815,15 @@ class GameCmd(cmd.Cmd):
 
             # Handle followers that are moving along with primary character
             for onechar in self.getFollowerList(charObj, oldRoom):
-                if onechar.calculateFollows():
+                if onechar.continuesToFollow(charObj):
                     self.gameObj.joinRoom(currentRoom, onechar)
                     self.gameObj.charMsg(onechar, onechar.getRoom().display(onechar))
                     msg = arrivedMsg.format(onechar.getName())
                     self.gameObj.othersInRoomMsg(
                         onechar, currentRoom, msg, charObj.isHidden())
+                else:
+                    # Follower loses sight of leader and is no longer following
+                    onechar.setFollow()
 
             return True
         else:
@@ -1445,7 +1448,7 @@ class GameCmd(cmd.Cmd):
         charList = self.getObjFromCmd(roomObj.getCharacterList(), line)
         targetCharObj = charList[0]
 
-        if not targetCharObj:
+        if not targetCharObj or not targetCharObj.getType() == "Character":
             self.selfMsg("You can't follow that\n")
             charObj.setFollow()  # Unset follow attribute
             return False
@@ -1454,8 +1457,6 @@ class GameCmd(cmd.Cmd):
             self.selfMsg("You can't follow yourself\n")
             charObj.setFollow()  # Unset follow attribute
             return False
-
-        # Verify that target is a character
 
         charObj.setFollow(targetCharObj)
         self.selfMsg("ok\n")

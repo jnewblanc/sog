@@ -33,7 +33,7 @@ class TestGame(TestGameBase):
         self.assertEqual(gameObj.getInstanceDebug() == startState, True, out)
 
 
-class TestGameCmd(TestGameBase):
+class TestGameCmd(TestGame):
     def multiCharacterSetUp(self, nameList=["char1", "char2"], roomObj=None):
         """ Create X characters and place them in the same room
             Returns a list of nametuples, one element for each character """
@@ -126,6 +126,11 @@ class TestGameCmd(TestGameBase):
         parasiteCharObj = charList[1].charObj
         parasiteGameCmdObj = charList[1].gameCmdObj
 
+        # Set player stats high so that follow always succeeds
+        parasiteCharObj.setClassName("ranger")
+        parasiteCharObj.dexterity = 25
+        parasiteCharObj.luck = 25
+
         # Begin tests
 
         logger.debug("testFollow: Follow case1: invalid target")
@@ -147,7 +152,6 @@ class TestGameCmd(TestGameBase):
         assert parasiteCharObj.getFollow() is None
 
         logger.debug("testFollow: Follow case3: valid target")
-
         logger.debug("testFollowGood: FollowSettingPre={}".format(
             parasiteCharObj.getFollow()))
         assert not parasiteGameCmdObj.do_follow(leadCharObj.getName())  # always False
@@ -157,7 +161,7 @@ class TestGameCmd(TestGameBase):
         assert parasiteCharObj.getFollow() is leadCharObj
 
         logger.debug("testFollow: Follow case4: lead moves south")
-
+        parasiteCharObj._instanceDebug = True
         self.showRoomNumsForAllChars()
         leadGameCmdObj._lastinput = "s"
         assert not leadGameCmdObj.do_s("")  # always False
@@ -167,6 +171,7 @@ class TestGameCmd(TestGameBase):
             leadCharObj.getRoom().getId(), parasiteCharObj.getRoom().getId())
         self.showRoomNumsForAllChars()
         assert self.charIsInRoom(parasiteCharObj, leadCharObj.getRoom()), debugInfo
+        parasiteCharObj._instanceDebug = False
 
         logger.debug("testFollow: Follow case5: unfollow")
         assert not parasiteGameCmdObj.do_unfollow("")  # always False
@@ -174,6 +179,12 @@ class TestGameCmd(TestGameBase):
         parasitePreRoomObj = parasiteCharObj.getRoom()  # store pre-move roomObj
         assert not leadGameCmdObj.do_s("")  # always False
         assert parasitePreRoomObj is parasiteCharObj.getRoom()  # hasn't moved
+        logger.debug(self.showOutput("testFollow", parasiteCharObj))
+
+        logger.debug("testFollow: Follow case6: follow non player")
+        assert not parasiteGameCmdObj.do_follow("tow")  # always False
+        logger.debug(self.showOutput("testFollowBad", parasiteCharObj))
+        assert parasiteCharObj.getFollow() is None
 
     def testLose(self):
         """ Test the lead/follow functionality """
