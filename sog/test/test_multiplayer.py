@@ -137,7 +137,7 @@ class TestGameCmd(TestGameBase):
             parasiteCharObj.getFollow()))
         assert parasiteCharObj.getFollow() is None
 
-        logger.debug("testFollow: Follow case1: invalid self target")
+        logger.debug("testFollow: Follow case2: invalid self target")
         logger.debug("testFollowBad: FollowSettingPre={}".format(
             parasiteCharObj.getFollow()))
         assert not parasiteGameCmdObj.do_follow(parasiteCharObj.getName())  # always F
@@ -146,7 +146,7 @@ class TestGameCmd(TestGameBase):
             parasiteCharObj.getFollow()))
         assert parasiteCharObj.getFollow() is None
 
-        logger.debug("testFollow: Follow case2: valid target")
+        logger.debug("testFollow: Follow case3: valid target")
 
         logger.debug("testFollowGood: FollowSettingPre={}".format(
             parasiteCharObj.getFollow()))
@@ -156,7 +156,7 @@ class TestGameCmd(TestGameBase):
             parasiteCharObj.getFollow()))
         assert parasiteCharObj.getFollow() is leadCharObj
 
-        logger.debug("testFollow: Follow case3: lead moves south")
+        logger.debug("testFollow: Follow case4: lead moves south")
 
         self.showRoomNumsForAllChars()
         leadGameCmdObj._lastinput = "s"
@@ -167,6 +167,13 @@ class TestGameCmd(TestGameBase):
             leadCharObj.getRoom().getId(), parasiteCharObj.getRoom().getId())
         self.showRoomNumsForAllChars()
         assert self.charIsInRoom(parasiteCharObj, leadCharObj.getRoom()), debugInfo
+
+        logger.debug("testFollow: Follow case5: unfollow")
+        assert not parasiteGameCmdObj.do_unfollow("")  # always False
+        assert parasiteCharObj.getFollow() is None
+        parasitePreRoomObj = parasiteCharObj.getRoom()  # store pre-move roomObj
+        assert not leadGameCmdObj.do_s("")  # always False
+        assert parasitePreRoomObj is parasiteCharObj.getRoom()  # hasn't moved
 
     def testLose(self):
         """ Test the lead/follow functionality """
