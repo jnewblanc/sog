@@ -1289,7 +1289,7 @@ class Character(Item):
         if _classname in self.classList:
             self._classname = str(_classname)
         else:
-            logger.error("setClassName: Attempt to set invalid gender")
+            logger.error("setClassName: Attempt to set invalid class")
 
     def setCurrentlyAttacking(self, player):
         self._currentlyAttacking = player
@@ -1729,12 +1729,34 @@ class Character(Item):
             return True
         return False
 
-    def calculateFollows(followingCharObj):
+    def continuesToFollow(self, followingCharObj, chanceOfFollowing=90):
         """ Returns true if follow succeeds
             Follow ability should be based on stats, class, luck, and other
             character's level """
-        logger.debug("calculateFollows: Returning True, todo: algorithm")
-        return(True)
+        logPrefix = __class__.__name__ + " continuesToFollow: "
+        debugMsg = "{} {} - Roll - {} < {}"
+
+        # Increase chance, based on stats
+        chanceOfFollowing += (divmod(self.dexterity, 5)[0] + divmod(self.luck, 10)[0])
+
+        # Increasee chance, based on class
+        if self.getClassName().lower() in ["ranger"]:
+            chanceOfFollowing += 5
+        else:
+            # Increase/Decrease chance of following depending on level difference
+            levelDiff = followingCharObj.getLevel() - self.getLevel()
+            chanceOfFollowing -= levelDiff
+
+        # Compare chance against random roll
+        randX = random.randint(1, 100)
+        if randX < chanceOfFollowing:
+            dLog(debugMsg.format(logPrefix, "Pass", randX, chanceOfFollowing),
+                 self._instanceDebug,)
+            return(True)
+
+        dLog(debugMsg.format(logPrefix, "Fail", randX, chanceOfFollowing),
+             self._instanceDebug,)
+        return(False)
 
     def checkCooldown(self, secs, msgStr=""):
         if self._lastAttackDate == getNeverDate():
