@@ -618,7 +618,7 @@ class Spell:
             self.charObj.setVulnerable(True)
 
     def cast(self, roomObj):
-        """ Returns true if spell was sucessfully cast """
+        """ Returns true if spell was successfully cast """
         logPrefix = "magic.cast: "
         # Do everything that comes before the spell's affects
         self._preCastTasks()
@@ -721,7 +721,7 @@ class Spell:
         return self.failedReason
 
     def _checkIfSucceeds(self):
-        """ Returns true if spell is sucessful """
+        """ Returns true if spell is successful """
         if self._useSelfCriteria:
             if not self._selfCriteriaAreMet():
                 return False

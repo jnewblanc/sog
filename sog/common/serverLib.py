@@ -6,6 +6,7 @@
 """
 
 # import selectors
+import os
 import socket
 import sys
 import time
@@ -20,8 +21,10 @@ import game
 def server(email=""):
     asyncThread = None
     logger.info("-------------------------------------------------------")
-    logger.info("Server Start - {} - Listening on {}:{}".format(
-        sys.argv[0], common.globals.HOST, common.globals.PORT))
+    logger.info("SVR Server Start {} (pid:{})".format(
+        sys.argv[0], os.getpid()))
+    logger.info("SVR Listening on {}:{}".format(common.globals.HOST,
+                                                common.globals.PORT))
 
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverHandle:
@@ -51,7 +54,7 @@ def server(email=""):
                     # we are listening for new connections, is about
                     # every second or so.  Will leave this here for debugging
                     if False:
-                        logger.warning("socket accept() failed - timeout?")
+                        logger.warning("SVR socket accept() failed - timeout?")
 
                 time.sleep(1)
 
@@ -65,14 +68,14 @@ def server(email=""):
 
 def haltAsyncThread(gameObj, asyncThread):
     if asyncThread:
-        logger.info("Halting asyncThread")
+        logger.info("SVR Halting asyncThread")
         asyncThread.halt()
         asyncThread.join()
 
 
 def haltClientThreads():
     for num, client in enumerate(common.globals.connections):
-        logger.info("Halting ClientThread " + str(num))
+        logger.info("SVR Halting ClientThread " + str(num))
         client.terminateClientConnection()
         client.join()
 
@@ -80,7 +83,7 @@ def haltClientThreads():
 def createAndStartAsyncThread():
     asyncThread = AsyncThread()
     if asyncThread:
-        logger.info("Starting AsyncThread")
+        logger.info("SVR Starting AsyncThread")
         asyncThread.start()
         return asyncThread
 
@@ -95,7 +98,7 @@ def threadIsRunning(threadHandle):
 
 def exitProg(statusCode=0):
     """ Cleanup and Exit program """
-    logger.info("Server Exit - " + sys.argv[0])
+    logger.info("SVR Server Exit - " + sys.argv[0])
 
     # exit server
     try:

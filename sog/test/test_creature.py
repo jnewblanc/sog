@@ -155,14 +155,14 @@ class TestCreature(TestGameBase):
         assert charObj.getCoins() == 10
         logger.debug(charObj.client.popOutSpool())
 
-        # Test sucessful bribe, coins are taken
+        # Test successful bribe, coins are taken
         charObj.setCoins(10000)
         assert creObj.acceptsBribe(charObj, 5000)
         assert charObj.getCoins() == 5000
         resultMsg = charObj.client.popOutSpool()
         logger.debug(resultMsg)
 
-        # Test unsucessful bribe, coins are taken
+        # Test unsuccessful bribe, coins are taken
         charObj.setCoins(10000)
         assert not creObj.acceptsBribe(charObj, 100)
         assert charObj.getCoins() == 9900
@@ -170,7 +170,7 @@ class TestCreature(TestGameBase):
         logger.debug(resultMsg)
         assert "3144" not in resultMsg.split(" ")
 
-        # Test unsucessful bribe, coins are not taken
+        # Test unsuccessful bribe, coins are not taken
         charObj.setCoins(10000)
         assert not creObj.acceptsBribe(charObj, 3000)
         assert charObj.getCoins() == 10000
@@ -178,7 +178,7 @@ class TestCreature(TestGameBase):
         logger.debug(resultMsg)
         assert "3144" in resultMsg.split(" ")
 
-        # Test unsucessful bribe, coins taken, but amount is shown
+        # Test unsuccessful bribe, coins taken, but amount is shown
         charObj.setCoins(10000)
         assert not creObj.acceptsBribe(charObj, 500)
         assert charObj.getCoins() == 9500
