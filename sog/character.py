@@ -1851,7 +1851,7 @@ class Character(Item):
         return max(0, damage)
 
     def getCircleSecs(self):
-        """ Returns the number seconds a creature will wait given a sucessful
+        """ Returns the number seconds a creature will wait given a successful
             circle - based on character level/stats"""
         secsToWait = random.randint(self.getLevel(), 20 + self.getDexterity())
         return secsToWait

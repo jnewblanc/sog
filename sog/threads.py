@@ -4,6 +4,7 @@
     * Note: threads must be started before use"""
 
 from datetime import datetime
+import os
 import socket
 import threading
 import time
@@ -251,7 +252,7 @@ class ClientThread(threading.Thread, ClientBase):
         if self.acctObj.login():
             loggedIn = True
         else:
-            logger.warning(str(self) + " Authentication failed")
+            logger.warning("{} Authentication failed".format(self))
             self.acctObj = None
 
         if loggedIn:
@@ -283,7 +284,7 @@ class ClientThread(threading.Thread, ClientBase):
 
     def removeConnectionFromList(self):
         if self in self.getConnectionList():
-            logger.info(str(self) + " Client connection terminated")
+            logger.info("{} Client connection terminated".format(self))
             common.globals.connections.remove(self)
             common.globals.totalConnections -= 1
 
@@ -305,9 +306,8 @@ class ClientThread(threading.Thread, ClientBase):
                 self.socket.close()
             except OSError:
                 if self._debugServer:
-                    logger.debug(
-                        "Server term - Couldn't close " + "non-existent socket"
-                    )
+                    logger.debug("{} Server term - ".format(self) +
+                                 "Couldn't close non-existent socket")
         return None
 
 
@@ -318,17 +318,22 @@ class AsyncThread(threading.Thread):
         self.gameObj = game.Game()  # create/use the single game instance
         self.gameObj._asyncThread = self
         self._debugAsync = False
-        threading.Thread.__init__(self, daemon=True, target=self._asyncLoop)
         self._startdate = datetime.now()
         self._stopFlag = False
         self._lastRunTime = datetime.now()
+        self.identifier = "AT0('async thread')"
+        threading.Thread.__init__(self, daemon=True, target=self._asyncLoop)
+
+    def __str__(self):
+        """ Connection/Thread ID Str - often used as a prefix for logging """
+        return self.identifier
 
     def _asyncLoop(self):
         """ Call the _asyncTasks method of the single game instance.
             * Thread control and tasks are handled in the game instance. """
         if self._debugAsync:
-            logger.debug(str(self) + "AsyncThread._asyncMain")
-        logger.info("Thread started - async worker")
+            logger.debug("{} AsyncThread._asyncMain".format(self))
+        logger.info("{} Thread started (pid: {})".format(self, os.getpid()))
         while not self._stopFlag:
             self.gameObj.asyncTasks()
             self._lastRunTime = datetime.now()
@@ -336,6 +341,7 @@ class AsyncThread(threading.Thread):
 
     def halt(self):
         self._stopFlag = True
+        logger.info("{} Halting thread".format(self))
 
     def getLastRunTime(self):
         return(self._lastRunTime)

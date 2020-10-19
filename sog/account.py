@@ -119,12 +119,12 @@ class Account(Storage, AttributeHelper, EditWizard):
             return False
         elif self.isValid():
             logger.info(
-                "{} Account login sucessful - {}".format(str(self.client),
-                                                         self.getEmail())
+                "{} Account login successful - {}".format(self.client,
+                                                          self.getEmail())
             )
         else:
             logger.info(
-                "{} Account {} is invalid".format(str(self.client), email)
+                "{} Account {} is invalid".format(self.client, email)
             )
             return False
 
@@ -154,7 +154,7 @@ class Account(Storage, AttributeHelper, EditWizard):
         self.client.spoolOut(buf)
         self.save(logStr=__class__.__name__)
         if self.client:
-            logger.info(str(self.client) + " Logout " + self.getEmail())
+            logger.info("{} Logout {}".format(self.client, self.getEmail()))
         self.__init__(self.client)
         return True
 
@@ -198,7 +198,9 @@ class Account(Storage, AttributeHelper, EditWizard):
             self.email = address
             return True
         else:
-            logger.error("account.setUserEmailAddress: Bad email: " + address)
+            msg = "{} account.setUserEmailAddress: Bad email: {}".format(self.client,
+                                                                         address)
+            logger.error(msg)
         return False
 
     def postLoad(self):
@@ -224,7 +226,7 @@ class Account(Storage, AttributeHelper, EditWizard):
             acctmsg = "Account {} created for {}\n".format(
                 self.getDisplayName(), self.getEmail())
             self.client.spoolOut(acctmsg)
-            logger.info("NEW ACCOUNT " + acctmsg)
+            logger.info("{} NEW ACCOUNT {}".format(self.client, acctmsg))
             return True
         else:
             self.client.spoolOut("Password validation failed\n")
@@ -238,7 +240,8 @@ class Account(Storage, AttributeHelper, EditWizard):
             if self.email != "":
                 return True
             else:
-                logger.warning("Account is missing email address")
+                msg = "{} Account is missing email address".format(self.client)
+                logger.warning(msg)
         return False
 
     def getInfo(self):
@@ -324,7 +327,8 @@ class Account(Storage, AttributeHelper, EditWizard):
         """ Prompt user to verify password, returns True if successful """
 
         if not self.email or self.email == "":
-            logger.debug("verifyAcctPassword failed.  email not defined")
+            msg = "{} verifyAcctPassword failed.  email not defined".format(self.client)
+            logger.debug(msg)
             return False
 
         if self.load(["password"], logStr=__class__.__name__):
@@ -340,11 +344,8 @@ class Account(Storage, AttributeHelper, EditWizard):
                         + " of 3).\n"
                     )
                     if x == 3:
-                        logger.warning(
-                            "Failed password verification for "
-                            + "account "
-                            + self.email
-                        )
+                        msg = "{} Failed password verification for account {}"
+                        logger.warning(msg.format(self.client, self.email))
         return False
 
     def validatePassword(self, given_password, promptStr="Verify Password: "):
@@ -363,13 +364,13 @@ class Account(Storage, AttributeHelper, EditWizard):
             # If the given password is encoded, use the encrypted check
             password_check = common.security.check_encrypted_password(
                 password_input, given_password)
-            # logger.debug("vp: Checking encrypted password... {}".format(
-            #     password_check))
+            # logger.debug("{} vp: Checking encrypted password... {}".format(
+            #     self.client, password_check))
             return(password_check)
         else:
             password_check = (password_input == given_password)
-            # logger.debug("vp: Checking cleartxt password... {}".format(
-            #     password_check))
+            # logger.debug("{} vp: Checking cleartxt password... {}".format(
+            #     self.client, password_check))
             return(password_check)
 
         return False
